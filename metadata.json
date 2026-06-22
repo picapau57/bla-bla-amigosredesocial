@@ -1,0 +1,6 @@
+{
+  "name": "Bla Bla Amigos",
+  "description": "Uma plataforma de rede social vibrante, moderna, completa e profissional para se conectar com amigos, compartilhar momentos, participar de grupos e impulsionar negócios.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
