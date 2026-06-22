@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Post, Chat, Message, Ad, Community, Event, Story, BusinessPage, SystemLog, Comment, CatalogProduct } from '../types';
+import { User, Post, Chat, Message, Ad, Community, Event, Story, BusinessPage, SystemLog, Comment, CatalogProduct, EmailConfig } from '../types';
 import {
   INITIAL_USERS,
   INITIAL_POSTS,
@@ -68,6 +68,22 @@ export function useSocialState() {
     const saved = localStorage.getItem('bb_current_uid');
     return saved || 'user-1';
   });
+
+  const [emailConfig, setEmailConfig] = useState<EmailConfig>(() => {
+    const saved = localStorage.getItem('bb_email_config');
+    return saved ? JSON.parse(saved) : {
+      serviceId: '',
+      templateId: '',
+      publicKey: '',
+      provider: 'disabled'
+    };
+  });
+
+  const updateEmailConfig = (config: EmailConfig) => {
+    setEmailConfig(config);
+    localStorage.setItem('bb_email_config', JSON.stringify(config));
+    logAction('success', `E-mail Transacional: Configurações do SMTP atualizadas (Provedor: ${config.provider.toUpperCase()}).`);
+  };
 
   // Keep state synchronized with localStorage
   useEffect(() => {
@@ -685,7 +701,9 @@ export function useSocialState() {
     adminToggleVerifyUser,
     adminDeletePost,
     adminDeleteAd,
-    getAdminStats
+    getAdminStats,
+    emailConfig,
+    updateEmailConfig
   };
 }
 export type UseSocialStateReturn = ReturnType<typeof useSocialState>;

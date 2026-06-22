@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { User, Post, Ad, SystemLog } from '../types';
+import { User, Post, Ad, SystemLog, EmailConfig } from '../types';
 import { 
-  Users, AlertTriangle, ShieldCheck, CheckCircle, 
+  Users, AlertTriangle, ShieldCheck, CheckCircle, Mail,
   Trash2, Ban, Unlock, DollarSign, Activity, FileText, CheckCircle2
 } from 'lucide-react';
 
@@ -11,6 +11,8 @@ interface AdminSectionProps {
   posts: Post[];
   ads: Ad[];
   logs: SystemLog[];
+  emailConfig: EmailConfig;
+  onUpdateEmailConfig: (config: EmailConfig) => void;
   onBlockUser: (id: string) => void;
   onUnblockUser: (id: string) => void;
   onToggleVerifyUser: (id: string) => void;
@@ -35,6 +37,8 @@ export default function AdminSection({
   posts,
   ads,
   logs,
+  emailConfig,
+  onUpdateEmailConfig,
   onBlockUser,
   onUnblockUser,
   onToggleVerifyUser,
@@ -43,7 +47,7 @@ export default function AdminSection({
   onApproveAd,
   getAdminStats
 }: AdminSectionProps) {
-  const [adminActiveSubTab, setAdminActiveSubTab] = useState<'dashboard' | 'users' | 'posts' | 'ads_moderation' | 'logs'>('dashboard');
+  const [adminActiveSubTab, setAdminActiveSubTab] = useState<'dashboard' | 'users' | 'posts' | 'ads_moderation' | 'logs' | 'email_settings'>('dashboard');
 
   const stats = getAdminStats();
 
@@ -72,7 +76,8 @@ export default function AdminSection({
           { id: 'users', name: 'Moderação de Usuários (' + users.length + ')', icon: Users },
           { id: 'posts', name: 'Excluir Conteúdo (' + posts.length + ')', icon: Trash2 },
           { id: 'ads_moderation', name: 'Gerenciar Anúncios', icon: ShieldCheck },
-          { id: 'logs', name: 'Logs de Segurança (' + logs.length + ')', icon: FileText }
+          { id: 'logs', name: 'Logs de Segurança (' + logs.length + ')', icon: FileText },
+          { id: 'email_settings', name: 'E-mail Transacional API', icon: Mail }
         ].map(tb => {
           const Icon = tb.icon;
           const isActive = adminActiveSubTab === tb.id;
@@ -364,6 +369,102 @@ export default function AdminSection({
                 <span className="text-[11px] leading-relaxed text-gray-300">{log.message}</span>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {adminActiveSubTab === 'email_settings' && (
+        <div className="space-y-6 animate-fade-in" id="admin-panel-email-tab">
+          <div className="flex items-center justify-between border-b border-white/5 pb-2">
+            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Verificação de Conta por E-mail Real (SMTP / EmailJS)</h4>
+            <span className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded uppercase ${
+              emailConfig.provider === 'emailjs' ? 'bg-[#00E676]/20 text-[#00E676]' : 'bg-amber-500/10 text-amber-500'
+            }`}>
+              {emailConfig.provider === 'emailjs' ? 'Real Ativo' : 'Simulação'}
+            </span>
+          </div>
+
+          <p className="text-xs text-slate-300 leading-relaxed font-sans">
+            Para que seus usuários recebam o código de ativação real em suas caixas de e-mail ao preencher o cadastro, conecte a sua conta do <strong>EmailJS</strong> abaixo. O EmailJS é um serviço gratuito de excelente reputação que envia e-mails transacionais diretamente do aplicativo.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* CONFIG FORM */}
+            <div className="bg-[#0A0A14] p-5 rounded-2xl border border-white/10 space-y-4">
+              <h5 className="text-xs font-bold font-mono text-[#00E5FF] uppercase tracking-wider">Credenciais de Envio</h5>
+              
+              <div className="space-y-3.5">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1">Status do Serviço</label>
+                  <select
+                    value={emailConfig.provider}
+                    onChange={(e) => onUpdateEmailConfig({ ...emailConfig, provider: e.target.value as any })}
+                    className="w-full bg-[#121225] text-white p-2.5 rounded-xl border border-white/10 text-xs focus:outline-none focus:border-[#00E5FF] font-semibold"
+                  >
+                    <option value="disabled">Desativado (Simular com código padrão)</option>
+                    <option value="emailjs">EmailJS Ativo (Envio real para o e-mail cadastrado)</option>
+                  </select>
+                </div>
+
+                {emailConfig.provider === 'emailjs' && (
+                  <>
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1">Service ID</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: service_g8x9s"
+                        value={emailConfig.serviceId}
+                        onChange={(e) => onUpdateEmailConfig({ ...emailConfig, serviceId: e.target.value })}
+                        className="w-full bg-[#121225] text-white p-2.5 rounded-xl border border-white/10 text-xs font-mono focus:outline-none focus:border-[#00E5FF]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1">Template ID</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: template_7g9d8"
+                        value={emailConfig.templateId}
+                        onChange={(e) => onUpdateEmailConfig({ ...emailConfig, templateId: e.target.value })}
+                        className="w-full bg-[#121225] text-white p-2.5 rounded-xl border border-white/10 text-xs font-mono focus:outline-none focus:border-[#00E5FF]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1">Public Key (User ID)</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: user_x89gSdfas7y87f"
+                        value={emailConfig.publicKey}
+                        onChange={(e) => onUpdateEmailConfig({ ...emailConfig, publicKey: e.target.value })}
+                        className="w-full bg-[#121225] text-white p-2.5 rounded-xl border border-white/10 text-xs font-mono focus:outline-none focus:border-[#00E5FF]"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* TUTORIAL / HELP */}
+            <div className="bg-[#0A0A14] p-5 rounded-2xl border border-white/10 space-y-3.5 text-xs leading-relaxed text-gray-400 font-sans">
+              <h5 className="text-xs font-extrabold font-mono text-white uppercase tracking-wider flex items-center gap-1.5">
+                <Mail className="w-4 h-4 text-[#FF5722]" /> Passo a Passo de Configuração:
+              </h5>
+              <ol className="list-decimal pl-4 space-y-2 text-gray-300">
+                <li>Acesse e crie uma conta gratuita em <a href="https://www.emailjs.com" target="_blank" rel="noreferrer" className="text-[#00E5FF] hover:underline font-bold">emailjs.com</a></li>
+                <li>Na aba <strong>Email Services</strong>, conecte seu e-mail de envio (Gmail, Outlook, etc.) e copie o seu <span className="font-mono text-[#00E5FF] font-bold">Service ID</span></li>
+                <li>Na aba <strong>Email Templates</strong>, crie um template de mensagem. Insira as variáveis abaixo exatamente como descritas para extrair os inputs do cadastro:
+                  <div className="bg-[#121225] p-3 rounded-xl border border-white/5 font-mono text-[10px] text-gray-400 mt-2 space-y-1">
+                    <p>Olá <span className="text-[#00E676] font-bold">{"{{to_name}}"}</span>,</p>
+                    <p>Seu código de confirmação na Bla Bla Amigos é: <span className="text-[#00E5FF] font-extrabold">{"{{code}}"}</span></p>
+                    <p>Destinatário: <span className="text-gray-300">{"{{to_email}}"}</span></p>
+                  </div>
+                </li>
+                <li>Crie ou copie o <span className="font-mono text-[#00E5FF] font-bold">Template ID</span></li>
+                <li>Na aba <strong>Account &gt; API Keys</strong>, copie a sua <span className="font-mono text-[#00E5FF] font-bold">Public Key</span></li>
+                <li>Preencha as credenciais ao lado, selecione o status como <strong>EmailJS Ativo</strong> e salve! Os dados ficam salvos de forma protegida no seu navegador</li>
+              </ol>
+            </div>
           </div>
         </div>
       )}

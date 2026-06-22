@@ -169,3 +169,10 @@ export interface SystemLog {
   message: string;
   timestamp: string;
 }
+
+export interface EmailConfig {
+  serviceId: string;
+  templateId: string;
+  publicKey: string;
+  provider: 'emailjs' | 'disabled';
+}

@@ -46,22 +46,89 @@ export default function App() {
   const [premiumPayMethod, setPremiumPayMethod] = useState<'pix' | 'credit'>('pix');
   const [premiumStep, setPremiumStep] = useState<'plan_pick' | 'checkout' | 'done'>('plan_pick');
 
+  const [expectedCode, setExpectedCode] = useState('8844');
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+
   const handleRegisterSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!regFullName || !regUsername || !regEmail) return;
 
-    // Transition to simulated verification
+    // Generate random 4 digit code
+    const generatedCodeStr = Math.floor(1000 + Math.random() * 9000).toString();
+    setExpectedCode(generatedCodeStr);
+
+    // Transition to verification stage
     setRegStep('email_validate');
-    social.logs.push({
-      id: `sys-${Date.now()}`,
-      type: 'info',
-      message: `Simulando envio de e-mail de verificação para '${regEmail}'...`,
-      timestamp: new Date().toISOString()
-    });
+
+    const config = social.emailConfig;
+    if (config && config.provider === 'emailjs' && config.serviceId && config.templateId && config.publicKey) {
+      setIsSendingEmail(true);
+      fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          service_id: config.serviceId,
+          template_id: config.templateId,
+          user_id: config.publicKey,
+          template_params: {
+            to_name: regFullName,
+            to_email: regEmail,
+            code: generatedCodeStr,
+            from_name: 'Bla Bla Amigos'
+          }
+        })
+      })
+      .then(async (res) => {
+        setIsSendingEmail(false);
+        if (res.ok) {
+          social.logs.push({
+            id: `sys-${Date.now()}-${Math.random()}`,
+            type: 'success',
+            message: `E-mail transacional real enviado com sucesso para ${regEmail} via EmailJS! Código: ${generatedCodeStr}`,
+            timestamp: new Date().toISOString()
+          });
+        } else {
+          const text = await res.text();
+          social.logs.push({
+            id: `sys-${Date.now()}-${Math.random()}`,
+            type: 'error',
+            message: `Erro ao enviar e-mail transacional EmailJS: ${text}`,
+            timestamp: new Date().toISOString()
+          });
+          alert(`O EmailJS respondeu com erro: "${text}". O administrador precisa verificar se as chaves estão corretas na aba "E-mail Transacional API" do Painel de Admin.`);
+        }
+      })
+      .catch((err: any) => {
+        setIsSendingEmail(false);
+        social.logs.push({
+          id: `sys-${Date.now()}-${Math.random()}`,
+          type: 'error',
+          message: `Falha de rede ao enviar EmailJS: ${err.message}`,
+          timestamp: new Date().toISOString()
+        });
+        alert(`Não foi possível estabelecer contato com o servidor EmailJS. Mas você ainda pode simular digitando o código.`);
+      });
+    } else {
+      // Fallback simulated delivery
+      social.logs.push({
+        id: `sys-${Date.now()}-${Math.random()}`,
+        type: 'info',
+        message: `Serviço EmailJS desativado ou incompleto. Código gerado de teste para '${regEmail}': ${generatedCodeStr}`,
+        timestamp: new Date().toISOString()
+      });
+    }
   };
 
   const handleVerifyCodeSubmit = (e: FormEvent) => {
     e.preventDefault();
+
+    if (verificationCode.trim() !== expectedCode) {
+      alert(`Código incorreto! Digite o código de confirmação correto enviado para ${regEmail}.`);
+      return;
+    }
+
     // Complete registration
     const res = social.registerUser({
       fullName: regFullName,
@@ -404,10 +471,29 @@ export default function App() {
                           onSubmit={handleVerifyCodeSubmit}
                           className="space-y-4"
                         >
-                          <div className="bg-[#121225] p-3.5 rounded-xl border border-[#00E5FF]/20 text-xs text-gray-300 text-center leading-relaxed font-sans space-y-1">
-                            <p>Simulação ativa para <strong className="text-[#00E5FF] font-mono">{regEmail}</strong>!</p>
-                            <p className="text-[11px] text-[#00E676] font-bold">👉 Código Liberado: Digite <span className="font-mono bg-[#0A0A14] text-white px-2 py-0.5 rounded border border-white/10 select-all">8844</span> para confirmar sua validação imediata.</p>
-                          </div>
+                          {social.emailConfig?.provider === 'emailjs' ? (
+                            <div className="bg-[#121225] p-3.5 rounded-xl border border-[#00E5FF]/20 text-xs text-gray-300 text-center leading-relaxed font-sans space-y-1 animate-fade-in">
+                              <span className="inline-block w-2 bg-[#00E676] rounded-full animate-pulse mr-1" />
+                              <span className="font-bold text-white uppercase text-[9px] bg-[#00E676]/10 px-2 py-0.5 border border-[#00E676]/20 rounded">Envio Real de E-mail Ativo</span>
+                              <p className="text-[11px] text-gray-300 mt-1">Enviamos um código de confirmação eletrônico para: <strong className="text-[#00E5FF] font-mono">{regEmail}</strong></p>
+                              {isSendingEmail ? (
+                                <p className="text-[10px] text-amber-400 font-mono italic animate-pulse mt-1">⚡ Conectando ao servidor e enviando e-mail...</p>
+                              ) : (
+                                <p className="text-[10px] text-gray-400 mt-1">Caso demore alguns segundos, verifique sua caixa de entrada e pasta de <strong>Spam</strong>.</p>
+                              )}
+                              
+                              <details className="mt-2 text-left bg-[#0A0A14] p-1.5 rounded border border-white/5">
+                                <summary className="text-[9px] text-gray-500 cursor-pointer hover:text-gray-400 outline-none select-none">Bypass de Desenvolvimento (Caso o e-mail atrase)</summary>
+                                <p className="text-[9px] text-[#00E676] font-mono mt-1">Código gerado nesta sessão: <strong className="font-extrabold bg-[#121225] px-1 rounded select-all text-white border border-white/10">{expectedCode}</strong></p>
+                              </details>
+                            </div>
+                          ) : (
+                            <div className="bg-[#121225] p-3.5 rounded-xl border border-white/10 text-xs text-gray-300 text-center leading-relaxed font-sans space-y-1 animate-fade-in">
+                              <p>Simulação ativa para <strong className="text-[#00E5FF] font-mono">{regEmail}</strong>!</p>
+                              <p className="text-[11px] text-[#00E676] font-bold font-mono">👉 Código de Ativação: Digite <span className="font-mono bg-[#0A0A14] text-white px-2 py-0.5 rounded border border-white/10 select-all font-extrabold">{expectedCode}</span> para validar seu acesso.</p>
+                              <p className="text-[9px] text-gray-500 bg-[#0A0A14] p-1.5 rounded mt-1">Administrador: Conecte o EmailJS no Painel Administrativo para testar envios reais para qualquer e-mail!</p>
+                            </div>
+                          )}
                           
                           <div>
                             <label className="block text-[10px] font-bold uppercase tracking-wider text-[#00E5FF] font-mono mb-1.5 text-center">
@@ -417,7 +503,7 @@ export default function App() {
                               type="text"
                               required
                               maxLength={4}
-                              placeholder="Ex: 8844"
+                              placeholder={"Ex: " + expectedCode}
                               value={verificationCode}
                               onChange={(e) => setVerificationCode(e.target.value)}
                               className="w-32 mx-auto block bg-[#0A0A14] border border-white/10 text-center text-white font-mono font-extrabold text-lg p-2 rounded-xl focus:border-[#00E5FF] focus:outline-none focus:ring-1 focus:ring-[#00E5FF]/20 animate-pulse"
@@ -637,6 +723,8 @@ export default function App() {
                       posts={social.posts}
                       ads={social.ads}
                       logs={social.logs}
+                      emailConfig={social.emailConfig}
+                      onUpdateEmailConfig={social.updateEmailConfig}
                       onBlockUser={social.adminBlockUser}
                       onUnblockUser={social.adminUnblockUser}
                       onToggleVerifyUser={social.adminToggleVerifyUser}
