@@ -53,6 +53,78 @@ export default function Sidebar({
   const [editState, setEditState] = useState(currentUser.state || '');
   const [editWebsite, setEditWebsite] = useState(currentUser.website || '');
 
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+
+  // Resize and compress chosen computer/mobile files so they fit into localStorage with perfect speed
+  const resizeAndProcessFile = (file: File, targetWidth: number, targetHeight: number, callback: (resultUrl: string) => void) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        // Keep aspect ratio
+        if (width > height) {
+          if (width > targetWidth) {
+            height = Math.round((height * targetWidth) / width);
+            width = targetWidth;
+          }
+        } else {
+          if (height > targetHeight) {
+            width = Math.round((width * targetHeight) / height);
+            height = targetHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.82); // Smooth JPEG compression at 82% quality
+          callback(dataUrl);
+        } else {
+          callback(e.target?.result as string);
+        }
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor, selecione um arquivo de imagem válido (PNG, JPG, JPEG).');
+      return;
+    }
+    setIsUploadingAvatar(true);
+    resizeAndProcessFile(file, 250, 250, (resultUrl) => {
+      setEditAvatar(resultUrl);
+      setIsUploadingAvatar(false);
+    });
+  };
+
+  const handleCoverFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor, selecione um arquivo de imagem válido (PNG, JPG, JPEG).');
+      return;
+    }
+    setIsUploadingCover(true);
+    resizeAndProcessFile(file, 800, 400, (resultUrl) => {
+      setEditCover(resultUrl);
+      setIsUploadingCover(false);
+    });
+  };
+
   const handleOpenEditModal = () => {
     setEditFullName(currentUser.fullName);
     setEditBio(currentUser.bio || '');
@@ -377,10 +449,10 @@ export default function Sidebar({
               </div>
 
               {/* Foto de Perfil Selection (AVATAR) */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono">1. Foto de Perfil (Como mudar sua foto)</label>
-                  <span className="text-[9px] text-[#00E5FF] font-mono">Clique para escolher uma sugestão 👇</span>
+                  <span className="text-[9px] text-[#00E5FF] font-mono">Selecione uma sugestão 👇</span>
                 </div>
                 {/* Suggestions Grid */}
                 <div className="grid grid-cols-5 gap-2.5 bg-[#0A0A14] p-3 rounded-xl border border-white/5">
@@ -400,9 +472,31 @@ export default function Sidebar({
                     );
                   })}
                 </div>
+
+                {/* Real File Upload from Device */}
+                <div className="bg-[#1A1A32] p-4 rounded-xl border border-white/10 flex flex-col items-center justify-center text-center relative hover:bg-[#232344] hover:border-[#00E5FF]/30 transition-all cursor-pointer group">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarFileChange}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                    id="avatar-file-upload-input"
+                  />
+                  <Camera className="w-5 h-5 text-[#00E5FF] mb-1 animate-pulse group-hover:scale-110 transition-transform" />
+                  <span className="text-xs font-bold text-white uppercase tracking-wide">Buscar Foto no Computador ou Celular</span>
+                  <p className="text-[10px] text-gray-400 mt-1 max-w-[90%] leading-normal">Selecione uma foto da sua galeria e ela será recortada, comprimida e ativada no seu perfil automaticamente.</p>
+                  
+                  {isUploadingAvatar && (
+                    <div className="absolute inset-0 bg-[#0A0A14]/95 rounded-xl flex items-center justify-center gap-2 z-20">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#00E5FF] animate-pulse" />
+                      <span className="text-[11px] font-bold text-[#00E5FF] font-mono uppercase tracking-wider animate-pulse">Otimizando e Comprimindo Foto...</span>
+                    </div>
+                  )}
+                </div>
+
                 {/* Custom URL Field */}
                 <div>
-                  <label className="block text-[9px] font-bold text-gray-500 uppercase font-mono mb-1">Ou cole o link (URL) de outra imagem da internet:</label>
+                  <label className="block text-[9px] font-bold text-gray-500 uppercase font-mono mb-1">Ou cole o link (URL) de uma imagem da internet:</label>
                   <input
                     type="url"
                     value={editAvatar}
@@ -414,9 +508,9 @@ export default function Sidebar({
               </div>
 
               {/* Capa do Perfil Selection (COVER) */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono">2. Capa do Perfil (Banner)</label>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono">2. Capa do Perfil (Banner de fundo)</label>
                 </div>
                 {/* Covers grid */}
                 <div className="grid grid-cols-5 gap-1.5 bg-[#0A0A14] p-2 rounded-xl border border-white/5">
@@ -435,6 +529,28 @@ export default function Sidebar({
                     );
                   })}
                 </div>
+
+                {/* Real Cover File Upload from Device */}
+                <div className="bg-[#1A1A32] p-2.5 rounded-xl border border-white/10 flex flex-col items-center justify-center text-center relative hover:bg-[#232344] hover:border-[#00E676]/30 transition-all cursor-pointer group">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCoverFileChange}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                    id="cover-file-upload-input"
+                  />
+                  <span className="text-[11px] font-bold text-white flex items-center gap-1.5 justify-center uppercase tracking-wide">
+                    <Camera className="w-4 h-4 text-[#00E676] group-hover:scale-115 transition-transform" /> Carregar Capa do Dispositivo
+                  </span>
+                  
+                  {isUploadingCover && (
+                    <div className="absolute inset-0 bg-[#0A0A14]/95 rounded-xl flex items-center justify-center gap-2 z-20">
+                      <span className="w-2 h-2 rounded-full bg-[#00E676] animate-pulse" />
+                      <span className="text-[10px] font-bold text-[#00E676] font-mono uppercase tracking-wider animate-pulse">Otimizando Capa...</span>
+                    </div>
+                  )}
+                </div>
+
                 {/* Custom cover URL */}
                 <div>
                   <input
