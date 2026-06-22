@@ -621,6 +621,7 @@ export default function App() {
                 setPremiumStep('plan_pick');
                 setShowPremiumModal(true);
               }}
+              onUpdateProfile={social.updateProfile}
             />
 
             {/* CENTRAL WORKSPACE STAGE */}
@@ -725,6 +726,7 @@ export default function App() {
                       logs={social.logs}
                       emailConfig={social.emailConfig}
                       onUpdateEmailConfig={social.updateEmailConfig}
+                      onDeleteUser={social.adminDeleteUser}
                       onBlockUser={social.adminBlockUser}
                       onUnblockUser={social.adminUnblockUser}
                       onToggleVerifyUser={social.adminToggleVerifyUser}

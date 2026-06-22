@@ -1,23 +1,88 @@
+import React, { useState, FormEvent } from 'react';
 import { User } from '../types';
 import { 
   Rss, MessageSquare, Megaphone, Users, Calendar, Building2, ShieldCheck, 
-  MapPin, Globe, Sparkles, Award, Star, Gem, CheckCircle, ShieldAlert
+  MapPin, Globe, Sparkles, Award, Star, Gem, CheckCircle, ShieldAlert,
+  Pencil, X, Camera, Save, Settings
 } from 'lucide-react';
 import { motion } from 'motion/react';
+
+const PRESET_AVATARS = [
+  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200',
+  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200',
+  'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
+  'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=200',
+  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200',
+  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
+  'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=200',
+  'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=200',
+  'https://images.unsplash.com/photo-1628157582853-a796fa650a6a?auto=format&fit=crop&q=80&w=200'
+];
+
+const PRESET_COVERS = [
+  'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=600',
+  'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&q=80&w=600',
+  'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&q=80&w=600',
+  'https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&q=80&w=600',
+  'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?auto=format&fit=crop&q=80&w=600'
+];
 
 interface SidebarProps {
   currentUser: User;
   activeTab: string;
   setActiveTab: (tab: string) => void;
   onUpgradePlan: () => void;
+  onUpdateProfile?: (userId: string, updates: Partial<User>) => void;
 }
 
 export default function Sidebar({
   currentUser,
   activeTab,
   setActiveTab,
-  onUpgradePlan
+  onUpgradePlan,
+  onUpdateProfile
 }: SidebarProps) {
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editFullName, setEditFullName] = useState(currentUser.fullName);
+  const [editBio, setEditBio] = useState(currentUser.bio || '');
+  const [editAvatar, setEditAvatar] = useState(currentUser.avatar);
+  const [editCover, setEditCover] = useState(currentUser.cover || '');
+  const [editCity, setEditCity] = useState(currentUser.city || '');
+  const [editState, setEditState] = useState(currentUser.state || '');
+  const [editWebsite, setEditWebsite] = useState(currentUser.website || '');
+
+  const handleOpenEditModal = () => {
+    setEditFullName(currentUser.fullName);
+    setEditBio(currentUser.bio || '');
+    setEditAvatar(currentUser.avatar);
+    setEditCover(currentUser.cover || '');
+    setEditCity(currentUser.city || '');
+    setEditState(currentUser.state || '');
+    setEditWebsite(currentUser.website || '');
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editFullName.trim()) {
+      alert('O Nome Completo não pode ficar em branco!');
+      return;
+    }
+    if (onUpdateProfile) {
+      onUpdateProfile(currentUser.id, {
+        fullName: editFullName.trim(),
+        bio: editBio.trim(),
+        avatar: editAvatar.trim() || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200',
+        cover: editCover.trim() || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=600',
+        city: editCity.trim(),
+        state: editState.trim(),
+        website: editWebsite.trim()
+      });
+    }
+    setIsEditModalOpen(false);
+  };
 
   const navItems = [
     { id: 'feed', name: 'Feed de Notícias', icon: Rss, color: 'text-cyan-400 font-bold' },
@@ -34,18 +99,37 @@ export default function Sidebar({
            {/* USER PROFILE CARD */}
       <div className="bg-[#121225] border border-white/10 rounded-2xl overflow-hidden shadow-xl" id="sidebar-profile-card">
         {/* Banner */}
-        <div className="h-20 w-full relative bg-cover bg-center" style={{ backgroundImage: `url(${currentUser.cover})` }}>
+        <div 
+          onClick={handleOpenEditModal}
+          className="h-20 w-full relative bg-cover bg-center cursor-pointer group" 
+          style={{ backgroundImage: `url(${currentUser.cover})` }}
+          title="Clique para editar capa"
+        >
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center text-xs text-white font-semibold font-mono gap-1">
+            <Camera className="w-3.5 h-3.5" /> Mudar Capa
+          </div>
           <div className="absolute inset-0 bg-gradient-to-t from-[#121225] via-transparent to-transparent" />
         </div>
 
         {/* Info */}
         <div className="px-5 pb-5 pt-0 relative flex flex-col items-center">
-          <img
-            src={currentUser.avatar}
-            alt={currentUser.fullName}
-            referrerPolicy="no-referrer"
-            className="w-18 h-18 rounded-full border-4 border-[#121225] object-cover shadow-xl -mt-9 relative z-10 hover:scale-105 transition-transform duration-300"
-          />
+          {/* Interactive Profile Photo */}
+          <div 
+            onClick={handleOpenEditModal}
+            className="relative -mt-9 z-10 w-18 h-18 rounded-full border-4 border-[#121225] shadow-xl overflow-hidden group cursor-pointer"
+            title="Clique para alterar sua foto de perfil"
+          >
+            <img
+              src={currentUser.avatar}
+              alt={currentUser.fullName}
+              referrerPolicy="no-referrer"
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+            />
+            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center text-white">
+              <Camera className="w-4 h-4 text-[#00E5FF] animate-pulse" />
+              <span className="text-[8px] font-bold uppercase mt-0.5 tracking-tighter">Editar</span>
+            </div>
+          </div>
           
           <div className="text-center mt-2">
             <h3 className="text-white font-bold text-base flex items-center justify-center gap-1">
@@ -60,6 +144,15 @@ export default function Sidebar({
           <p className="text-gray-400 text-xs text-center mt-2 line-clamp-2 italic px-2 font-sans">
             "{currentUser.bio || 'Sem biografia definida.'}"
           </p>
+
+          {/* Edit Profile Quick Button */}
+          <button
+            onClick={handleOpenEditModal}
+            className="w-full mt-3 bg-[#1A1A32] hover:bg-[#25254A] border border-white/5 hover:border-[#00E5FF]/30 text-xs font-semibold py-1.5 px-3 rounded-xl transition-all duration-300 text-gray-300 hover:text-white flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+          >
+            <Settings className="w-3.5 h-3.5 text-[#00E5FF]" />
+            Editar Perfil / Foto
+          </button>
 
           {/* Badges */}
           {currentUser.badges && currentUser.badges.length > 0 && (
@@ -194,6 +287,198 @@ export default function Sidebar({
           </>
         )}
       </div>
+
+      {/* EDIT PROFILE MODAL */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 bg-[#0A0A14]/80 backdrop-blur-sm z-[999] flex items-center justify-center p-4 overflow-y-auto animate-fade-in" id="edit-profile-modal-overlay">
+          <div className="bg-[#121225] border border-white/10 w-full max-w-xl rounded-2xl overflow-hidden shadow-2xl flex flex-col my-8 max-h-[85vh]">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
+              <h3 className="text-white font-bold text-sm uppercase tracking-wider flex items-center gap-2 font-mono">
+                <Settings className="w-5 h-5 text-[#00E5FF]" /> Editar Meu Perfil
+              </h3>
+              <button 
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-gray-400 hover:text-white p-1 rounded-full hover:bg-white/5 transition-colors cursor-pointer"
+                type="button"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSaveProfile} className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+              {/* Profile Pictures Header Visual Preview */}
+              <div className="bg-[#0A0A14] p-4 rounded-xl border border-white/5 relative flex flex-col items-center">
+                <span className="text-[10px] font-mono text-gray-500 uppercase tracking-widest absolute top-2 right-3">Prévia Visual</span>
+                {/* Banner Preview */}
+                <div 
+                  className="h-16 w-full rounded-lg bg-cover bg-center mb-6 relative overflow-hidden" 
+                  style={{ backgroundImage: `url(${editCover || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=600'})` }}
+                >
+                  <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-[#0A0A14] to-transparent" />
+                </div>
+                {/* Avatar Preview */}
+                <div className="relative -mt-11 z-[5]">
+                  <img
+                    src={editAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200'}
+                    alt="Preview"
+                    className="w-14 h-14 rounded-full border-2 border-white/20 object-cover shadow-lg"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200';
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* General details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1">Nome de Exibição (Completo)</label>
+                  <input
+                    type="text"
+                    required
+                    value={editFullName}
+                    onChange={(e) => setEditFullName(e.target.value)}
+                    placeholder="Ex: Roseni Ferreira de Souza"
+                    className="w-full bg-[#1A1A32] text-white p-2.5 rounded-xl border border-white/10 text-xs focus:outline-none focus:border-[#00E5FF] font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1">Cidade e Estado</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      placeholder="Cidade (Ex: São Paulo)"
+                      value={editCity}
+                      onChange={(e) => setEditCity(e.target.value)}
+                      className="w-full bg-[#1A1A32] text-white p-2.5 rounded-xl border border-white/10 text-xs focus:outline-none focus:border-[#00E5FF]"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Estado (Ex: SP)"
+                      value={editState}
+                      onChange={(e) => setEditState(e.target.value)}
+                      className="w-full bg-[#1A1A32] text-white p-2.5 rounded-xl border border-white/10 text-xs focus:outline-none focus:border-[#00E5FF]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1">Biografia Curta</label>
+                <textarea
+                  value={editBio}
+                  onChange={(e) => setEditBio(e.target.value)}
+                  placeholder="Escreva algo sobre você..."
+                  maxLength={160}
+                  className="w-full bg-[#1A1A32] text-white p-2.5 rounded-xl border border-white/10 text-xs focus:outline-none focus:border-[#00E5FF] min-h-[60px] max-h-[100px]"
+                />
+              </div>
+
+              {/* Foto de Perfil Selection (AVATAR) */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono">1. Foto de Perfil (Como mudar sua foto)</label>
+                  <span className="text-[9px] text-[#00E5FF] font-mono">Clique para escolher uma sugestão 👇</span>
+                </div>
+                {/* Suggestions Grid */}
+                <div className="grid grid-cols-5 gap-2.5 bg-[#0A0A14] p-3 rounded-xl border border-white/5">
+                  {PRESET_AVATARS.map((url, index) => {
+                    const isSelected = editAvatar === url;
+                    return (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => setEditAvatar(url)}
+                        className={`relative w-8.5 h-8.5 rounded-full overflow-hidden border-2 transition-all cursor-pointer ${
+                          isSelected ? 'border-[#00E5FF] scale-110 shadow-[0_0_8px_#00E5FF]' : 'border-transparent opacity-60 hover:opacity-100'
+                        }`}
+                      >
+                        <img src={url} alt={`Preset ${index}`} className="w-full h-full object-cover" />
+                      </button>
+                    );
+                  })}
+                </div>
+                {/* Custom URL Field */}
+                <div>
+                  <label className="block text-[9px] font-bold text-gray-500 uppercase font-mono mb-1">Ou cole o link (URL) de outra imagem da internet:</label>
+                  <input
+                    type="url"
+                    value={editAvatar}
+                    onChange={(e) => setEditAvatar(e.target.value)}
+                    placeholder="https://exemplo.com/suafoto.jpg"
+                    className="w-full bg-[#1A1A32] text-white p-2 rounded-xl border border-white/10 text-[11px] font-mono focus:outline-none focus:border-[#00E5FF]"
+                  />
+                </div>
+              </div>
+
+              {/* Capa do Perfil Selection (COVER) */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono">2. Capa do Perfil (Banner)</label>
+                </div>
+                {/* Covers grid */}
+                <div className="grid grid-cols-5 gap-1.5 bg-[#0A0A14] p-2 rounded-xl border border-white/5">
+                  {PRESET_COVERS.map((url, index) => {
+                    const isSelected = editCover === url;
+                    return (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => setEditCover(url)}
+                        className={`relative h-6.5 rounded overflow-hidden border-2 transition-all cursor-pointer bg-cover bg-center ${
+                          isSelected ? 'border-[#00E5FF] scale-105 shadow-[0_0_5px_#00E5FF]' : 'border-transparent opacity-60 hover:opacity-100'
+                        }`}
+                        style={{ backgroundImage: `url(${url})` }}
+                      />
+                    );
+                  })}
+                </div>
+                {/* Custom cover URL */}
+                <div>
+                  <input
+                    type="url"
+                    value={editCover}
+                    onChange={(e) => setEditCover(e.target.value)}
+                    placeholder="Cole aqui um link de capa personalizado..."
+                    className="w-full bg-[#1A1A32] text-white p-2 rounded-xl border border-white/10 text-[11px] font-mono focus:outline-none focus:border-[#00E5FF]"
+                  />
+                </div>
+              </div>
+
+              {/* Website */}
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1">Website Pessoal / Link de Redes Sociais</label>
+                <input
+                  type="text"
+                  placeholder="Ex: https://instagram.com/seuusuario"
+                  value={editWebsite}
+                  onChange={(e) => setEditWebsite(e.target.value)}
+                  className="w-full bg-[#1A1A32] text-white p-2.5 rounded-xl border border-white/10 text-xs focus:outline-none focus:border-[#00E5FF] font-mono"
+                />
+              </div>
+
+              {/* Actions Footer */}
+              <div className="flex items-center justify-end gap-3 border-t border-white/5 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 rounded-xl text-xs font-semibold cursor-pointer transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-gradient-to-r from-[#7C4DFF] via-[#00E5FF] to-[#00E676] hover:opacity-90 font-bold text-xs uppercase tracking-wide text-white rounded-xl cursor-pointer flex items-center gap-1.5 shadow-lg shadow-[#00E5FF]/10"
+                >
+                  <Save className="w-4 h-4" /> Salvar Perfil
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

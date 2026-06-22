@@ -13,6 +13,7 @@ interface AdminSectionProps {
   logs: SystemLog[];
   emailConfig: EmailConfig;
   onUpdateEmailConfig: (config: EmailConfig) => void;
+  onDeleteUser: (id: string) => void;
   onBlockUser: (id: string) => void;
   onUnblockUser: (id: string) => void;
   onToggleVerifyUser: (id: string) => void;
@@ -39,6 +40,7 @@ export default function AdminSection({
   logs,
   emailConfig,
   onUpdateEmailConfig,
+  onDeleteUser,
   onBlockUser,
   onUnblockUser,
   onToggleVerifyUser,
@@ -236,24 +238,37 @@ export default function AdminSection({
 
                   {/* Block / Unblock action */}
                   {u.id !== currentUser.id ? (
-                    <button
-                      onClick={() => u.isBlocked ? onUnblockUser(u.id) : onBlockUser(u.id)}
-                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer ${
-                        u.isBlocked
-                          ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
-                          : 'bg-red-500/10 border border-red-500/20 text-[#FF1744] hover:bg-gradient-to-r hover:from-[#FF5722] hover:to-[#FF1744] hover:text-white'
-                      }`}
-                    >
-                      {u.isBlocked ? (
-                        <>
-                          <Unlock className="w-3 h-3" /> Desbloquear
-                        </>
-                      ) : (
-                        <>
-                          <Ban className="w-3 h-3" /> Bloquear
-                        </>
-                      )}
-                    </button>
+                    <>
+                      <button
+                        onClick={() => u.isBlocked ? onUnblockUser(u.id) : onBlockUser(u.id)}
+                        className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer ${
+                          u.isBlocked
+                            ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
+                            : 'bg-red-500/10 border border-red-500/20 text-[#FF1744] hover:bg-gradient-to-r hover:from-[#FF5722] hover:to-[#FF1744] hover:text-white'
+                        }`}
+                      >
+                        {u.isBlocked ? (
+                          <>
+                            <Unlock className="w-3 h-3" /> Desbloquear
+                          </>
+                        ) : (
+                          <>
+                            <Ban className="w-3 h-3" /> Bloquear
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`Deseja realmente EXCLUIR PERMANENTEMENTE o usuário @${u.username} e todo seu conteúdo? Essa ação é definitiva!`)) {
+                            onDeleteUser(u.id);
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer bg-rose-600/25 border border-rose-500/30 text-rose-400 hover:bg-[#FF1744] hover:text-white hover:border-transparent"
+                      >
+                        <Trash2 className="w-3 h-3" /> Excluir
+                      </button>
+                    </>
                   ) : (
                     <span className="bg-[#121225] text-gray-500 rounded-lg text-[10px] font-mono px-3 py-1.5 border border-white/15">Logado</span>
                   )}

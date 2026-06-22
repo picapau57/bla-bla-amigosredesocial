@@ -612,6 +612,15 @@ export function useSocialState() {
   };
 
   // Administration capabilities
+  const adminDeleteUser = (userId: string) => {
+    // Confirm it's not the user-admin self deletion just in case
+    if (userId === 'user-admin') return;
+    setUsers(prev => prev.filter(u => u.id !== userId));
+    setPosts(prev => prev.filter(p => p.userId !== userId));
+    setAds(prev => prev.filter(a => a.userId !== userId));
+    logAction('warning', `MODERAÇÃO: O usuário com ID '${userId}' e todo o seu conteúdo associado foram deletados permanentemente.`);
+  };
+
   const adminBlockUser = (userId: string) => {
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, isBlocked: true } : u));
     logAction('warning', `MODERAÇÃO: O usuário com ID '${userId}' foi BLOQUEADO pelo administrador.`);
@@ -696,6 +705,7 @@ export function useSocialState() {
     addProductToPage,
     toggleLikePage,
     // Admin operations
+    adminDeleteUser,
     adminBlockUser,
     adminUnblockUser,
     adminToggleVerifyUser,
