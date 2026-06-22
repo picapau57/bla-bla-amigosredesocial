@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   User, Post, Chat, Message, Ad, Community, Event, Story, BusinessPage, 
   SystemLog, Comment, CatalogProduct, EmailConfig 
@@ -20,6 +20,7 @@ import { seedDatabaseIfEmpty } from '../lib/firebaseSeeder';
 import { 
   collection, doc, setDoc, deleteDoc, onSnapshot 
 } from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
 
 const autoRep = (name: string, originalText: string, defaultText: string) => {
   const val = originalText.toLowerCase();
@@ -53,103 +54,128 @@ export function useSocialState() {
     provider: 'disabled'
   });
 
+  const trackedImpressionsRef = useRef(new Set<string>());
+
   // 1. Initialize DB and listen to changes in real-time
   useEffect(() => {
     let isMounted = true;
+    const activeUnsubs: (() => void)[] = [];
 
-    seedDatabaseIfEmpty().then(() => {
+    const init = async () => {
+      await seedDatabaseIfEmpty();
       if (!isMounted) return;
 
       // Listen Core Collections in Real-time
       const unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
         const list: User[] = [];
         snapshot.forEach(doc => list.push(doc.data() as User));
-        if (list.length > 0) setUsers(list);
+        if (isMounted && list.length > 0) setUsers(list);
+      }, (err) => {
+        if (isMounted) handleFirestoreError(err, OperationType.GET, 'users');
       });
+      activeUnsubs.push(unsubUsers);
 
       const unsubPosts = onSnapshot(collection(db, 'posts'), (snapshot) => {
         const list: Post[] = [];
         snapshot.forEach(doc => list.push(doc.data() as Post));
         list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        if (list.length > 0) setPosts(list);
+        if (isMounted && list.length > 0) setPosts(list);
+      }, (err) => {
+        if (isMounted) handleFirestoreError(err, OperationType.GET, 'posts');
       });
+      activeUnsubs.push(unsubPosts);
 
       const unsubCommunities = onSnapshot(collection(db, 'communities'), (snapshot) => {
         const list: Community[] = [];
         snapshot.forEach(doc => list.push(doc.data() as Community));
-        if (list.length > 0) setCommunities(list);
+        if (isMounted && list.length > 0) setCommunities(list);
+      }, (err) => {
+        if (isMounted) handleFirestoreError(err, OperationType.GET, 'communities');
       });
+      activeUnsubs.push(unsubCommunities);
 
       const unsubEvents = onSnapshot(collection(db, 'events'), (snapshot) => {
         const list: Event[] = [];
         snapshot.forEach(doc => list.push(doc.data() as Event));
-        if (list.length > 0) setEvents(list);
+        if (isMounted && list.length > 0) setEvents(list);
+      }, (err) => {
+        if (isMounted) handleFirestoreError(err, OperationType.GET, 'events');
       });
+      activeUnsubs.push(unsubEvents);
 
       const unsubStories = onSnapshot(collection(db, 'stories'), (snapshot) => {
         const list: Story[] = [];
         snapshot.forEach(doc => list.push(doc.data() as Story));
         list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        if (list.length > 0) setStories(list);
+        if (isMounted && list.length > 0) setStories(list);
+      }, (err) => {
+        if (isMounted) handleFirestoreError(err, OperationType.GET, 'stories');
       });
+      activeUnsubs.push(unsubStories);
 
       const unsubAds = onSnapshot(collection(db, 'ads'), (snapshot) => {
         const list: Ad[] = [];
         snapshot.forEach(doc => list.push(doc.data() as Ad));
-        if (list.length > 0) setAds(list);
+        if (isMounted && list.length > 0) setAds(list);
+      }, (err) => {
+        if (isMounted) handleFirestoreError(err, OperationType.GET, 'ads');
       });
+      activeUnsubs.push(unsubAds);
 
       const unsubPages = onSnapshot(collection(db, 'pages'), (snapshot) => {
         const list: BusinessPage[] = [];
         snapshot.forEach(doc => list.push(doc.data() as BusinessPage));
-        if (list.length > 0) setPages(list);
+        if (isMounted && list.length > 0) setPages(list);
+      }, (err) => {
+        if (isMounted) handleFirestoreError(err, OperationType.GET, 'pages');
       });
+      activeUnsubs.push(unsubPages);
 
       const unsubChats = onSnapshot(collection(db, 'chats'), (snapshot) => {
         const list: Chat[] = [];
         snapshot.forEach(doc => list.push(doc.data() as Chat));
         list.sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
-        if (list.length > 0) setChats(list);
+        if (isMounted && list.length > 0) setChats(list);
+      }, (err) => {
+        if (isMounted) handleFirestoreError(err, OperationType.GET, 'chats');
       });
+      activeUnsubs.push(unsubChats);
 
       const unsubMessages = onSnapshot(collection(db, 'messages'), (snapshot) => {
         const list: Message[] = [];
         snapshot.forEach(doc => list.push(doc.data() as Message));
         list.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-        if (list.length > 0) setMessages(list);
+        if (isMounted && list.length > 0) setMessages(list);
+      }, (err) => {
+        if (isMounted) handleFirestoreError(err, OperationType.GET, 'messages');
       });
+      activeUnsubs.push(unsubMessages);
 
       const unsubLogs = onSnapshot(collection(db, 'logs'), (snapshot) => {
         const list: SystemLog[] = [];
         snapshot.forEach(doc => list.push(doc.data() as SystemLog));
         list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-        if (list.length > 0) setLogs(list.slice(0, 50));
+        if (isMounted && list.length > 0) setLogs(list.slice(0, 50));
+      }, (err) => {
+        if (isMounted) handleFirestoreError(err, OperationType.GET, 'logs');
       });
+      activeUnsubs.push(unsubLogs);
 
       const unsubEmailConfig = onSnapshot(doc(db, 'email_config', 'main'), (snapshot) => {
-        if (snapshot.exists()) {
+        if (snapshot.exists() && isMounted) {
           setEmailConfig(snapshot.data() as EmailConfig);
         }
+      }, (err) => {
+        if (isMounted) handleFirestoreError(err, OperationType.GET, 'email_config/main');
       });
+      activeUnsubs.push(unsubEmailConfig);
+    };
 
-      // Cleanup subscriptions on unmount
-      return () => {
-        unsubUsers();
-        unsubPosts();
-        unsubCommunities();
-        unsubEvents();
-        unsubStories();
-        unsubAds();
-        unsubPages();
-        unsubChats();
-        unsubMessages();
-        unsubLogs();
-        unsubEmailConfig();
-      };
-    });
+    init();
 
     return () => {
       isMounted = false;
+      activeUnsubs.forEach(unsub => unsub());
     };
   }, []);
 
@@ -654,8 +680,14 @@ export function useSocialState() {
   };
 
   const trackAdImpression = (adId: string) => {
+    if (trackedImpressionsRef.current.has(adId)) return;
+    trackedImpressionsRef.current.add(adId);
+
     const a = ads.find(ad => ad.id === adId);
-    if (!a) return;
+    if (!a) {
+      trackedImpressionsRef.current.delete(adId);
+      return;
+    }
     const updatedAd = { ...a, impressions: a.impressions + 1 };
     setAds(prev => prev.map(ad => ad.id === adId ? updatedAd : ad));
     setDoc(doc(db, 'ads', adId), updatedAd).catch(err => console.error(err));
