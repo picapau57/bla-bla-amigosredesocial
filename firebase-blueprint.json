@@ -1,0 +1,255 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile in the application",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fullName": { "type": "string" },
+        "username": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "birthDate": { "type": "string" },
+        "city": { "type": "string" },
+        "state": { "type": "string" },
+        "country": { "type": "string" },
+        "avatar": { "type": "string" },
+        "cover": { "type": "string" },
+        "gender": { "type": "string" },
+        "bio": { "type": "string" },
+        "website": { "type": "string" },
+        "isVerified": { "type": "boolean" },
+        "badges": { "type": "array" },
+        "premiumPlan": { "type": "string" },
+        "isBlocked": { "type": "boolean" },
+        "friends": { "type": "array" },
+        "followers": { "type": "array" },
+        "following": { "type": "array" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "fullName", "username", "email"]
+    },
+    "Post": {
+      "title": "Post",
+      "description": "Post published by a user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "content": { "type": "string" },
+        "mediaUrl": { "type": "string" },
+        "mediaType": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "reactions": { "type": "object" },
+        "comments": { "type": "array" },
+        "sharesCount": { "type": "integer" },
+        "isPatrocinado": { "type": "boolean" },
+        "adUrl": { "type": "string" },
+        "category": { "type": "string" }
+      },
+      "required": ["id", "userId", "content", "createdAt"]
+    },
+    "Community": {
+      "title": "Community",
+      "description": "A group community",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "avatar": { "type": "string" },
+        "cover": { "type": "string" },
+        "isPrivate": { "type": "boolean" },
+        "creatorId": { "type": "string" },
+        "members": { "type": "array" },
+        "moderators": { "type": "array" },
+        "pendingMembers": { "type": "array" },
+        "rules": { "type": "array" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "name", "creatorId"]
+    },
+    "Event": {
+      "title": "Event",
+      "description": "An event created by a user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "location": { "type": "string" },
+        "category": { "type": "string" },
+        "image": { "type": "string" },
+        "creatorId": { "type": "string" },
+        "going": { "type": "array" },
+        "maybe": { "type": "array" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "title", "date", "creatorId"]
+    },
+    "Story": {
+      "title": "Story",
+      "description": "A temporary story",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "mediaUrl": { "type": "string" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "type": { "type": "string" }
+      },
+      "required": ["id", "userId", "mediaUrl", "createdAt"]
+    },
+    "Ad": {
+      "title": "Ad",
+      "description": "An advertisement",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "link": { "type": "string" },
+        "type": { "type": "string" },
+        "position": { "type": "string" },
+        "plan": { "type": "string" },
+        "price": { "type": "number" },
+        "status": { "type": "string" },
+        "clicks": { "type": "integer" },
+        "impressions": { "type": "integer" },
+        "paymentMethod": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "title", "imageUrl", "link"]
+    },
+    "BusinessPage": {
+      "title": "BusinessPage",
+      "description": "A professional/business page",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "username": { "type": "string" },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "avatar": { "type": "string" },
+        "cover": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "website": { "type": "string" },
+        "catalog": { "type": "array" },
+        "likes": { "type": "array" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "name", "username"]
+    },
+    "Chat": {
+      "title": "Chat",
+      "description": "A conversation group or DM",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "isGroup": { "type": "boolean" },
+        "members": { "type": "array" },
+        "avatar": { "type": "string" },
+        "lastMessage": { "type": "string" },
+        "lastMessageAt": { "type": "string" }
+      },
+      "required": ["id", "isGroup", "members"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "A chat message",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "chatId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "text": { "type": "string" },
+        "mediaUrl": { "type": "string" },
+        "mediaType": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "isRead": { "type": "boolean" }
+      },
+      "required": ["id", "chatId", "senderId", "text", "createdAt"]
+    },
+    "SystemLog": {
+      "title": "SystemLog",
+      "description": "System auditory log",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string" },
+        "message": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["id", "type", "message", "timestamp"]
+    },
+    "EmailConfig": {
+      "title": "EmailConfig",
+      "description": "Email transporter configuration",
+      "type": "object",
+      "properties": {
+        "serviceId": { "type": "string" },
+        "templateId": { "type": "string" },
+        "publicKey": { "type": "string" },
+        "provider": { "type": "string" }
+      },
+      "required": ["serviceId", "templateId", "publicKey", "provider"]
+    }
+  },
+  "firestore": {
+    "users": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "posts": {
+      "schema": "Post",
+      "description": "Regular network posts"
+    },
+    "communities": {
+      "schema": "Community",
+      "description": "Social communities"
+    },
+    "events": {
+      "schema": "Event",
+      "description": "Scheduled events"
+    },
+    "stories": {
+      "schema": "Story",
+      "description": "24h stories"
+    },
+    "ads": {
+      "schema": "Ad",
+      "description": "Advertisement records"
+    },
+    "pages": {
+      "schema": "BusinessPage",
+      "description": "Commercial and Business pages"
+    },
+    "chats": {
+      "schema": "Chat",
+      "description": "Conversations list"
+    },
+    "messages": {
+      "schema": "Message",
+      "description": "Individual chat messages"
+    },
+    "logs": {
+      "schema": "SystemLog",
+      "description": "System moderation logs"
+    },
+    "email_config": {
+      "schema": "EmailConfig",
+      "description": "E-mail credential configuration"
+    }
+  }
+}

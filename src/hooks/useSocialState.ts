@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
-import { User, Post, Chat, Message, Ad, Community, Event, Story, BusinessPage, SystemLog, Comment, CatalogProduct, EmailConfig } from '../types';
+import { 
+  User, Post, Chat, Message, Ad, Community, Event, Story, BusinessPage, 
+  SystemLog, Comment, CatalogProduct, EmailConfig 
+} from '../types';
 import {
   INITIAL_USERS,
   INITIAL_POSTS,
@@ -12,125 +15,150 @@ import {
   INITIAL_MESSAGES,
   INITIAL_LOGS
 } from '../data/mockData';
+import { db } from '../lib/firebase';
+import { seedDatabaseIfEmpty } from '../lib/firebaseSeeder';
+import { 
+  collection, doc, setDoc, deleteDoc, onSnapshot 
+} from 'firebase/firestore';
+
+const autoRep = (name: string, originalText: string, defaultText: string) => {
+  const val = originalText.toLowerCase();
+  if (val.includes('oi') || val.includes('olá')) return `Olá! Aqui é ${name.split(' ')[0]}. Tudo bem? Que prazer falar com você!`;
+  if (val.includes('neon') || val.includes('layout')) return `Nossa, a estética Neon da plataforma é minha queridinha! Ficou incrível! 💎`;
+  if (val.includes('anuncio') || val.includes('patrocinio')) return `Os anúncios Patrocinados aqui rendem cliques incríveis! Me dá mais detalhes.`;
+  return defaultText;
+};
 
 export function useSocialState() {
-  const [users, setUsers] = useState<User[]>(() => {
-    const saved = localStorage.getItem('bb_users');
-    return saved ? JSON.parse(saved) : INITIAL_USERS;
-  });
-
-  const [posts, setPosts] = useState<Post[]>(() => {
-    const saved = localStorage.getItem('bb_posts');
-    return saved ? JSON.parse(saved) : INITIAL_POSTS;
-  });
-
-  const [communities, setCommunities] = useState<Community[]>(() => {
-    const saved = localStorage.getItem('bb_communities');
-    return saved ? JSON.parse(saved) : INITIAL_COMMUNITIES;
-  });
-
-  const [events, setEvents] = useState<Event[]>(() => {
-    const saved = localStorage.getItem('bb_events');
-    return saved ? JSON.parse(saved) : INITIAL_EVENTS;
-  });
-
-  const [stories, setStories] = useState<Story[]>(() => {
-    const saved = localStorage.getItem('bb_stories');
-    return saved ? JSON.parse(saved) : INITIAL_STORIES;
-  });
-
-  const [ads, setAds] = useState<Ad[]>(() => {
-    const saved = localStorage.getItem('bb_ads');
-    return saved ? JSON.parse(saved) : INITIAL_ADS;
-  });
-
-  const [pages, setPages] = useState<BusinessPage[]>(() => {
-    const saved = localStorage.getItem('bb_pages');
-    return saved ? JSON.parse(saved) : INITIAL_BUSINESS_PAGES;
-  });
-
-  const [chats, setChats] = useState<Chat[]>(() => {
-    const saved = localStorage.getItem('bb_chats');
-    return saved ? JSON.parse(saved) : INITIAL_CHATS;
-  });
-
-  const [messages, setMessages] = useState<Message[]>(() => {
-    const saved = localStorage.getItem('bb_messages');
-    return saved ? JSON.parse(saved) : INITIAL_MESSAGES;
-  });
-
-  const [logs, setLogs] = useState<SystemLog[]>(() => {
-    const saved = localStorage.getItem('bb_logs');
-    return saved ? JSON.parse(saved) : INITIAL_LOGS;
-  });
+  const [users, setUsers] = useState<User[]>(INITIAL_USERS);
+  const [posts, setPosts] = useState<Post[]>(INITIAL_POSTS);
+  const [communities, setCommunities] = useState<Community[]>(INITIAL_COMMUNITIES);
+  const [events, setEvents] = useState<Event[]>(INITIAL_EVENTS);
+  const [stories, setStories] = useState<Story[]>(INITIAL_STORIES);
+  const [ads, setAds] = useState<Ad[]>(INITIAL_ADS);
+  const [pages, setPages] = useState<BusinessPage[]>(INITIAL_BUSINESS_PAGES);
+  const [chats, setChats] = useState<Chat[]>(INITIAL_CHATS);
+  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
+  const [logs, setLogs] = useState<SystemLog[]>(INITIAL_LOGS);
 
   const [currentUserId, setCurrentUserId] = useState<string>(() => {
     const saved = localStorage.getItem('bb_current_uid');
     return saved || 'user-1';
   });
 
-  const [emailConfig, setEmailConfig] = useState<EmailConfig>(() => {
-    const saved = localStorage.getItem('bb_email_config');
-    return saved ? JSON.parse(saved) : {
-      serviceId: '',
-      templateId: '',
-      publicKey: '',
-      provider: 'disabled'
-    };
+  const [emailConfig, setEmailConfig] = useState<EmailConfig>({
+    serviceId: '',
+    templateId: '',
+    publicKey: '',
+    provider: 'disabled'
   });
 
-  const updateEmailConfig = (config: EmailConfig) => {
-    setEmailConfig(config);
-    localStorage.setItem('bb_email_config', JSON.stringify(config));
-    logAction('success', `E-mail Transacional: Configurações do SMTP atualizadas (Provedor: ${config.provider.toUpperCase()}).`);
-  };
-
-  // Keep state synchronized with localStorage
+  // 1. Initialize DB and listen to changes in real-time
   useEffect(() => {
-    localStorage.setItem('bb_users', JSON.stringify(users));
-  }, [users]);
+    let isMounted = true;
 
-  useEffect(() => {
-    localStorage.setItem('bb_posts', JSON.stringify(posts));
-  }, [posts]);
+    seedDatabaseIfEmpty().then(() => {
+      if (!isMounted) return;
 
-  useEffect(() => {
-    localStorage.setItem('bb_communities', JSON.stringify(communities));
-  }, [communities]);
+      // Listen Core Collections in Real-time
+      const unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
+        const list: User[] = [];
+        snapshot.forEach(doc => list.push(doc.data() as User));
+        if (list.length > 0) setUsers(list);
+      });
 
-  useEffect(() => {
-    localStorage.setItem('bb_events', JSON.stringify(events));
-  }, [events]);
+      const unsubPosts = onSnapshot(collection(db, 'posts'), (snapshot) => {
+        const list: Post[] = [];
+        snapshot.forEach(doc => list.push(doc.data() as Post));
+        list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        if (list.length > 0) setPosts(list);
+      });
 
-  useEffect(() => {
-    localStorage.setItem('bb_stories', JSON.stringify(stories));
-  }, [stories]);
+      const unsubCommunities = onSnapshot(collection(db, 'communities'), (snapshot) => {
+        const list: Community[] = [];
+        snapshot.forEach(doc => list.push(doc.data() as Community));
+        if (list.length > 0) setCommunities(list);
+      });
 
-  useEffect(() => {
-    localStorage.setItem('bb_ads', JSON.stringify(ads));
-  }, [ads]);
+      const unsubEvents = onSnapshot(collection(db, 'events'), (snapshot) => {
+        const list: Event[] = [];
+        snapshot.forEach(doc => list.push(doc.data() as Event));
+        if (list.length > 0) setEvents(list);
+      });
 
-  useEffect(() => {
-    localStorage.setItem('bb_pages', JSON.stringify(pages));
-  }, [pages]);
+      const unsubStories = onSnapshot(collection(db, 'stories'), (snapshot) => {
+        const list: Story[] = [];
+        snapshot.forEach(doc => list.push(doc.data() as Story));
+        list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        if (list.length > 0) setStories(list);
+      });
 
-  useEffect(() => {
-    localStorage.setItem('bb_chats', JSON.stringify(chats));
-  }, [chats]);
+      const unsubAds = onSnapshot(collection(db, 'ads'), (snapshot) => {
+        const list: Ad[] = [];
+        snapshot.forEach(doc => list.push(doc.data() as Ad));
+        if (list.length > 0) setAds(list);
+      });
 
-  useEffect(() => {
-    localStorage.setItem('bb_messages', JSON.stringify(messages));
-  }, [messages]);
+      const unsubPages = onSnapshot(collection(db, 'pages'), (snapshot) => {
+        const list: BusinessPage[] = [];
+        snapshot.forEach(doc => list.push(doc.data() as BusinessPage));
+        if (list.length > 0) setPages(list);
+      });
 
-  useEffect(() => {
-    localStorage.setItem('bb_logs', JSON.stringify(logs));
-  }, [logs]);
+      const unsubChats = onSnapshot(collection(db, 'chats'), (snapshot) => {
+        const list: Chat[] = [];
+        snapshot.forEach(doc => list.push(doc.data() as Chat));
+        list.sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
+        if (list.length > 0) setChats(list);
+      });
 
+      const unsubMessages = onSnapshot(collection(db, 'messages'), (snapshot) => {
+        const list: Message[] = [];
+        snapshot.forEach(doc => list.push(doc.data() as Message));
+        list.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        if (list.length > 0) setMessages(list);
+      });
+
+      const unsubLogs = onSnapshot(collection(db, 'logs'), (snapshot) => {
+        const list: SystemLog[] = [];
+        snapshot.forEach(doc => list.push(doc.data() as SystemLog));
+        list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        if (list.length > 0) setLogs(list.slice(0, 50));
+      });
+
+      const unsubEmailConfig = onSnapshot(doc(db, 'email_config', 'main'), (snapshot) => {
+        if (snapshot.exists()) {
+          setEmailConfig(snapshot.data() as EmailConfig);
+        }
+      });
+
+      // Cleanup subscriptions on unmount
+      return () => {
+        unsubUsers();
+        unsubPosts();
+        unsubCommunities();
+        unsubEvents();
+        unsubStories();
+        unsubAds();
+        unsubPages();
+        unsubChats();
+        unsubMessages();
+        unsubLogs();
+        unsubEmailConfig();
+      };
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Save active logged-in user key to LocalStorage (device-dependent, which is correct)
   useEffect(() => {
     localStorage.setItem('bb_current_uid', currentUserId);
   }, [currentUserId]);
 
-  const currentUser = users.find(u => u.id === currentUserId) || users[0];
+  const currentUser = users.find(u => u.id === currentUserId) || users[0] || INITIAL_USERS[0];
 
   const logAction = (type: 'info' | 'warning' | 'success' | 'error', message: string) => {
     const newLog: SystemLog = {
@@ -139,7 +167,9 @@ export function useSocialState() {
       message,
       timestamp: new Date().toISOString()
     };
-    setLogs(prev => [newLog, ...prev].slice(0, 50)); // cap at 50 logs for performance
+    setDoc(doc(db, 'logs', newLog.id), newLog).catch(err => {
+      console.error('Error logging to Firestore: ', err);
+    });
   };
 
   const loginAs = (userId: string) => {
@@ -171,7 +201,6 @@ export function useSocialState() {
     bio: string;
     website: string;
   }) => {
-    // Check username uniqueness
     const exists = users.some(u => u.username.toLowerCase() === inputs.username.toLowerCase());
     if (exists) {
       return { success: false, message: 'Este nome de usuário já está em uso.' };
@@ -192,13 +221,28 @@ export function useSocialState() {
 
     setUsers(prev => [...prev, newUser]);
     setCurrentUserId(newUser.id);
-    logAction('success', `Nova conta de usuário criada: ${newUser.fullName} (@${newUser.username}).`);
+    
+    // Save to firestore asynchronously
+    setDoc(doc(db, 'users', newUser.id), newUser)
+      .then(() => {
+        logAction('success', `Nova conta de usuário criada: ${newUser.fullName} (@${newUser.username}).`);
+      })
+      .catch(err => console.error('Error registering user: ', err));
+
     return { success: true };
   };
 
   const updateProfile = (userId: string, updates: Partial<User>) => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updates } : u));
-    logAction('success', `Perfil de '${currentUser.fullName}' atualizado com sucesso.`);
+    const target = users.find(u => u.id === userId);
+    if (!target) return;
+    const updated = { ...target, ...updates };
+    setUsers(prev => prev.map(u => u.id === userId ? updated : u));
+    
+    setDoc(doc(db, 'users', userId), updated)
+      .then(() => {
+        logAction('success', `Perfil de '${updated.fullName}' atualizado com sucesso.`);
+      })
+      .catch(err => console.error('Error updating profile: ', err));
   };
 
   const addPost = (content: string, mediaUrl?: string, mediaType?: 'image' | 'video') => {
@@ -217,39 +261,47 @@ export function useSocialState() {
       comments: [],
       sharesCount: 0
     };
+    
     setPosts(prev => [newPost, ...prev]);
-    logAction('success', `Anfitrião @${currentUser.username} publicou uma nova postagem.`);
+    
+    setDoc(doc(db, 'posts', newPost.id), newPost)
+      .then(() => {
+        logAction('success', `Anfitrião @${currentUser.username} publicou uma nova postagem.`);
+      })
+      .catch(err => console.error('Error adding post: ', err));
   };
 
   const toggleReaction = (postId: string, type: 'likes' | 'loves' | 'applauds') => {
-    setPosts(prev => prev.map(p => {
-      if (p.id !== postId) return p;
+    const p = posts.find(item => item.id === postId);
+    if (!p) return;
 
-      const keys: ('likes' | 'loves' | 'applauds')[] = ['likes', 'loves', 'applauds'];
-      const updatedReactions = { ...p.reactions };
+    const keys: ('likes' | 'loves' | 'applauds')[] = ['likes', 'loves', 'applauds'];
+    const updatedReactions = { ...p.reactions };
 
-      // Remove active user from other reaction categories if reacting to maintain clean metrics
-      keys.forEach(k => {
-        if (k === type) {
-          if (updatedReactions[k].includes(currentUser.id)) {
-            updatedReactions[k] = updatedReactions[k].filter(uid => uid !== currentUser.id);
-          } else {
-            updatedReactions[k] = [...updatedReactions[k], currentUser.id];
-          }
-        } else {
+    keys.forEach(k => {
+      if (k === type) {
+        if (updatedReactions[k].includes(currentUser.id)) {
           updatedReactions[k] = updatedReactions[k].filter(uid => uid !== currentUser.id);
+        } else {
+          updatedReactions[k] = [...updatedReactions[k], currentUser.id];
         }
-      });
+      } else {
+        updatedReactions[k] = updatedReactions[k].filter(uid => uid !== currentUser.id);
+      }
+    });
 
-      return {
-        ...p,
-        reactions: updatedReactions
-      };
-    }));
+    const updatedPost = { ...p, reactions: updatedReactions };
+    setPosts(prev => prev.map(item => item.id === postId ? updatedPost : item));
+    
+    setDoc(doc(db, 'posts', postId), updatedPost)
+      .catch(err => console.error('Error setting reaction: ', err));
   };
 
   const addComment = (postId: string, content: string) => {
     if (!content.trim()) return;
+    const p = posts.find(item => item.id === postId);
+    if (!p) return;
+
     const newComment: Comment = {
       id: `comment-${Date.now()}`,
       postId,
@@ -258,57 +310,85 @@ export function useSocialState() {
       createdAt: new Date().toISOString()
     };
 
-    setPosts(prev => prev.map(p => p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p));
-    logAction('info', `@${currentUser.username} comentou na postagem de #${postId.slice(-4)}.`);
+    const updatedPost = { ...p, comments: [...p.comments, newComment] };
+    setPosts(prev => prev.map(item => item.id === postId ? updatedPost : item));
+    
+    setDoc(doc(db, 'posts', postId), updatedPost)
+      .then(() => {
+        logAction('info', `@${currentUser.username} comentou na postagem de #${postId.slice(-4)}.`);
+      })
+      .catch(err => console.error('Error adding comment: ', err));
   };
 
   const handleShare = (postId: string) => {
-    setPosts(prev => prev.map(p => p.id === postId ? { ...p, sharesCount: p.sharesCount + 1 } : p));
-    logAction('info', `@${currentUser.username} compartilhou a publicação #${postId.slice(-4)}.`);
+    const p = posts.find(item => item.id === postId);
+    if (!p) return;
+
+    const updatedPost = { ...p, sharesCount: p.sharesCount + 1 };
+    setPosts(prev => prev.map(item => item.id === postId ? updatedPost : item));
+    
+    setDoc(doc(db, 'posts', postId), updatedPost)
+      .then(() => {
+        logAction('info', `@${currentUser.username} compartilhou a publicação #${postId.slice(-4)}.`);
+      })
+      .catch(err => console.error('Error sharing post: ', err));
   };
 
   const toggleFollowUser = (targetUserId: string) => {
     if (targetUserId === currentUser.id) return;
+    const curr = users.find(u => u.id === currentUser.id);
+    const targ = users.find(u => u.id === targetUserId);
+    if (!curr || !targ) return;
+
+    const following = curr.following.includes(targetUserId)
+      ? curr.following.filter(id => id !== targetUserId)
+      : [...curr.following, targetUserId];
+    const updatedCurr = { ...curr, following };
+
+    const followers = targ.followers.includes(currentUser.id)
+      ? targ.followers.filter(id => id !== currentUser.id)
+      : [...targ.followers, currentUser.id];
+    const updatedTarg = { ...targ, followers };
+
     setUsers(prev => prev.map(u => {
-      if (u.id === currentUser.id) {
-        const following = u.following.includes(targetUserId)
-          ? u.following.filter(id => id !== targetUserId)
-          : [...u.following, targetUserId];
-        return { ...u, following };
-      }
-      if (u.id === targetUserId) {
-        const followers = u.followers.includes(currentUser.id)
-          ? u.followers.filter(id => id !== currentUser.id)
-          : [...u.followers, currentUser.id];
-        return { ...u, followers };
-      }
+      if (u.id === currentUser.id) return updatedCurr;
+      if (u.id === targetUserId) return updatedTarg;
       return u;
     }));
+
+    setDoc(doc(db, 'users', currentUser.id), updatedCurr).catch(e => console.error(e));
+    setDoc(doc(db, 'users', targetUserId), updatedTarg).catch(e => console.error(e));
   };
 
   const toggleFriend = (targetUserId: string) => {
     if (targetUserId === currentUser.id) return;
+    const curr = users.find(u => u.id === currentUser.id);
+    const targ = users.find(u => u.id === targetUserId);
+    if (!curr || !targ) return;
+
+    const currIsFriend = curr.friends.includes(targetUserId);
+    const currFriends = currIsFriend
+      ? curr.friends.filter(id => id !== targetUserId)
+      : [...curr.friends, targetUserId];
+    const updatedCurr = { ...curr, friends: currFriends };
+
+    const targIsFriend = targ.friends.includes(currentUser.id);
+    const targFriends = targIsFriend
+      ? targ.friends.filter(id => id !== currentUser.id)
+      : [...targ.friends, currentUser.id];
+    const updatedTarg = { ...targ, friends: targFriends };
+
     setUsers(prev => prev.map(u => {
-      if (u.id === currentUser.id) {
-        const isFriend = u.friends.includes(targetUserId);
-        const friends = isFriend
-          ? u.friends.filter(id => id !== targetUserId)
-          : [...u.friends, targetUserId];
-        return { ...u, friends };
-      }
-      if (u.id === targetUserId) {
-        const isFriend = u.friends.includes(currentUser.id);
-        const friends = isFriend
-          ? u.friends.filter(id => id !== currentUser.id)
-          : [...u.friends, currentUser.id];
-        return { ...u, friends };
-      }
+      if (u.id === currentUser.id) return updatedCurr;
+      if (u.id === targetUserId) return updatedTarg;
       return u;
     }));
+
+    setDoc(doc(db, 'users', currentUser.id), updatedCurr).catch(e => console.error(e));
+    setDoc(doc(db, 'users', targetUserId), updatedTarg).catch(e => console.error(e));
   };
 
   const startDirectChat = (targetUserId: string) => {
-    // Check if chat already exists
     const existing = chats.find(c => !c.isGroup && c.members.includes(currentUser.id) && c.members.includes(targetUserId));
     if (existing) {
       return existing.id;
@@ -324,6 +404,7 @@ export function useSocialState() {
     };
 
     setChats(prev => [newChat, ...prev]);
+    setDoc(doc(db, 'chats', newChatId), newChat).catch(e => console.error(e));
     return newChatId;
   };
 
@@ -342,25 +423,26 @@ export function useSocialState() {
     };
 
     setMessages(prev => [...prev, newMessage]);
-    setChats(prev => prev.map(c => c.id === chatId ? {
-      ...c,
-      lastMessage: text || '[Media]',
-      lastMessageAt: new Date().toISOString()
-    } : c));
+    setDoc(doc(db, 'messages', newMessage.id), newMessage).catch(e => console.error(e));
 
-    // Simulate passive replies in direct dialogue or groups after a small delay
     const chat = chats.find(c => c.id === chatId);
     if (chat) {
+      const updatedChat = {
+        ...chat,
+        lastMessage: text || '[Media]',
+        lastMessageAt: new Date().toISOString()
+      };
+      setChats(prev => prev.map(c => c.id === chatId ? updatedChat : c));
+      setDoc(doc(db, 'chats', chatId), updatedChat).catch(e => console.error(e));
+
       const isCoreGroup = chat.isGroup && chat.id === 'chat-2';
       const destinationMemberId = chat.members.find(uid => uid !== currentUser.id);
 
       setTimeout(() => {
-        // Find who will reply
         let replier: User | undefined;
         let replyText = '';
 
         if (isCoreGroup) {
-          // Admin replies in group
           const otherMembers = chat.members.filter(m => m !== currentUser.id);
           const randomMemberId = otherMembers[Math.floor(Math.random() * otherMembers.length)];
           replier = users.find(u => u.id === randomMemberId);
@@ -395,23 +477,18 @@ export function useSocialState() {
           };
 
           setMessages(prev => [...prev, autoMessage]);
-          setChats(prev => prev.map(c => c.id === chatId ? {
-            ...c,
+          setDoc(doc(db, 'messages', autoMessage.id), autoMessage).catch(e => console.error(e));
+
+          const nextUpdatedChat = {
+            ...updatedChat,
             lastMessage: autoMessage.text,
             lastMessageAt: new Date().toISOString()
-          } : c));
+          };
+          setChats(prev => prev.map(c => c.id === chatId ? nextUpdatedChat : c));
+          setDoc(doc(db, 'chats', chatId), nextUpdatedChat).catch(e => console.error(e));
         }
       }, 1500);
     }
-  };
-
-  const autoRep = (name: string, originalText: string, defaultText: string) => {
-    // basic smart keyword replies
-    const val = originalText.toLowerCase();
-    if (val.includes('oi') || val.includes('olá')) return `Olá! Aqui é ${name.split(' ')[0]}. Tudo bem? Que prazer falar com você!`;
-    if (val.includes('neon') || val.includes('layout')) return `Nossa, a estética Neon da plataforma é minha queridinha! Ficou incrível! 💎`;
-    if (val.includes('anuncio') || val.includes('patrocinio')) return `Os anúncios Patrocinados aqui rendem cliques incríveis! Me dá mais detalhes.`;
-    return defaultText;
   };
 
   const createCommunity = (inputs: {
@@ -432,37 +509,43 @@ export function useSocialState() {
       pendingMembers: [],
       createdAt: new Date().toISOString()
     };
+    
     setCommunities(prev => [...prev, newComm]);
-    logAction('success', `Comunidade '${newComm.name}' criada por @${currentUser.username}.`);
+    setDoc(doc(db, 'communities', newComm.id), newComm)
+      .then(() => {
+        logAction('success', `Comunidade '${newComm.name}' criada por @${currentUser.username}.`);
+      })
+      .catch(err => console.error(err));
   };
 
   const toggleJoinCommunity = (commId: string) => {
-    setCommunities(prev => prev.map(c => {
-      if (c.id !== commId) return c;
+    const c = communities.find(comm => comm.id === commId);
+    if (!c) return;
 
-      const isMember = c.members.includes(currentUser.id);
-      let members = [...c.members];
-      let pendingMembers = [...c.pendingMembers];
+    const isMember = c.members.includes(currentUser.id);
+    let members = [...c.members];
+    let pendingMembers = [...c.pendingMembers];
 
-      if (isMember) {
-        members = members.filter(id => id !== currentUser.id);
-        logAction('info', `@${currentUser.username} saiu da comunidade '${c.name}'.`);
-      } else {
-        if (c.isPrivate) {
-          if (pendingMembers.includes(currentUser.id)) {
-            pendingMembers = pendingMembers.filter(id => id !== currentUser.id);
-          } else {
-            pendingMembers.push(currentUser.id);
-            logAction('info', `@${currentUser.username} solicitou entrada na comunidade privada '${c.name}'.`);
-          }
+    if (isMember) {
+      members = members.filter(id => id !== currentUser.id);
+      logAction('info', `@${currentUser.username} saiu da comunidade '${c.name}'.`);
+    } else {
+      if (c.isPrivate) {
+        if (pendingMembers.includes(currentUser.id)) {
+          pendingMembers = pendingMembers.filter(id => id !== currentUser.id);
         } else {
-          members.push(currentUser.id);
-          logAction('success', `@${currentUser.username} entrou na comunidade '${c.name}'.`);
+          pendingMembers.push(currentUser.id);
+          logAction('info', `@${currentUser.username} solicitou entrada na comunidade privada '${c.name}'.`);
         }
+      } else {
+        members.push(currentUser.id);
+        logAction('success', `@${currentUser.username} entrou na comunidade '${c.name}'.`);
       }
+    }
 
-      return { ...c, members, pendingMembers };
-    }));
+    const updatedComm = { ...c, members, pendingMembers };
+    setCommunities(prev => prev.map(comm => comm.id === commId ? updatedComm : comm));
+    setDoc(doc(db, 'communities', commId), updatedComm).catch(err => console.error(err));
   };
 
   const createEvent = (inputs: {
@@ -483,34 +566,39 @@ export function useSocialState() {
       createdAt: new Date().toISOString()
     };
     setEvents(prev => [...prev, newEvent]);
-    logAction('success', `Evento '${newEvent.title}' publicado para dia ${newEvent.date}.`);
+    setDoc(doc(db, 'events', newEvent.id), newEvent)
+      .then(() => {
+        logAction('success', `Evento '${newEvent.title}' publicado para dia ${newEvent.date}.`);
+      })
+      .catch(err => console.error(err));
   };
 
   const toggleRSVP = (eventId: string, rsvp: 'going' | 'maybe') => {
-    setEvents(prev => prev.map(e => {
-      if (e.id !== eventId) return e;
+    const e = events.find(event => event.id === eventId);
+    if (!e) return;
 
-      let going = [...e.going];
-      let maybe = [...e.maybe];
+    let going = [...e.going];
+    let maybe = [...e.maybe];
 
-      if (rsvp === 'going') {
-        if (going.includes(currentUser.id)) {
-          going = going.filter(uid => uid !== currentUser.id);
-        } else {
-          going.push(currentUser.id);
-          maybe = maybe.filter(uid => uid !== currentUser.id);
-        }
+    if (rsvp === 'going') {
+      if (going.includes(currentUser.id)) {
+        going = going.filter(uid => uid !== currentUser.id);
       } else {
-        if (maybe.includes(currentUser.id)) {
-          maybe = maybe.filter(uid => uid !== currentUser.id);
-        } else {
-          maybe.push(currentUser.id);
-          going = going.filter(uid => uid !== currentUser.id);
-        }
+        going.push(currentUser.id);
+        maybe = maybe.filter(uid => uid !== currentUser.id);
       }
+    } else {
+      if (maybe.includes(currentUser.id)) {
+        maybe = maybe.filter(uid => uid !== currentUser.id);
+      } else {
+        maybe.push(currentUser.id);
+        going = going.filter(uid => uid !== currentUser.id);
+      }
+    }
 
-      return { ...e, going, maybe };
-    }));
+    const updatedEvent = { ...e, going, maybe };
+    setEvents(prev => prev.map(event => event.id === eventId ? updatedEvent : event));
+    setDoc(doc(db, 'events', eventId), updatedEvent).catch(err => console.error(err));
   };
 
   const purchaseAd = (inputs: {
@@ -528,28 +616,49 @@ export function useSocialState() {
       ...inputs,
       id: `ad-${Date.now()}`,
       userId: currentUser.id,
-      status: inputs.type === 'patrocinado' ? 'pending' : 'active', // patrocinado requires checkout
+      status: inputs.type === 'patrocinado' ? 'pending' : 'active',
       clicks: 0,
       impressions: 1,
       createdAt: new Date().toISOString()
     };
 
     setAds(prev => [newAd, ...prev]);
-    logAction('success', `Anúncio '${newAd.title}' (${newAd.type}) cadastrado no sistema.`);
+    setDoc(doc(db, 'ads', newAd.id), newAd)
+      .then(() => {
+        logAction('success', `Anúncio '${newAd.title}' (${newAd.type}) cadastrado no sistema.`);
+      })
+      .catch(err => console.error(err));
+
     return newAd;
   };
 
   const approveAd = (adId: string) => {
-    setAds(prev => prev.map(a => a.id === adId ? { ...a, status: 'active' } : a));
-    logAction('success', `Anúncio patrocinado #${adId.slice(-4)} aprovado financeiramente.`);
+    const a = ads.find(ad => ad.id === adId);
+    if (!a) return;
+    const updatedAd = { ...a, status: 'active' as const };
+    setAds(prev => prev.map(ad => ad.id === adId ? updatedAd : ad));
+    
+    setDoc(doc(db, 'ads', adId), updatedAd)
+      .then(() => {
+        logAction('success', `Anúncio patrocinado #${adId.slice(-4)} aprovado financeiramente.`);
+      })
+      .catch(err => console.error(err));
   };
 
   const trackAdClick = (adId: string) => {
-    setAds(prev => prev.map(a => a.id === adId ? { ...a, clicks: a.clicks + 1 } : a));
+    const a = ads.find(ad => ad.id === adId);
+    if (!a) return;
+    const updatedAd = { ...a, clicks: a.clicks + 1 };
+    setAds(prev => prev.map(ad => ad.id === adId ? updatedAd : ad));
+    setDoc(doc(db, 'ads', adId), updatedAd).catch(err => console.error(err));
   };
 
   const trackAdImpression = (adId: string) => {
-    setAds(prev => prev.map(a => a.id === adId ? { ...a, impressions: a.impressions + 1 } : a));
+    const a = ads.find(ad => ad.id === adId);
+    if (!a) return;
+    const updatedAd = { ...a, impressions: a.impressions + 1 };
+    setAds(prev => prev.map(ad => ad.id === adId ? updatedAd : ad));
+    setDoc(doc(db, 'ads', adId), updatedAd).catch(err => console.error(err));
   };
 
   const addStory = (mediaUrl: string, text?: string, type: 'image' | 'video' | 'text' = 'image') => {
@@ -562,10 +671,14 @@ export function useSocialState() {
       createdAt: new Date().toISOString()
     };
     setStories(prev => [newStory, ...prev]);
-    logAction('success', `@${currentUser.username} publicou um novo Story de 24h.`);
+    
+    setDoc(doc(db, 'stories', newStory.id), newStory)
+      .then(() => {
+        logAction('success', `@${currentUser.username} publicou um novo Story de 24h.`);
+      })
+      .catch(err => console.error(err));
   };
 
-  // Business Page logic
   const createBusinessPage = (inputs: {
     name: string;
     username: string;
@@ -586,72 +699,116 @@ export function useSocialState() {
       createdAt: new Date().toISOString()
     };
     setPages(prev => [...prev, newPage]);
-    logAction('success', `Página Comercial '${newPage.name}' registrada por @${currentUser.username}.`);
+    
+    setDoc(doc(db, 'pages', newPage.id), newPage)
+      .then(() => {
+        logAction('success', `Página Comercial '${newPage.name}' registrada por @${currentUser.username}.`);
+      })
+      .catch(err => console.error(err));
   };
 
   const addProductToPage = (pageId: string, product: Omit<CatalogProduct, 'id'>) => {
+    const p = pages.find(page => page.id === pageId);
+    if (!p) return;
+
     const newProduct: CatalogProduct = {
       ...product,
       id: `prod-${Date.now()}`
     };
-    setPages(prev => prev.map(p => p.id === pageId ? {
+
+    const updatedPage = {
       ...p,
       catalog: [...p.catalog, newProduct]
-    } : p));
-    logAction('success', `Produto '${newProduct.name}' adicionado ao catálogo da página.`);
+    };
+
+    setPages(prev => prev.map(page => page.id === pageId ? updatedPage : page));
+    
+    setDoc(doc(db, 'pages', pageId), updatedPage)
+      .then(() => {
+        logAction('success', `Produto '${newProduct.name}' adicionado ao catálogo da página.`);
+      })
+      .catch(err => console.error(err));
   };
 
   const toggleLikePage = (pageId: string) => {
-    setPages(prev => prev.map(p => {
-      if (p.id !== pageId) return p;
-      const likes = p.likes.includes(currentUser.id)
-        ? p.likes.filter(id => id !== currentUser.id)
-        : [...p.likes, currentUser.id];
-      return { ...p, likes };
-    }));
+    const p = pages.find(page => page.id === pageId);
+    if (!p) return;
+
+    const likes = p.likes.includes(currentUser.id)
+      ? p.likes.filter(id => id !== currentUser.id)
+      : [...p.likes, currentUser.id];
+
+    const updatedPage = { ...p, likes };
+    setPages(prev => prev.map(page => page.id === pageId ? updatedPage : page));
+    setDoc(doc(db, 'pages', pageId), updatedPage).catch(err => console.error(err));
   };
 
-  // Administration capabilities
   const adminDeleteUser = (userId: string) => {
-    // Confirm it's not the user-admin self deletion just in case
     if (userId === 'user-admin') return;
+
     setUsers(prev => prev.filter(u => u.id !== userId));
     setPosts(prev => prev.filter(p => p.userId !== userId));
     setAds(prev => prev.filter(a => a.userId !== userId));
+
+    deleteDoc(doc(db, 'users', userId)).catch(e => console.error(e));
+
+    const userPosts = posts.filter(p => p.userId === userId);
+    for (const p of userPosts) {
+      deleteDoc(doc(db, 'posts', p.id)).catch(e => console.error(e));
+    }
+
+    const userAds = ads.filter(a => a.userId === userId);
+    for (const a of userAds) {
+      deleteDoc(doc(db, 'ads', a.id)).catch(e => console.error(e));
+    }
+
     logAction('warning', `MODERAÇÃO: O usuário com ID '${userId}' e todo o seu conteúdo associado foram deletados permanentemente.`);
   };
 
   const adminBlockUser = (userId: string) => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, isBlocked: true } : u));
+    const u = users.find(user => user.id === userId);
+    if (!u) return;
+    const updated = { ...u, isBlocked: true };
+    setUsers(prev => prev.map(user => user.id === userId ? updated : user));
+    setDoc(doc(db, 'users', userId), updated).catch(e => console.error(e));
     logAction('warning', `MODERAÇÃO: O usuário com ID '${userId}' foi BLOQUEADO pelo administrador.`);
   };
 
   const adminUnblockUser = (userId: string) => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, isBlocked: false } : u));
+    const u = users.find(user => user.id === userId);
+    if (!u) return;
+    const updated = { ...u, isBlocked: false };
+    setUsers(prev => prev.map(user => user.id === userId ? updated : user));
+    setDoc(doc(db, 'users', userId), updated).catch(e => console.error(e));
     logAction('success', `MODERAÇÃO: O usuário com ID '${userId}' foi DESBLOQUEADO pelo administrador.`);
   };
 
   const adminToggleVerifyUser = (userId: string) => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, isVerified: !u.isVerified } : u));
+    const u = users.find(user => user.id === userId);
+    if (!u) return;
+    const updated = { ...u, isVerified: !u.isVerified };
+    setUsers(prev => prev.map(user => user.id === userId ? updated : user));
+    setDoc(doc(db, 'users', userId), updated).catch(e => console.error(e));
     logAction('info', `MODERAÇÃO: Status de verificado do usuário '${userId}' foi alterado.`);
   };
 
   const adminDeletePost = (postId: string) => {
     setPosts(prev => prev.filter(p => p.id !== postId));
+    deleteDoc(doc(db, 'posts', postId)).catch(e => console.error(e));
     logAction('warning', `MODERAÇÃO: Postagem #${postId.slice(-4)} removida por violar regras comunitárias.`);
   };
 
   const adminDeleteAd = (adId: string) => {
     setAds(prev => prev.filter(a => a.id !== adId));
+    deleteDoc(doc(db, 'ads', adId)).catch(e => console.error(e));
     logAction('warning', `MODERAÇÃO: Campanha de anúncio #${adId.slice(-4)} excluída pelo administrador.`);
   };
 
-  // Analytics calculator
   const getAdminStats = () => {
-    const activeUsersOnline = Math.floor(users.filter(u => !u.isBlocked).length * 1.4) + 64; // nice simulated active value
+    const activeUsersOnline = Math.floor(users.filter(u => !u.isBlocked).length * 1.4) + 64;
     const totalEarnings = ads
       .filter(a => a.type === 'patrocinado' && a.status === 'active')
-      .reduce((sum, current) => sum + (current.price || 0), 0) + 1240.00; // static base + active ads
+      .reduce((sum, current) => sum + (current.price || 0), 0) + 1240.00;
 
     const totalImpressions = ads.reduce((sum, a) => sum + a.impressions, 0);
     const totalClicks = ads.reduce((sum, a) => sum + a.clicks, 0);
@@ -666,6 +823,12 @@ export function useSocialState() {
       impressions: totalImpressions,
       clicks: totalClicks
     };
+  };
+
+  const updateEmailConfig = (config: EmailConfig) => {
+    setEmailConfig(config);
+    setDoc(doc(db, 'email_config', 'main'), config).catch(e => console.error(e));
+    logAction('success', `E-mail Transacional: Configurações do SMTP atualizadas (Provedor: ${config.provider.toUpperCase()}).`);
   };
 
   return {
@@ -704,7 +867,6 @@ export function useSocialState() {
     createBusinessPage,
     addProductToPage,
     toggleLikePage,
-    // Admin operations
     adminDeleteUser,
     adminBlockUser,
     adminUnblockUser,
@@ -716,4 +878,6 @@ export function useSocialState() {
     updateEmailConfig
   };
 }
+
 export type UseSocialStateReturn = ReturnType<typeof useSocialState>;
+
