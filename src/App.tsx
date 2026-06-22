@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { useSocialState } from './hooks/useSocialState';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -21,7 +21,14 @@ import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
   const social = useSocialState();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return localStorage.getItem('bb_is_logged_in') === 'true';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('bb_is_logged_in', isLoggedIn ? 'true' : 'false');
+  }, [isLoggedIn]);
+
   const [activeTab, setActiveTab] = useState('feed');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -118,6 +125,7 @@ export default function App() {
         message: `Serviço EmailJS desativado ou incompleto. Código gerado de teste para '${regEmail}': ${generatedCodeStr}`,
         timestamp: new Date().toISOString()
       });
+      alert(`[SIMULAÇÃO DE CADASTRO]\n\nComo o serviço EmailJS está inativo/em teste, geramos o seguinte código de ativação para o e-mail ${regEmail}:\n\n👉 ${generatedCodeStr}\n\nDigite-o no próximo campo para confirmar o seu cadastro!`);
     }
   };
 
