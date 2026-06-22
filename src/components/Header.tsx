@@ -95,7 +95,7 @@ export default function Header({
                   {currentUser.fullName}
                 </div>
                 <div className="text-[10px] text-[#00E5FF] font-mono flex items-center gap-0.5 mt-0.5">
-                  @{currentUser.username}
+                  ID: {currentUser.username}
                   {currentUser.isVerified && <BadgeCheck className="w-3 h-3 text-[#00E5FF] inline" />}
                 </div>
               </div>
@@ -135,7 +135,7 @@ export default function Header({
                             {u.fullName}
                             {u.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-[#00E5FF] inline" />}
                           </div>
-                          <div className="text-gray-400 text-[10px] font-mono">@{u.username}</div>
+                          <div className="text-gray-400 text-[10px] font-mono">ID: {u.username}</div>
                         </div>
                       </button>
                     ))}

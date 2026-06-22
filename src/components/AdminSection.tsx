@@ -219,7 +219,7 @@ export default function AdminSection({
                         <span className="text-[8px] bg-[#121225] text-gray-500 font-mono p-0.5 rounded px-1 shrink-0 font-bold uppercase tracking-wide">Não verificado</span>
                       )}
                     </div>
-                    <p className="text-[10px] text-gray-400 font-mono mt-0.5">@{u.username} • {u.email} • Plano {u.premiumPlan}</p>
+                    <p className="text-[10px] text-gray-400 font-mono mt-0.5">ID: {u.username} • {u.email} • Plano {u.premiumPlan}</p>
                   </div>
                 </div>
 
@@ -292,7 +292,7 @@ export default function AdminSection({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1.5">
                       <span className="text-[10px] text-[#7C4DFF] font-mono font-bold">Post #{p.id.slice(-4)}</span>
-                      <span className="text-[10px] text-gray-500 font-mono font-bold">por @{creator.username}</span>
+                      <span className="text-[10px] text-gray-500 font-mono font-bold">por ID: {creator.username}</span>
                     </div>
                     <p className="text-xs text-gray-300 line-clamp-2 leading-relaxed whitespace-pre-wrap italic font-sans">
                       "{p.content}"
@@ -334,7 +334,7 @@ export default function AdminSection({
                         </span>
                       </h5>
                       <p className="text-[10px] text-gray-500 font-mono mt-0.5">
-                        Anunciante: @{advertiser.username} • Pos: {ad.position} • {ad.price ? `R$ ${ad.price} (${ad.plan})` : 'Classificado'}
+                        Anunciante: ID: {advertiser.username} • Pos: {ad.position} • {ad.price ? `R$ ${ad.price} (${ad.plan})` : 'Classificado'}
                       </p>
                     </div>
                   </div>

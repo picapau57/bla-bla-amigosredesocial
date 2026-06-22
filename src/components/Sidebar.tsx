@@ -210,7 +210,7 @@ export default function Sidebar({
                 <CheckCircle className="w-4 h-4 text-[#00E5FF] fill-[#00E5FF]/10 shrink-0" title="Perfil Verificado" />
               )}
             </h3>
-            <p className="text-[#00E5FF] text-xs font-mono">@{currentUser.username}</p>
+            <p className="text-[#00E5FF] text-xs font-mono">ID: {currentUser.username}</p>
           </div>
 
           <p className="text-gray-400 text-xs text-center mt-2 line-clamp-2 italic px-2 font-sans">

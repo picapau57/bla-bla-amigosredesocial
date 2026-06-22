@@ -152,7 +152,7 @@ export default function StoriesSection({
                           {author.fullName}
                           {author.isVerified && <CheckCircle className="w-3.5 h-3.5 text-[#00E5FF] fill-[#00E5FF]/10 shrink-0" />}
                         </div>
-                        <div className="text-[10px] text-gray-400 font-mono font-bold">@{author.username}</div>
+                        <div className="text-[10px] text-gray-400 font-mono font-bold">ID: {author.username}</div>
                       </div>
                     </>
                   ) : null;

@@ -50,7 +50,7 @@ export default function ChatSection({
       return {
         name: otherUser.fullName,
         avatar: otherUser.avatar,
-        subtitle: `@${otherUser.username} • ${otherUser.isVerified ? 'Membro Verificado' : 'Amigo online'}`
+        subtitle: `ID: ${otherUser.username} • ${otherUser.isVerified ? 'Membro Verificado' : 'Amigo online'}`
       };
     }
   };

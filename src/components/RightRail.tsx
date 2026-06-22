@@ -130,7 +130,7 @@ export default function RightRail({
                   />
                   <div className="truncate font-sans">
                     <div className="text-xs font-semibold text-white truncate">{user.fullName}</div>
-                    <div className="text-[10px] text-[#00E5FF] font-mono">@{user.username}</div>
+                    <div className="text-[10px] text-[#00E5FF] font-mono">ID: {user.username}</div>
                   </div>
                 </div>
                 <button

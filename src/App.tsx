@@ -403,11 +403,11 @@ export default function App() {
 
                           <div className="grid grid-cols-2 gap-2">
                             <div>
-                              <label className="block text-[10px] font-bold uppercase text-gray-400 font-mono mb-1">Username Único</label>
+                              <label className="block text-[10px] font-bold uppercase text-gray-400 font-mono mb-1">ID do Membro (CPF ou Nickname)</label>
                               <input
                                 type="text"
                                 required
-                                placeholder="sampa.skate"
+                                placeholder="Ex: 123.456.789-10"
                                 value={regUsername}
                                 onChange={(e) => setRegUsername(e.target.value)}
                                 className="w-full bg-[#0A0A14] border border-white/5 text-gray-200 p-2 text-xs rounded-lg focus:border-[#00E5FF] focus:outline-none focus:ring-1 focus:ring-[#00E5FF]/20"

@@ -309,7 +309,7 @@ export default function FeedSection({
                         )}
                       </div>
                       <div className="text-[10px] text-gray-450 text-gray-400 font-mono flex items-center gap-1 mt-0.5">
-                        <span>@{author.username}</span>
+                        <span>ID: {author.username}</span>
                         <span>•</span>
                         <span>{new Date(post.createdAt).toLocaleDateString()}</span>
                       </div>
