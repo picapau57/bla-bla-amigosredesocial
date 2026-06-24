@@ -42,9 +42,14 @@ export default function RightRail({
     }
   }, [bottomAd?.id]);
 
-  // Recommended connections (not currently friends with active user, not active user itself, not blocked)
+  // Recommended connections (not currently friends with active user, not active user itself, not blocked, and not mock users)
   const recommendedUsers = users
-    .filter(u => u.id !== currentUser.id && !currentUser.friends.includes(u.id) && !u.isBlocked)
+    .filter(u => 
+      u.id !== currentUser.id && 
+      !currentUser.friends.includes(u.id) && 
+      !u.isBlocked && 
+      !['user-1', 'user-2', 'user-3', 'user-4', 'user-5', 'admin-1'].includes(u.id)
+    )
     .slice(0, 3);
 
   const hashtags = [

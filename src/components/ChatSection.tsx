@@ -144,27 +144,31 @@ export default function ChatSection({
             Iniciar Chat com Amigos
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-            {users
-              .filter(u => u.id !== currentUser.id && !u.isBlocked)
-              .map(u => (
-                <button
-                  key={u.id}
-                  onClick={() => {
-                    const cid = onStartChat(u.id);
-                    setActiveChatId(cid);
-                  }}
-                  title={`Converse com ${u.fullName}`}
-                  className="shrink-0 relative focus:outline-none cursor-pointer"
-                >
-                  <img
-                    src={u.avatar}
-                    alt={u.fullName}
-                    referrerPolicy="no-referrer"
-                    className="w-8.5 h-8.5 rounded-full object-cover border border-white/10 hover:border-[#00E5FF] transition-colors"
-                  />
-                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#00E676] rounded-full border-2 border-[#121225]" />
-                </button>
-              ))}
+            {users.filter(u => u.id !== currentUser.id && !u.isBlocked && !['user-1', 'user-2', 'user-3', 'user-4', 'user-5', 'admin-1'].includes(u.id)).length === 0 ? (
+              <span className="text-[10px] text-gray-500 italic p-1">Nenhum outro membro real cadastrado para conversar ainda.</span>
+            ) : (
+              users
+                .filter(u => u.id !== currentUser.id && !u.isBlocked && !['user-1', 'user-2', 'user-3', 'user-4', 'user-5', 'admin-1'].includes(u.id))
+                .map(u => (
+                  <button
+                    key={u.id}
+                    onClick={() => {
+                      const cid = onStartChat(u.id);
+                      setActiveChatId(cid);
+                    }}
+                    title={`Converse com ${u.fullName}`}
+                    className="shrink-0 relative focus:outline-none cursor-pointer"
+                  >
+                    <img
+                      src={u.avatar}
+                      alt={u.fullName}
+                      referrerPolicy="no-referrer"
+                      className="w-8.5 h-8.5 rounded-full object-cover border border-white/10 hover:border-[#00E5FF] transition-colors"
+                    />
+                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#00E676] rounded-full border-2 border-[#121225]" />
+                  </button>
+                ))
+            )}
           </div>
         </div>
       </div>

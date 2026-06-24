@@ -177,7 +177,7 @@ export default function App() {
         alert(res.message);
       }
     } else {
-      alert('Usuário não encontrado. Dica: clique e use os botões de simulação instantânea de login abaixo para testar!');
+      alert('Usuário não encontrado. Verifique se digitou o e-mail ou ID do membro cadastrado corretamente, ou crie uma nova conta grátis!');
     }
   };
 
@@ -326,39 +326,10 @@ export default function App() {
                       </button>
                     </form>
 
-                    {/* QUICK PRESET LOGIN ACCOUNTS - FOR SIMPLICITY EVALUATION */}
-                    <div className="border-t border-white/5 pt-4.5 space-y-3">
-                      <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest font-mono text-center">
-                        Simular Acesso Imediato
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <button
-                          onClick={() => loginAsPreset('user-1')}
-                          className="p-2 border border-white/10 rounded-xl hover:border-[#00E5FF] hover:bg-[#0A0A14]/60 text-left transition-colors flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=30" alt="" className="w-5.5 h-5.5 rounded-full object-cover shrink-0" />
-                          <div className="truncate">
-                            <span className="font-semibold block text-[10px] text-white truncate leading-none">Carlos Souza</span>
-                            <span className="text-[8px] text-gray-500 font-mono">@carlos.neon</span>
-                          </div>
-                        </button>
-                        <button
-                          onClick={() => loginAsPreset('user-4')}
-                          className="p-2 border border-white/10 rounded-xl hover:border-[#FF5722] hover:bg-[#0A0A14]/60 text-left transition-colors flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=30" alt="" className="w-5.5 h-5.5 rounded-full object-cover shrink-0" />
-                          <div className="truncate">
-                            <span className="font-semibold block text-[10px] text-white truncate leading-none">Felipe Inova</span>
-                            <span className="text-[8px] text-gray-500 font-mono">@felipe.inova</span>
-                          </div>
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="text-center pt-2">
+                    <div className="text-center pt-4 border-t border-white/5">
                       <button
                         onClick={() => setIsRegisterMode(true)}
-                        className="text-xs text-[#00E5FF] hover:underline cursor-pointer"
+                        className="text-xs text-[#00E5FF] hover:underline cursor-pointer font-bold"
                       >
                         Não possui conta? Registre-se já!
                       </button>

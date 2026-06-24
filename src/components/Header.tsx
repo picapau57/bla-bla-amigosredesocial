@@ -31,8 +31,12 @@ export default function Header({
     onSearch(e.target.value);
   };
 
-  // Filter out admin or blocked users for quick switching
-  const quickSwitchUsers = users.filter(u => u.id !== currentUser.id && !u.isBlocked);
+  // Filter out admin or blocked users and mock example users for quick switching
+  const quickSwitchUsers = users.filter(u => 
+    u.id !== currentUser.id && 
+    !u.isBlocked && 
+    !['user-1', 'user-2', 'user-3', 'user-4', 'user-5', 'admin-1'].includes(u.id)
+  );
 
   const notifications = logs.filter(l => l.type === 'success' || l.type === 'warning').slice(0, 5);
 
@@ -111,34 +115,40 @@ export default function Header({
                   className="absolute right-0 mt-3.5 w-64 bg-[#121225]/95 border border-white/10 rounded-2xl p-3 shadow-2xl text-slate-300 backdrop-blur-lg animate-fade-in"
                 >
                   <div className="text-[11px] font-bold text-[#00E5FF] uppercase tracking-widest px-2 mb-2">
-                    Simular Nova Conta
+                    Contas de Membros Reais
                   </div>
                   <div className="max-h-60 overflow-y-auto space-y-1 pr-1">
-                    {quickSwitchUsers.map(u => (
-                      <button
-                        key={u.id}
-                        onClick={() => {
-                          onSelectUser(u.id);
-                          setShowUserDropdown(false);
-                          setActiveTab('feed');
-                        }}
-                        className="w-full flex items-center gap-3 p-2 hover:bg-[#1E1E30]/60 rounded-xl transition-all text-left"
-                      >
-                        <img
-                          src={u.avatar}
-                          alt={u.fullName}
-                          referrerPolicy="no-referrer"
-                          className="w-8 h-8 rounded-full object-cover"
-                        />
-                        <div className="text-xs truncate">
-                          <div className="font-semibold text-white flex items-center gap-1">
-                            {u.fullName}
-                            {u.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-[#00E5FF] inline" />}
+                    {quickSwitchUsers.length === 0 ? (
+                      <div className="text-[10px] text-gray-400 italic p-3.5 text-center leading-relaxed">
+                        Nenhum outro usuário real cadastrado nesta plataforma ainda.
+                      </div>
+                    ) : (
+                      quickSwitchUsers.map(u => (
+                        <button
+                          key={u.id}
+                          onClick={() => {
+                            onSelectUser(u.id);
+                            setShowUserDropdown(false);
+                            setActiveTab('feed');
+                          }}
+                          className="w-full flex items-center gap-3 p-2 hover:bg-[#1E1E30]/60 rounded-xl transition-all text-left"
+                        >
+                          <img
+                            src={u.avatar}
+                            alt={u.fullName}
+                            referrerPolicy="no-referrer"
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                          <div className="text-xs truncate">
+                            <div className="font-semibold text-white flex items-center gap-1">
+                              {u.fullName}
+                              {u.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-[#00E5FF] inline" />}
+                            </div>
+                            <div className="text-gray-400 text-[10px] font-mono">ID: {u.username}</div>
                           </div>
-                          <div className="text-gray-400 text-[10px] font-mono">ID: {u.username}</div>
-                        </div>
-                      </button>
-                    ))}
+                        </button>
+                      ))
+                    )}
                   </div>
                   <div className="border-t border-white/10 mt-2.5 pt-2.5 px-2">
                     <button

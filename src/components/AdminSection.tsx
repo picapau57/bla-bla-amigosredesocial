@@ -52,6 +52,7 @@ export default function AdminSection({
   const [adminActiveSubTab, setAdminActiveSubTab] = useState<'dashboard' | 'users' | 'posts' | 'ads_moderation' | 'logs' | 'email_settings'>('dashboard');
 
   const stats = getAdminStats();
+  const realUsers = users.filter(u => !['user-1', 'user-2', 'user-3', 'user-4', 'user-5', 'admin-1'].includes(u.id));
 
   return (
     <div className="flex-1 bg-[#121225] border border-white/10 rounded-2xl p-5 shadow-xl space-y-6" id="admin-panel-stage">
@@ -75,7 +76,7 @@ export default function AdminSection({
       <div className="flex flex-wrap gap-2 text-xs">
         {[
           { id: 'dashboard', name: 'Dashboard Real', icon: Activity },
-          { id: 'users', name: 'Moderação de Usuários (' + users.length + ')', icon: Users },
+          { id: 'users', name: 'Moderação de Usuários (' + realUsers.length + ')', icon: Users },
           { id: 'posts', name: 'Excluir Conteúdo (' + posts.length + ')', icon: Trash2 },
           { id: 'ads_moderation', name: 'Gerenciar Anúncios', icon: ShieldCheck },
           { id: 'logs', name: 'Logs de Segurança (' + logs.length + ')', icon: FileText },
@@ -206,75 +207,82 @@ export default function AdminSection({
           <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-1">Registros de Usuários e Políticas</h4>
           
           <div className="space-y-3.5 max-h-[400px] overflow-y-auto pr-1">
-            {users.map(u => (
-              <div key={u.id} className="bg-[#0A0A14] p-3.5 rounded-xl border border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div className="flex gap-3 items-center min-w-0">
-                  <img src={u.avatar} alt="avatar" className="w-10 h-10 rounded-full object-cover bg-[#121225] shrink-0" />
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold text-white flex items-center gap-1.5 truncate uppercase">
-                      {u.fullName}
-                      {u.isVerified ? (
-                        <CheckCircle className="w-3.5 h-3.5 text-[#00E5FF] inline shrink-0" title="Verificado" />
-                      ) : (
-                        <span className="text-[8px] bg-[#121225] text-gray-500 font-mono p-0.5 rounded px-1 shrink-0 font-bold uppercase tracking-wide">Não verificado</span>
-                      )}
+            {realUsers.length === 0 ? (
+              <div className="text-xs text-gray-400 italic p-6 text-center bg-[#0A0A14] rounded-xl border border-white/5">
+                Nenhum usuário real cadastrado na plataforma ainda.
+              </div>
+            ) : (
+              realUsers.map(u => (
+                <div key={u.id} className="bg-[#0A0A14] p-3.5 rounded-xl border border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div className="flex gap-3 items-center min-w-0">
+                    <img src={u.avatar} alt="avatar" className="w-10 h-10 rounded-full object-cover bg-[#121225] shrink-0" />
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-white flex items-center gap-1.5 truncate uppercase">
+                        {u.fullName}
+                        {u.isVerified ? (
+                          <CheckCircle className="w-3.5 h-3.5 text-[#00E5FF] inline shrink-0" title="Verificado" />
+                        ) : (
+                          <span className="text-[8px] bg-[#121225] text-gray-500 font-mono p-0.5 rounded px-1 shrink-0 font-bold uppercase tracking-wide">Não verificado</span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-gray-400 font-mono mt-0.5">ID: {u.username} • {u.email} • Plano {u.premiumPlan}</p>
                     </div>
-                    <p className="text-[10px] text-gray-400 font-mono mt-0.5">ID: {u.username} • {u.email} • Plano {u.premiumPlan}</p>
+                  </div>
+
+                  <div className="flex gap-2 shrink-0 self-end sm:self-center">
+                    {/* Verify button toggle */}
+                    <button
+                      onClick={() => onToggleVerifyUser(u.id)}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all cursor-pointer ${
+                        u.isVerified
+                          ? 'bg-[#00E5FF]/10 border border-[#00E5FF]/20 text-[#00E5FF]'
+                          : 'bg-[#121225] hover:bg-[#121225]/85 text-gray-400 hover:text-white border border-white/10'
+                      }`}
+                    >
+                      Selo Verificar
+                    </button>
+
+                    {/* Block / Unblock action */}
+                    {u.id !== currentUser.id ? (
+                      <>
+                        <button
+                          onClick={() => u.isBlocked ? onUnblockUser(u.id) : onBlockUser(u.id)}
+                          className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer ${
+                            u.isBlocked
+                              ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
+                              : 'bg-red-500/10 border border-red-500/20 text-[#FF1744] hover:bg-gradient-to-r hover:from-[#FF5722] hover:to-[#FF1744] hover:text-white'
+                          }`}
+                        >
+                          {u.isBlocked ? (
+                            <>
+                              <Unlock className="w-3 h-3" /> Desbloquear
+                            </>
+                          ) : (
+                            <>
+                              <Ban className="w-3 h-3" /> Bloquear
+                            </>
+                          )
+                        }
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Deseja realmente EXCLUIR PERMANENTEMENTE o usuário @${u.username} e todo seu conteúdo? Essa ação é definitiva!`)) {
+                              onDeleteUser(u.id);
+                            }
+                          }}
+                          className="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer bg-rose-600/25 border border-rose-500/30 text-rose-400 hover:bg-[#FF1744] hover:text-white hover:border-transparent"
+                        >
+                          <Trash2 className="w-3 h-3" /> Excluir
+                        </button>
+                      </>
+                    ) : (
+                      <span className="bg-[#121225] text-gray-500 rounded-lg text-[10px] font-mono px-3 py-1.5 border border-white/15">Logado</span>
+                    )}
                   </div>
                 </div>
-
-                <div className="flex gap-2 shrink-0 self-end sm:self-center">
-                  {/* Verify button toggle */}
-                  <button
-                    onClick={() => onToggleVerifyUser(u.id)}
-                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all cursor-pointer ${
-                      u.isVerified
-                        ? 'bg-[#00E5FF]/10 border border-[#00E5FF]/20 text-[#00E5FF]'
-                        : 'bg-[#121225] hover:bg-[#121225]/85 text-gray-400 hover:text-white border border-white/10'
-                    }`}
-                  >
-                    Selo Verificar
-                  </button>
-
-                  {/* Block / Unblock action */}
-                  {u.id !== currentUser.id ? (
-                    <>
-                      <button
-                        onClick={() => u.isBlocked ? onUnblockUser(u.id) : onBlockUser(u.id)}
-                        className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer ${
-                          u.isBlocked
-                            ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
-                            : 'bg-red-500/10 border border-red-500/20 text-[#FF1744] hover:bg-gradient-to-r hover:from-[#FF5722] hover:to-[#FF1744] hover:text-white'
-                        }`}
-                      >
-                        {u.isBlocked ? (
-                          <>
-                            <Unlock className="w-3 h-3" /> Desbloquear
-                          </>
-                        ) : (
-                          <>
-                            <Ban className="w-3 h-3" /> Bloquear
-                          </>
-                        )}
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          if (window.confirm(`Deseja realmente EXCLUIR PERMANENTEMENTE o usuário @${u.username} e todo seu conteúdo? Essa ação é definitiva!`)) {
-                            onDeleteUser(u.id);
-                          }
-                        }}
-                        className="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer bg-rose-600/25 border border-rose-500/30 text-rose-400 hover:bg-[#FF1744] hover:text-white hover:border-transparent"
-                      >
-                        <Trash2 className="w-3 h-3" /> Excluir
-                      </button>
-                    </>
-                  ) : (
-                    <span className="bg-[#121225] text-gray-500 rounded-lg text-[10px] font-mono px-3 py-1.5 border border-white/15">Logado</span>
-                  )}
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
 
         </div>

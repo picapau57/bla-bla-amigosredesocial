@@ -32,8 +32,11 @@ export default function StoriesSection({
     'https://images.unsplash.com/photo-1513829096900-ee825ee22591?auto=format&fit=crop&q=80&w=400'
   ];
 
+  // Filter out mock users' stories
+  const filteredStories = stories.filter(s => !['user-1', 'user-2', 'user-3', 'user-4', 'user-5', 'admin-1'].includes(s.userId));
+
   // Group stories by user so each user has one main bubble in the bar
-  const usersWithStories = Array.from(new Set(stories.map(s => s.userId)))
+  const usersWithStories = Array.from(new Set(filteredStories.map(s => s.userId)))
     .map(uid => users.find(u => u.id === uid))
     .filter((u): u is User => !!u);
 
@@ -42,7 +45,7 @@ export default function StoriesSection({
     if (activeStoryIdx === null) return;
 
     const timer = setTimeout(() => {
-      if (activeStoryIdx < stories.length - 1) {
+      if (activeStoryIdx < filteredStories.length - 1) {
         setActiveStoryIdx(activeStoryIdx + 1);
       } else {
         setActiveStoryIdx(null);
@@ -50,7 +53,7 @@ export default function StoriesSection({
     }, 4500); // 4.5 seconds auto-advance
 
     return () => clearTimeout(timer);
-  }, [activeStoryIdx, stories]);
+  }, [activeStoryIdx, filteredStories]);
 
   const handlePostStory = () => {
     const finalImage = newStoryImage.trim() || sampleStoryImages[0];
@@ -61,8 +64,8 @@ export default function StoriesSection({
   };
 
   const handleOpenUserStory = (userId: string) => {
-    // Find the first story index of this specific user in the global stories array
-    const firstIdx = stories.findIndex(s => s.userId === userId);
+    // Find the first story index of this specific user in the filtered stories array
+    const firstIdx = filteredStories.findIndex(s => s.userId === userId);
     if (firstIdx !== -1) {
       setActiveStoryIdx(firstIdx);
     }
@@ -76,7 +79,7 @@ export default function StoriesSection({
         <span className="text-xs font-bold uppercase tracking-widest text-[#00E5FF] font-mono">
           Stories Diários (24h)
         </span>
-        <span className="text-[10px] text-gray-500 font-mono font-bold">Total: {stories.length}</span>
+        <span className="text-[10px] text-gray-500 font-mono font-bold">Total: {filteredStories.length}</span>
       </div>
 
       <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none" id="stories-bubbles-container">
@@ -137,7 +140,7 @@ export default function StoriesSection({
             <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-20">
               <div className="flex items-center gap-2.5">
                 {(() => {
-                  const s = stories[activeStoryIdx];
+                  const s = filteredStories[activeStoryIdx];
                   const author = users.find(u => u.id === s.userId);
                   return author ? (
                     <>
@@ -182,7 +185,7 @@ export default function StoriesSection({
 
             <div className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20">
               <button
-                disabled={activeStoryIdx === stories.length - 1}
+                disabled={activeStoryIdx === filteredStories.length - 1}
                 onClick={(e) => {
                   e.stopPropagation();
                   setActiveStoryIdx(activeStoryIdx + 1);
@@ -198,7 +201,7 @@ export default function StoriesSection({
               
               {/* TIMELINE TIMER BAR */}
               <div className="absolute top-18 left-3 right-3 flex gap-1 z-20">
-                {stories.map((st, i) => (
+                {filteredStories.map((st, i) => (
                   <div key={st.id} className="h-1 flex-1 bg-white/10 rounded-full overflow-hidden">
                     <div 
                       className={`h-full bg-gradient-to-r from-[#00E5FF] to-[#7C4DFF] rounded-full transition-all duration-4500 ease-linear ${
@@ -210,16 +213,16 @@ export default function StoriesSection({
               </div>
 
               <img
-                src={stories[activeStoryIdx].mediaUrl}
+                src={filteredStories[activeStoryIdx].mediaUrl}
                 alt="Story Media"
                 className="w-full h-full object-cover"
               />
               
               {/* Overlay Gradient for subtitles */}
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#0A0A14] via-[#0A0A14]/20 to-transparent p-6 pt-16 flex items-end">
-                {stories[activeStoryIdx].text && (
+                {filteredStories[activeStoryIdx].text && (
                   <p className="text-white text-center w-full font-bold text-sm tracking-wide drop-shadow-md">
-                    {stories[activeStoryIdx].text}
+                    {filteredStories[activeStoryIdx].text}
                   </p>
                 )}
               </div>
