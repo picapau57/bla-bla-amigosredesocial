@@ -1,4 +1,4 @@
-import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import {
   INITIAL_USERS,
@@ -15,6 +15,19 @@ import {
 
 export async function seedDatabaseIfEmpty() {
   try {
+    // Force set the correct admin user to avoid "Usuário não encontrado"
+    const adminUser = INITIAL_USERS.find(u => u.id === 'admin');
+    if (adminUser) {
+      await setDoc(doc(db, 'users', 'admin'), adminUser);
+    }
+
+    // Clean up old user-admin doc
+    try {
+      await deleteDoc(doc(db, 'users', 'user-admin'));
+    } catch (e) {
+      // ignore
+    }
+
     const usersSnapshot = await getDocs(collection(db, 'users'));
     if (usersSnapshot.empty) {
       console.log('Seeding initial users to Firestore...');
