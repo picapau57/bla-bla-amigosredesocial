@@ -776,7 +776,7 @@ export function useSocialState() {
   };
 
   const adminDeleteUser = (userId: string) => {
-    if (userId === 'user-admin') return;
+    if (userId === 'admin') return;
 
     setUsers(prev => prev.filter(u => u.id !== userId));
     setPosts(prev => prev.filter(p => p.userId !== userId));
@@ -875,7 +875,7 @@ export function useSocialState() {
     chats,
     messages,
     logs,
-    isAdminActive: currentUser.id === 'user-admin',
+    isAdminActive: currentUser.id === 'admin',
     loginAs,
     registerUser,
     updateProfile,

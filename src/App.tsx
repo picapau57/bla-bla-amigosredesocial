@@ -696,7 +696,7 @@ export default function App() {
                   )}
 
                   {/* RESTRICTED MASTER ADMIN PANEL */}
-                  {activeTab === 'admin' && (
+                  {activeTab === 'admin' && social.currentUser.id === 'admin' && (
                     <AdminSection
                       currentUser={social.currentUser}
                       users={social.users}

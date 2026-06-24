@@ -163,7 +163,7 @@ export default function Sidebar({
     { id: 'groups', name: 'Grupos e Comunidades', icon: Users, color: 'text-emerald-400 font-bold' },
     { id: 'events', name: 'Eventos da Rede', icon: Calendar, color: 'text-pink-400 font-bold' },
     { id: 'pages', name: 'Páginas Comerciais', icon: Building2, color: 'text-blue-400 font-bold' },
-    { id: 'admin', name: 'Painel do Administrador', icon: ShieldCheck, color: 'text-rose-400 font-bold' }
+    ...(currentUser.id === 'admin' ? [{ id: 'admin', name: 'Painel do Administrador', icon: ShieldCheck, color: 'text-rose-400 font-bold' }] : [])
   ];
 
   return (

@@ -48,7 +48,7 @@ export default function RightRail({
       u.id !== currentUser.id && 
       !currentUser.friends.includes(u.id) && 
       !u.isBlocked && 
-      !['user-1', 'user-2', 'user-3', 'user-4', 'user-5', 'admin-1'].includes(u.id)
+      !['user-1', 'user-2', 'user-3', 'user-4', 'user-5', 'admin'].includes(u.id)
     )
     .slice(0, 3);
 

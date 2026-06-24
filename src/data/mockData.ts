@@ -122,7 +122,7 @@ export const INITIAL_USERS: User[] = [
     createdAt: '2026-04-10T14:20:00Z'
   },
   {
-    id: 'user-admin',
+    id: 'admin',
     fullName: 'Administrador Boss',
     username: 'admin',
     email: 'admin@blablaamigos.com.br',
@@ -329,7 +329,7 @@ export const INITIAL_EVENTS: Event[] = [
     location: 'Pavilhão Neospatial, Av. Paulista - São Paulo, SP',
     category: 'Social/Cultural',
     image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=800',
-    creatorId: 'user-admin',
+    creatorId: 'admin',
     going: ['user-1', 'user-2', 'user-3', 'user-4', 'user-5'],
     maybe: [],
     createdAt: '2026-06-15T12:00:00Z'
@@ -457,7 +457,7 @@ export const INITIAL_CHATS: Chat[] = [
     id: 'chat-2',
     isGroup: true,
     name: 'Bla Bla Amigos Founders Core',
-    members: ['user-1', 'user-2', 'user-4', 'user-admin'],
+    members: ['user-1', 'user-2', 'user-4', 'admin'],
     avatar: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=200',
     lastMessage: 'Felipe: Precisamos calibrar o anúncio de lateral superior para focar no público Pro.',
     lastMessageAt: '2026-06-21T20:30:00Z'
@@ -501,7 +501,7 @@ export const INITIAL_MESSAGES: Message[] = [
   {
     id: 'msg-g1',
     chatId: 'chat-2',
-    senderId: 'user-admin',
+    senderId: 'admin',
     text: 'Sejam bem-vindos ao chat dos fundadores da rede social Bla Bla Amigos!',
     createdAt: '2026-06-21T19:00:00Z',
     isRead: true

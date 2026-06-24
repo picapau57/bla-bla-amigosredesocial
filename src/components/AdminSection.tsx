@@ -52,7 +52,7 @@ export default function AdminSection({
   const [adminActiveSubTab, setAdminActiveSubTab] = useState<'dashboard' | 'users' | 'posts' | 'ads_moderation' | 'logs' | 'email_settings'>('dashboard');
 
   const stats = getAdminStats();
-  const realUsers = users.filter(u => !['user-1', 'user-2', 'user-3', 'user-4', 'user-5', 'admin-1'].includes(u.id));
+  const realUsers = users.filter(u => !['user-1', 'user-2', 'user-3', 'user-4', 'user-5', 'admin'].includes(u.id));
 
   return (
     <div className="flex-1 bg-[#121225] border border-white/10 rounded-2xl p-5 shadow-xl space-y-6" id="admin-panel-stage">

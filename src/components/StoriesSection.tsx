@@ -33,7 +33,7 @@ export default function StoriesSection({
   ];
 
   // Filter out mock users' stories
-  const filteredStories = stories.filter(s => !['user-1', 'user-2', 'user-3', 'user-4', 'user-5', 'admin-1'].includes(s.userId));
+  const filteredStories = stories.filter(s => !['user-1', 'user-2', 'user-3', 'user-4', 'user-5', 'admin'].includes(s.userId));
 
   // Group stories by user so each user has one main bubble in the bar
   const usersWithStories = Array.from(new Set(filteredStories.map(s => s.userId)))

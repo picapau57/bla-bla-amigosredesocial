@@ -35,7 +35,7 @@ export default function Header({
   const quickSwitchUsers = users.filter(u => 
     u.id !== currentUser.id && 
     !u.isBlocked && 
-    !['user-1', 'user-2', 'user-3', 'user-4', 'user-5', 'admin-1'].includes(u.id)
+    !['user-1', 'user-2', 'user-3', 'user-4', 'user-5', 'admin'].includes(u.id)
   );
 
   const notifications = logs.filter(l => l.type === 'success' || l.type === 'warning').slice(0, 5);
@@ -153,7 +153,7 @@ export default function Header({
                   <div className="border-t border-white/10 mt-2.5 pt-2.5 px-2">
                     <button
                       onClick={() => {
-                        onSelectUser('user-admin');
+                        onSelectUser('admin');
                         setShowUserDropdown(false);
                         setActiveTab('admin');
                       }}
@@ -241,7 +241,7 @@ export default function Header({
           </div>
 
           {/* ADMIN SPEED LINK (FOR EASIER EVALUATION) */}
-          {currentUser.id !== 'user-admin' && (
+          {currentUser.id === 'admin' && (
             <button
               onClick={() => setActiveTab('admin')}
               className="hidden lg:flex items-center gap-1.5 bg-gradient-to-r from-pink-500 to-indigo-600 hover:from-pink-600 hover:to-indigo-700 text-white font-bold text-xs px-3.5 py-2.5 rounded-full border border-pink-400/20 shadow-md hover:shadow-lg transition-all active:scale-95 duration-200"
