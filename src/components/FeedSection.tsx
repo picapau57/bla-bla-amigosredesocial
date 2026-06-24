@@ -19,6 +19,79 @@ interface FeedSectionProps {
   onTrackAdImpression: (adId: string) => void;
 }
 
+function ReelsVideoPlayer({ mediaUrl }: { mediaUrl: string }) {
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const getYouTubeDetails = (url: string) => {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    if (match && match[2].length === 11) {
+      const videoId = match[2];
+      return {
+        videoId,
+        embedUrl: `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0`,
+        thumbnailUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+      };
+    }
+    return null;
+  };
+
+  const ytDetails = getYouTubeDetails(mediaUrl);
+
+  if (ytDetails) {
+    if (isPlaying) {
+      return (
+        <div className="w-full aspect-video bg-black relative">
+          <iframe
+            src={ytDetails.embedUrl}
+            title="YouTube Video Player"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+            className="w-full h-full"
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div 
+        className="w-full aspect-video bg-[#0A0A14] relative flex items-center justify-center group/vid cursor-pointer overflow-hidden"
+        onClick={() => setIsPlaying(true)}
+      >
+        <img 
+          src={ytDetails.thumbnailUrl} 
+          alt="Video Preview" 
+          className="w-full h-full object-cover opacity-85 group-hover:scale-105 transition-transform duration-300" 
+        />
+        <div className="absolute inset-0 bg-[#0A0A14]/40 flex items-center justify-center">
+          <div className="bg-[#FF5722] text-white rounded-full p-4 hover:scale-110 active:scale-95 transition-all shadow-xl shadow-[#FF5722]/35 cursor-pointer">
+            <Video className="w-6 h-6 animate-pulse" />
+          </div>
+        </div>
+        <div className="absolute bottom-3 left-3 bg-[#121225]/90 p-2 rounded text-[11px] font-mono text-white flex items-center gap-1.5">
+          <span className="inline-block w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+          <span>YouTube Reels / Vídeo</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback for regular direct video files or general URL
+  return (
+    <div className="w-full bg-black relative flex items-center justify-center group/vid">
+      <video
+        src={mediaUrl}
+        controls
+        preload="metadata"
+        className="w-full aspect-video max-h-[460px] object-contain"
+        poster="https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?auto=format&fit=crop&q=80&w=800"
+      />
+    </div>
+  );
+}
+
 export default function FeedSection({
   currentUser,
   users,
@@ -337,24 +410,7 @@ export default function FeedSection({
                 {post.mediaUrl && (
                   <div className="border-t border-b border-[#0A0A14] bg-[#0A0A14] overflow-hidden max-h-[460px] flex items-center justify-center">
                     {post.mediaType === 'video' ? (
-                      <div className="w-full aspect-video bg-[#0A0A14] relative flex items-center justify-center group/vid">
-                        <img 
-                          src={post.mediaUrl} 
-                          alt="mock-video-thumbnail" 
-                          className="w-full h-full object-cover opacity-60" 
-                        />
-                        <div className="absolute inset-0 bg-[#0A0A14]/50 flex items-center justify-center">
-                          <button 
-                            onClick={() => alert('Parabéns! Reprodução automática de vídeo/reels simulada em tempo real com sucesso.')}
-                            className="bg-[#FF5722] text-white rounded-full p-4 hover:scale-110 active:scale-95 transition-all shadow-xl shadow-[#FF5722]/20 cursor-pointer"
-                          >
-                            <Video className="w-6 h-6 animate-pulse" />
-                          </button>
-                        </div>
-                        <div className="absolute bottom-3 left-3 bg-[#121225]/85 p-2 rounded text-[11px] font-mono text-white">
-                          ▶ Simulação Reels Vídeo Curto
-                        </div>
-                      </div>
+                      <ReelsVideoPlayer mediaUrl={post.mediaUrl} />
                     ) : (
                       <img
                         src={post.mediaUrl}
