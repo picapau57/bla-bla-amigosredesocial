@@ -748,6 +748,7 @@ export default function App() {
             <div className="flex gap-4">
               <button 
                 onClick={() => {
+                  social.logout();
                   setIsLoggedIn(false);
                   setRegStep('details');
                   setRegFullName('');

@@ -47,6 +47,10 @@ export function useSocialState() {
     return saved || 'user-1';
   });
 
+  const [isAdminSessionActive, setIsAdminSessionActive] = useState<boolean>(() => {
+    return localStorage.getItem('bb_admin_session_active') === 'true';
+  });
+
   const [emailConfig, setEmailConfig] = useState<EmailConfig>({
     serviceId: '',
     templateId: '',
@@ -182,7 +186,14 @@ export function useSocialState() {
   // Save active logged-in user key to LocalStorage (device-dependent, which is correct)
   useEffect(() => {
     localStorage.setItem('bb_current_uid', currentUserId);
+    if (currentUserId === 'admin') {
+      setIsAdminSessionActive(true);
+    }
   }, [currentUserId]);
+
+  useEffect(() => {
+    localStorage.setItem('bb_admin_session_active', isAdminSessionActive ? 'true' : 'false');
+  }, [isAdminSessionActive]);
 
   const currentUser = users.find(u => u.id === currentUserId) || users[0] || INITIAL_USERS[0];
 
@@ -210,6 +221,12 @@ export function useSocialState() {
       return { success: true };
     }
     return { success: false, message: 'Usuário não encontrado.' };
+  };
+
+  const logout = () => {
+    setCurrentUserId('user-1');
+    setIsAdminSessionActive(false);
+    logAction('info', `Sessão de usuário desconectada.`);
   };
 
   const registerUser = (inputs: {
@@ -922,7 +939,9 @@ export function useSocialState() {
     messages,
     logs,
     isAdminActive: currentUser.id === 'admin',
+    isAdminSessionActive,
     loginAs,
+    logout,
     registerUser,
     updateProfile,
     addPost,

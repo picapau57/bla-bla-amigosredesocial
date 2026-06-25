@@ -273,6 +273,20 @@ export default function Header({
             </button>
           )}
 
+          {/* SIMULATION EXIT LINK (RETURN TO ADMIN) */}
+          {currentUser.id !== 'admin' && localStorage.getItem('bb_admin_session_active') === 'true' && (
+            <button
+              onClick={() => {
+                onSelectUser('admin');
+                setActiveTab('admin');
+              }}
+              className="flex items-center gap-1.5 bg-gradient-to-r from-rose-500 to-amber-500 hover:brightness-110 text-white font-bold text-xs px-3.5 py-2.5 rounded-full border border-rose-400/20 shadow-md hover:shadow-lg transition-all active:scale-95 duration-200 cursor-pointer"
+            >
+              <ShieldAlert className="w-4 h-4 text-rose-100 animate-pulse" />
+              Voltar ao Admin
+            </button>
+          )}
+
         </div>
       </div>
     </header>
