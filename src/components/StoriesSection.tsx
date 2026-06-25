@@ -82,46 +82,95 @@ export default function StoriesSection({
         <span className="text-[10px] text-gray-500 font-mono font-bold">Total: {filteredStories.length}</span>
       </div>
 
-      <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none" id="stories-bubbles-container">
+      <div className="flex items-center gap-3.5 overflow-x-auto pb-3 pt-1 scrollbar-none" id="stories-bubbles-container">
         
-        {/* CREATE STORY BUBBLE */}
-        <div className="flex flex-col items-center gap-1.5 shrink-0 select-none">
-          <button 
-            onClick={() => setShowCreateModal(true)}
-            className="group relative w-15 h-15 rounded-full bg-[#0A0A14] flex items-center justify-center border-2 border-dashed border-white/10 hover:border-[#00E5FF] transition-all duration-300 cursor-pointer"
-          >
-            <Plus className="w-5 h-5 text-gray-400 group-hover:text-[#00E5FF] group-hover:scale-110 transition-all" />
-            <span className="absolute bottom-0 right-0 bg-gradient-to-r from-[#00E5FF] to-[#7C4DFF] text-white p-0.5 rounded-full border border-[#0A0A14]">
-              <Plus className="w-2.5 h-2.5" />
+        {/* CREATE STORY CARD (FACEBOOK STYLE) */}
+        <div 
+          onClick={() => setShowCreateModal(true)}
+          className="relative w-28 sm:w-32 h-44 sm:h-48 rounded-2xl overflow-hidden bg-[#1A1932] border border-white/10 shadow-lg cursor-pointer shrink-0 select-none group transition-all duration-300 hover:shadow-[#00E5FF]/20 hover:border-[#00E5FF]/40 hover:-translate-y-1"
+        >
+          {/* Top image section: current user's avatar */}
+          <div className="w-full h-[70%] overflow-hidden relative bg-[#0D0C1D]">
+            <img 
+              src={currentUser.avatar} 
+              alt={currentUser.fullName}
+              referrerPolicy="no-referrer"
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 brightness-90 filter blur-[0.2px]"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A14]/80 via-transparent to-transparent" />
+          </div>
+          {/* Bottom text section */}
+          <div className="w-full h-[30%] bg-[#0A0A14] flex flex-col items-center justify-end pb-3 relative">
+            {/* Overlapping circular plus button */}
+            <div className="absolute -top-4.5 left-1/2 -translate-x-1/2 p-[3px] rounded-full bg-[#0A0A14]">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#00E5FF] to-[#7C4DFF] flex items-center justify-center text-white shadow-md shadow-[#00E5FF]/30 group-hover:scale-110 transition-transform duration-300">
+                <Plus className="w-4 h-4 stroke-[3px]" />
+              </div>
+            </div>
+            <span className="text-[10px] text-white font-mono font-extrabold tracking-wider uppercase mt-1">
+              Criar Story
             </span>
-          </button>
-          <span className="text-[10px] text-gray-300 font-medium font-mono text-center max-w-[65px] truncate font-bold">
-            Adicionar
-          </span>
+          </div>
         </div>
 
-        {/* ACTIVE STORIES BUBBLES */}
+        {/* ACTIVE STORIES CARDS (FACEBOOK STYLE) */}
         {usersWithStories.map(user => {
           const isCurrentUser = user.id === currentUser.id;
+          
+          // Find user's stories
+          const userStories = filteredStories.filter(s => s.userId === user.id);
+          const firstStory = userStories[0];
+          const bgImage = firstStory ? firstStory.mediaUrl : user.avatar;
+
           return (
             <div 
               key={user.id} 
               onClick={() => handleOpenUserStory(user.id)}
-              className="flex flex-col items-center gap-1.5 shrink-0 cursor-pointer select-none group"
+              className="relative w-28 sm:w-32 h-44 sm:h-48 rounded-2xl overflow-hidden bg-[#0A0A14] border border-white/10 shadow-lg cursor-pointer shrink-0 select-none group transition-all duration-300 hover:shadow-[#7C4DFF]/20 hover:border-[#7C4DFF]/40 hover:-translate-y-1"
             >
-              <div className="p-[2px] rounded-full bg-gradient-to-tr from-[#00E5FF] via-[#7C4DFF] to-[#FF5722] animate-pulse-slow">
-                <div className="p-0.5 rounded-full bg-[#121124]">
+              {/* Background Story Image */}
+              <img 
+                src={bgImage} 
+                alt={`${user.fullName}'s story`}
+                referrerPolicy="no-referrer"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+              />
+              {/* Soft Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-[#0A0A14]/90" />
+
+              {/* User Circular Avatar Badge in the top-left */}
+              <div className="absolute top-3 left-3 z-10 p-[1.5px] rounded-full bg-gradient-to-tr from-[#00E5FF] via-[#7C4DFF] to-[#FF5722] shadow-md animate-pulse-slow">
+                <div className="p-0.5 rounded-full bg-[#0A0A14]">
                   <img
                     src={user.avatar}
                     alt={user.fullName}
                     referrerPolicy="no-referrer"
-                    className="w-13-5 h-13-5 rounded-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-7 h-7 rounded-full object-cover border border-white/5"
                   />
                 </div>
               </div>
-              <span className="text-[10px] text-gray-300 font-medium font-mono text-center max-w-[68px] truncate font-bold">
-                {isCurrentUser ? 'Seu Story' : user.fullName.split(' ')[0]}
-              </span>
+
+              {/* Multi-story item count indicator */}
+              {userStories.length > 1 && (
+                <div className="absolute top-3 right-3 z-10 bg-black/60 backdrop-blur-md text-[8px] font-mono font-extrabold text-[#00E5FF] border border-[#00E5FF]/30 px-1.5 py-0.5 rounded-full">
+                  {userStories.length}
+                </div>
+              )}
+
+              {/* User Name and Caption snippet at the bottom */}
+              <div className="absolute bottom-3 left-3 right-3 z-10 flex flex-col">
+                <span className="text-[10px] text-white font-mono font-black tracking-wide truncate flex items-center gap-1 drop-shadow-md">
+                  {isCurrentUser ? 'Seu Story' : user.fullName.split(' ')[0]}
+                  {user.isVerified && (
+                    <span className="w-3 h-3 rounded-full bg-[#00E5FF] inline-flex items-center justify-center text-[7px] text-[#0A0A14] font-black shrink-0">✓</span>
+                  )}
+                </span>
+                {firstStory?.text && (
+                  <span className="text-[8px] text-gray-300 font-bold truncate font-mono mt-0.5 opacity-85 group-hover:opacity-100 transition-opacity">
+                    "{firstStory.text}"
+                  </span>
+                )}
+              </div>
             </div>
           );
         })}
