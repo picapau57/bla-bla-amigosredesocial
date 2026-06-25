@@ -80,34 +80,56 @@ export default function Header({
           
           {/* USER SWAPPER (SIMULATE SESSIONS) */}
           <div className="relative" id="header-user-swapper">
-            <button
-              onClick={() => {
-                setShowUserDropdown(!showUserDropdown);
-                setShowNotifDropdown(false);
-              }}
-              title="Alternar Sessão de Usuário"
-              className="flex items-center gap-2 bg-white/5 p-1.5 pr-3.5 rounded-full border border-white/5 hover:border-white/10 hover:bg-white/10 transition-all duration-300"
-            >
-              <img
-                src={currentUser.avatar}
-                alt={currentUser.fullName}
-                referrerPolicy="no-referrer"
-                className="w-7 h-7 rounded-full object-cover ring-2 ring-[#7C4DFF]"
-              />
-              <div className="text-left hidden sm:block">
-                <div className="text-xs font-semibold leading-none max-w-[90px] truncate text-white">
-                  {currentUser.fullName}
+            {currentUser.id === 'admin' ? (
+              <button
+                onClick={() => {
+                  setShowUserDropdown(!showUserDropdown);
+                  setShowNotifDropdown(false);
+                }}
+                title="Alternar Sessão de Usuário"
+                className="flex items-center gap-2 bg-white/5 p-1.5 pr-3.5 rounded-full border border-white/5 hover:border-white/10 hover:bg-white/10 transition-all duration-300 cursor-pointer"
+              >
+                <img
+                  src={currentUser.avatar}
+                  alt={currentUser.fullName}
+                  referrerPolicy="no-referrer"
+                  className="w-7 h-7 rounded-full object-cover ring-2 ring-[#7C4DFF]"
+                />
+                <div className="text-left hidden sm:block">
+                  <div className="text-xs font-semibold leading-none max-w-[90px] truncate text-white">
+                    {currentUser.fullName}
+                  </div>
+                  <div className="text-[10px] text-[#00E5FF] font-mono flex items-center gap-0.5 mt-0.5">
+                    ID: {currentUser.username}
+                    {currentUser.isVerified && <BadgeCheck className="w-3 h-3 text-[#00E5FF] inline" />}
+                  </div>
                 </div>
-                <div className="text-[10px] text-[#00E5FF] font-mono flex items-center gap-0.5 mt-0.5">
-                  ID: {currentUser.username}
-                  {currentUser.isVerified && <BadgeCheck className="w-3 h-3 text-[#00E5FF] inline" />}
+                <Shuffle className="w-3.5 h-3.5 text-[#00E5FF] animate-spin-slow ml-1" />
+              </button>
+            ) : (
+              <div
+                className="flex items-center gap-2 bg-white/5 p-1.5 pr-3.5 rounded-full border border-white/5 select-none"
+              >
+                <img
+                  src={currentUser.avatar}
+                  alt={currentUser.fullName}
+                  referrerPolicy="no-referrer"
+                  className="w-7 h-7 rounded-full object-cover ring-2 ring-[#7C4DFF]"
+                />
+                <div className="text-left hidden sm:block">
+                  <div className="text-xs font-semibold leading-none max-w-[90px] truncate text-white">
+                    {currentUser.fullName}
+                  </div>
+                  <div className="text-[10px] text-[#00E5FF] font-mono flex items-center gap-0.5 mt-0.5">
+                    ID: {currentUser.username}
+                    {currentUser.isVerified && <BadgeCheck className="w-3 h-3 text-[#00E5FF] inline" />}
+                  </div>
                 </div>
               </div>
-              <Shuffle className="w-3.5 h-3.5 text-[#00E5FF] animate-spin-slow ml-1" />
-            </button>
+            )}
 
             <AnimatePresence>
-              {showUserDropdown && (
+              {currentUser.id === 'admin' && showUserDropdown && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
