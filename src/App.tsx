@@ -151,7 +151,8 @@ export default function App() {
       cover: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&q=80&w=800',
       gender: 'Não Especificado',
       bio: regBio || 'Olá! Sou novo por aqui no Bla Bla Amigos!',
-      website: ''
+      website: '',
+      password: regPassword
     });
 
     if (res.success) {
@@ -170,6 +171,11 @@ export default function App() {
     e.preventDefault();
     const u = social.users.find(x => x.username.toLowerCase() === loginUserText.toLowerCase().trim() || x.email.toLowerCase() === loginUserText.toLowerCase().trim());
     if (u) {
+      const expectedPassword = u.password || (u.id === 'admin' ? 'admin123' : '123456');
+      if (loginPassText !== expectedPassword) {
+        alert('Senha de segurança incorreta! Verifique sua senha cadastrada e tente novamente.');
+        return;
+      }
       const res = social.loginAs(u.id);
       if (res.success) {
         setIsLoggedIn(true);

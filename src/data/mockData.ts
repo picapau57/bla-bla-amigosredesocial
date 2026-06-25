@@ -23,7 +23,8 @@ export const INITIAL_USERS: User[] = [
     friends: ['user-2', 'user-3', 'user-4'],
     followers: ['user-2', 'user-3', 'user-4', 'user-5'],
     following: ['user-2', 'user-3'],
-    createdAt: '2026-01-10T12:00:00Z'
+    createdAt: '2026-01-10T12:00:00Z',
+    password: '123456'
   },
   {
     id: 'user-2',
@@ -47,7 +48,8 @@ export const INITIAL_USERS: User[] = [
     friends: ['user-1', 'user-3'],
     followers: ['user-1', 'user-3', 'user-4'],
     following: ['user-1', 'user-4'],
-    createdAt: '2026-02-15T15:30:00Z'
+    createdAt: '2026-02-15T15:30:00Z',
+    password: '123456'
   },
   {
     id: 'user-3',
@@ -71,7 +73,8 @@ export const INITIAL_USERS: User[] = [
     friends: ['user-1', 'user-2', 'user-5'],
     followers: ['user-1', 'user-2'],
     following: ['user-1', 'user-2', 'user-5'],
-    createdAt: '2026-03-01T09:15:00Z'
+    createdAt: '2026-03-01T09:15:00Z',
+    password: '123456'
   },
   {
     id: 'user-4',
@@ -95,7 +98,8 @@ export const INITIAL_USERS: User[] = [
     friends: ['user-1', 'user-5'],
     followers: ['user-1', 'user-2'],
     following: ['user-1', 'user-2', 'user-5'],
-    createdAt: '2026-01-20T10:45:00Z'
+    createdAt: '2026-01-20T10:45:00Z',
+    password: '123456'
   },
   {
     id: 'user-5',
@@ -119,7 +123,8 @@ export const INITIAL_USERS: User[] = [
     friends: ['user-3', 'user-4'],
     followers: ['user-3', 'user-4'],
     following: ['user-3', 'user-4'],
-    createdAt: '2026-04-10T14:20:00Z'
+    createdAt: '2026-04-10T14:20:00Z',
+    password: '123456'
   },
   {
     id: 'admin',
@@ -143,7 +148,8 @@ export const INITIAL_USERS: User[] = [
     friends: [],
     followers: ['user-1', 'user-2', 'user-3', 'user-4', 'user-5'],
     following: [],
-    createdAt: '2026-01-01T00:00:00Z'
+    createdAt: '2026-01-01T00:00:00Z',
+    password: 'admin123'
   }
 ];
 

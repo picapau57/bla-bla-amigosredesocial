@@ -406,15 +406,32 @@ export default function Sidebar({
               {/* General details */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1">Nome de Exibição (Completo)</label>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1 flex items-center justify-between">
+                    <span>Nome de Exibição (Completo)</span>
+                    {currentUser.id !== 'admin' && (
+                      <span className="text-[9px] text-[#00E5FF] font-mono font-bold flex items-center gap-0.5">
+                        🔒 Identidade Verificada
+                      </span>
+                    )}
+                  </label>
                   <input
                     type="text"
                     required
+                    disabled={currentUser.id !== 'admin'}
                     value={editFullName}
                     onChange={(e) => setEditFullName(e.target.value)}
                     placeholder="Ex: Roseni Ferreira de Souza"
-                    className="w-full bg-[#1A1A32] text-white p-2.5 rounded-xl border border-white/10 text-xs focus:outline-none focus:border-[#00E5FF] font-semibold"
+                    className={`w-full text-xs p-2.5 rounded-xl border font-semibold focus:outline-none transition-all ${
+                      currentUser.id === 'admin'
+                        ? 'bg-[#1A1A32] text-white border-white/10 focus:border-[#00E5FF]'
+                        : 'bg-[#0A0A14] text-gray-400 border-white/5 cursor-not-allowed'
+                    }`}
                   />
+                  {currentUser.id !== 'admin' && (
+                    <p className="text-[9px] text-gray-500 mt-1 font-sans leading-relaxed">
+                      Por motivos de conformidade profissional, alterações cadastrais de nome requerem suporte administrativo.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1">Cidade e Estado</label>

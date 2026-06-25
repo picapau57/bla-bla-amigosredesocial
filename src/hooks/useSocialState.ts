@@ -226,6 +226,7 @@ export function useSocialState() {
     gender: string;
     bio: string;
     website: string;
+    password?: string;
   }) => {
     const exists = users.some(u => u.username.toLowerCase() === inputs.username.toLowerCase());
     if (exists) {
@@ -268,6 +269,14 @@ export function useSocialState() {
 
     const target = users.find(u => u.id === userId);
     if (!target) return;
+
+    // SECURITY GATE 2: Prevent regular users from changing their registered fullName to prevent spoofing
+    if (currentUserId !== 'admin' && updates.fullName && updates.fullName !== target.fullName) {
+      logAction('warning', `SEGURANÇA: Tentativa de alterar o nome completo de '${target.fullName}' para '${updates.fullName}' foi bloqueada.`);
+      alert('Segurança: O nome completo de sua identidade profissional é homologado e não pode ser editado de forma autônoma. Entre em contato com o suporte.');
+      return;
+    }
+
     const updated = { ...target, ...updates };
     setUsers(prev => prev.map(u => u.id === userId ? updated : u));
     

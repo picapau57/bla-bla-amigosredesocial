@@ -21,6 +21,7 @@ export interface User {
   followers: string[]; // List of user IDs
   following: string[]; // List of user IDs
   createdAt: string;
+  password?: string;
 }
 
 export interface Comment {
