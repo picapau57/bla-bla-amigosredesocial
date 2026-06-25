@@ -480,8 +480,8 @@ export default function App() {
                             </div>
                           )}
                           
-                          <div>
-                            <label className="block text-[10px] font-bold uppercase tracking-wider text-[#00E5FF] font-mono mb-1.5 text-center">
+                          <div className="flex flex-col items-center gap-2">
+                            <label className="block text-[10px] font-bold uppercase tracking-wider text-[#00E5FF] font-mono mb-1 text-center">
                               Insira o Código de 4 dígitos enviado:
                             </label>
                             <input
@@ -493,6 +493,21 @@ export default function App() {
                               onChange={(e) => setVerificationCode(e.target.value)}
                               className="w-32 mx-auto block bg-[#0A0A14] border border-white/10 text-center text-white font-mono font-extrabold text-lg p-2 rounded-xl focus:border-[#00E5FF] focus:outline-none focus:ring-1 focus:ring-[#00E5FF]/20 animate-pulse"
                             />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setVerificationCode(expectedCode);
+                                social.logs.push({
+                                  id: `sys-${Date.now()}-${Math.random()}`,
+                                  type: 'info',
+                                  message: `Bypass de validação acionado: Código ${expectedCode} preenchido automaticamente.`,
+                                  timestamp: new Date().toISOString()
+                                });
+                              }}
+                              className="text-[10px] bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20 px-3 py-1.5 rounded-lg font-bold uppercase tracking-wider cursor-pointer transition-all"
+                            >
+                              ⚡ Preencher Código Automático ({expectedCode})
+                            </button>
                           </div>
 
                           <button

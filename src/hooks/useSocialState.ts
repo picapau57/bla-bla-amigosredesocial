@@ -522,6 +522,12 @@ export function useSocialState() {
           ];
           replyText = activeReplies[Math.floor(Math.random() * activeReplies.length)];
         } else if (destinationMemberId) {
+          // Apenas disparar resposta automática simulada se o destinatário for um usuário mock original
+          const isMockUser = ['user-1', 'user-2', 'user-3', 'user-4', 'user-5', 'admin'].includes(destinationMemberId);
+          if (!isMockUser) {
+            return;
+          }
+
           replier = users.find(u => u.id === destinationMemberId);
           if (replier) {
             const replies = [
