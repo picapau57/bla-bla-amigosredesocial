@@ -73,7 +73,7 @@ export function useSocialState() {
       const unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
         const list: User[] = [];
         snapshot.forEach(doc => list.push(doc.data() as User));
-        if (isMounted && list.length > 0) setUsers(list);
+        if (isMounted) setUsers(list);
       }, (err) => {
         if (isMounted) handleFirestoreError(err, OperationType.GET, 'users');
       });
@@ -83,7 +83,7 @@ export function useSocialState() {
         const list: Post[] = [];
         snapshot.forEach(doc => list.push(doc.data() as Post));
         list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        if (isMounted && list.length > 0) setPosts(list);
+        if (isMounted) setPosts(list);
       }, (err) => {
         if (isMounted) handleFirestoreError(err, OperationType.GET, 'posts');
       });
@@ -92,7 +92,7 @@ export function useSocialState() {
       const unsubCommunities = onSnapshot(collection(db, 'communities'), (snapshot) => {
         const list: Community[] = [];
         snapshot.forEach(doc => list.push(doc.data() as Community));
-        if (isMounted && list.length > 0) setCommunities(list);
+        if (isMounted) setCommunities(list);
       }, (err) => {
         if (isMounted) handleFirestoreError(err, OperationType.GET, 'communities');
       });
@@ -101,7 +101,7 @@ export function useSocialState() {
       const unsubEvents = onSnapshot(collection(db, 'events'), (snapshot) => {
         const list: Event[] = [];
         snapshot.forEach(doc => list.push(doc.data() as Event));
-        if (isMounted && list.length > 0) setEvents(list);
+        if (isMounted) setEvents(list);
       }, (err) => {
         if (isMounted) handleFirestoreError(err, OperationType.GET, 'events');
       });
@@ -111,7 +111,7 @@ export function useSocialState() {
         const list: Story[] = [];
         snapshot.forEach(doc => list.push(doc.data() as Story));
         list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        if (isMounted && list.length > 0) setStories(list);
+        if (isMounted) setStories(list);
       }, (err) => {
         if (isMounted) handleFirestoreError(err, OperationType.GET, 'stories');
       });
@@ -120,7 +120,7 @@ export function useSocialState() {
       const unsubAds = onSnapshot(collection(db, 'ads'), (snapshot) => {
         const list: Ad[] = [];
         snapshot.forEach(doc => list.push(doc.data() as Ad));
-        if (isMounted && list.length > 0) setAds(list);
+        if (isMounted) setAds(list);
       }, (err) => {
         if (isMounted) handleFirestoreError(err, OperationType.GET, 'ads');
       });
@@ -129,7 +129,7 @@ export function useSocialState() {
       const unsubPages = onSnapshot(collection(db, 'pages'), (snapshot) => {
         const list: BusinessPage[] = [];
         snapshot.forEach(doc => list.push(doc.data() as BusinessPage));
-        if (isMounted && list.length > 0) setPages(list);
+        if (isMounted) setPages(list);
       }, (err) => {
         if (isMounted) handleFirestoreError(err, OperationType.GET, 'pages');
       });
@@ -139,7 +139,7 @@ export function useSocialState() {
         const list: Chat[] = [];
         snapshot.forEach(doc => list.push(doc.data() as Chat));
         list.sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
-        if (isMounted && list.length > 0) setChats(list);
+        if (isMounted) setChats(list);
       }, (err) => {
         if (isMounted) handleFirestoreError(err, OperationType.GET, 'chats');
       });
@@ -149,7 +149,7 @@ export function useSocialState() {
         const list: Message[] = [];
         snapshot.forEach(doc => list.push(doc.data() as Message));
         list.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-        if (isMounted && list.length > 0) setMessages(list);
+        if (isMounted) setMessages(list);
       }, (err) => {
         if (isMounted) handleFirestoreError(err, OperationType.GET, 'messages');
       });
@@ -159,7 +159,7 @@ export function useSocialState() {
         const list: SystemLog[] = [];
         snapshot.forEach(doc => list.push(doc.data() as SystemLog));
         list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-        if (isMounted && list.length > 0) setLogs(list.slice(0, 50));
+        if (isMounted) setLogs(list.slice(0, 50));
       }, (err) => {
         if (isMounted) handleFirestoreError(err, OperationType.GET, 'logs');
       });
