@@ -717,6 +717,7 @@ export default function App() {
                       onBlockUser={social.adminBlockUser}
                       onUnblockUser={social.adminUnblockUser}
                       onToggleVerifyUser={social.adminToggleVerifyUser}
+                      onUpdateUserPassword={social.adminUpdateUserPassword}
                       onDeletePost={social.adminDeletePost}
                       onDeleteAd={social.adminDeleteAd}
                       onApproveAd={social.approveAd}

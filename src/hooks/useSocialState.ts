@@ -252,6 +252,7 @@ export function useSocialState() {
 
     const newUser: User = {
       ...inputs,
+      password: inputs.password ? inputs.password.trim() : '123456',
       id: `user-${Date.now()}`,
       isVerified: false,
       badges: ['Novato', 'Pioneiro'],
@@ -885,6 +886,24 @@ export function useSocialState() {
     logAction('info', `MODERAÇÃO: Status de verificado do usuário '${userId}' foi alterado.`);
   };
 
+  const adminUpdateUserPassword = (userId: string, newPassword: string) => {
+    if (currentUserId !== 'admin') {
+      logAction('error', `SEGURANÇA: Tentativa de alterar senha de usuário (Alvo: ${userId}) negada por falta de permissões de administrador.`);
+      alert('Segurança: Apenas o administrador pode realizar esta ação!');
+      return;
+    }
+    const u = users.find(user => user.id === userId);
+    if (!u) return;
+    const updated = { ...u, password: newPassword.trim() };
+    setUsers(prev => prev.map(user => user.id === userId ? updated : user));
+    setDoc(doc(db, 'users', userId), updated)
+      .then(() => {
+        logAction('success', `MODERAÇÃO: A senha do usuário '${u.fullName}' (@${u.username}) foi alterada pelo administrador.`);
+        alert('Senha alterada com sucesso!');
+      })
+      .catch(e => console.error(e));
+  };
+
   const adminDeletePost = (postId: string) => {
     if (currentUserId !== 'admin') {
       logAction('error', `SEGURANÇA: Tentativa de remoção de postagem (ID: ${postId}) negada por falta de permissões de administrador.`);
@@ -976,6 +995,7 @@ export function useSocialState() {
     adminBlockUser,
     adminUnblockUser,
     adminToggleVerifyUser,
+    adminUpdateUserPassword,
     adminDeletePost,
     adminDeleteAd,
     getAdminStats,

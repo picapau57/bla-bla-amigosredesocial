@@ -56,6 +56,7 @@ export default function Sidebar({
   const [editCity, setEditCity] = useState(currentUser.city || '');
   const [editState, setEditState] = useState(currentUser.state || '');
   const [editWebsite, setEditWebsite] = useState(currentUser.website || '');
+  const [editPassword, setEditPassword] = useState(currentUser.password || '123456');
 
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
@@ -137,6 +138,7 @@ export default function Sidebar({
     setEditCity(currentUser.city || '');
     setEditState(currentUser.state || '');
     setEditWebsite(currentUser.website || '');
+    setEditPassword(currentUser.password || '123456');
     setIsEditModalOpen(true);
   };
 
@@ -154,7 +156,8 @@ export default function Sidebar({
         cover: editCover.trim() || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=600',
         city: editCity.trim(),
         state: editState.trim(),
-        website: editWebsite.trim()
+        website: editWebsite.trim(),
+        password: editPassword.trim() || '123456'
       });
     }
     setIsEditModalOpen(false);
@@ -603,16 +606,28 @@ export default function Sidebar({
                 </div>
               </div>
 
-              {/* Website */}
-              <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1">Website Pessoal / Link de Redes Sociais</label>
-                <input
-                  type="text"
-                  placeholder="Ex: https://instagram.com/seuusuario"
-                  value={editWebsite}
-                  onChange={(e) => setEditWebsite(e.target.value)}
-                  className="w-full bg-[#1A1A32] text-white p-2.5 rounded-xl border border-white/10 text-xs focus:outline-none focus:border-[#00E5FF] font-mono"
-                />
+              {/* Website & Senha Secreta */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1">Senha Secreta de Acesso</label>
+                  <input
+                    type="text"
+                    placeholder="Altere sua senha de acesso..."
+                    value={editPassword}
+                    onChange={(e) => setEditPassword(e.target.value)}
+                    className="w-full bg-[#1A1A32] text-white p-2.5 rounded-xl border border-white/10 text-xs focus:outline-none focus:border-[#00E5FF] font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1">Website Pessoal / Link de Redes Sociais</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: https://instagram.com/seuusuario"
+                    value={editWebsite}
+                    onChange={(e) => setEditWebsite(e.target.value)}
+                    className="w-full bg-[#1A1A32] text-white p-2.5 rounded-xl border border-white/10 text-xs focus:outline-none focus:border-[#00E5FF] font-mono"
+                  />
+                </div>
               </div>
 
               {/* Actions Footer */}

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { User, Post, Ad, SystemLog, EmailConfig } from '../types';
 import { 
   Users, AlertTriangle, ShieldCheck, CheckCircle, Mail,
-  Trash2, Ban, Unlock, DollarSign, Activity, FileText, CheckCircle2
+  Trash2, Ban, Unlock, DollarSign, Activity, FileText, CheckCircle2, Key
 } from 'lucide-react';
 
 interface AdminSectionProps {
@@ -17,6 +17,7 @@ interface AdminSectionProps {
   onBlockUser: (id: string) => void;
   onUnblockUser: (id: string) => void;
   onToggleVerifyUser: (id: string) => void;
+  onUpdateUserPassword?: (id: string, newPassword: string) => void;
   onDeletePost: (id: string) => void;
   onDeleteAd: (id: string) => void;
   onApproveAd: (id: string) => void;
@@ -44,6 +45,7 @@ export default function AdminSection({
   onBlockUser,
   onUnblockUser,
   onToggleVerifyUser,
+  onUpdateUserPassword,
   onDeletePost,
   onDeleteAd,
   onApproveAd,
@@ -225,11 +227,31 @@ export default function AdminSection({
                           <span className="text-[8px] bg-[#121225] text-gray-500 font-mono p-0.5 rounded px-1 shrink-0 font-bold uppercase tracking-wide">Não verificado</span>
                         )}
                       </div>
-                      <p className="text-[10px] text-gray-400 font-mono mt-0.5">ID: {u.username} • {u.email} • Plano {u.premiumPlan}</p>
+                      <p className="text-[10px] text-gray-400 font-mono mt-0.5">ID: {u.username} • {u.email} • Plano {u.premiumPlan} • <span className="text-amber-400 font-bold bg-amber-400/5 px-1.5 py-0.5 rounded border border-amber-400/10">Senha: {u.password || '123456'}</span></p>
                     </div>
                   </div>
 
-                  <div className="flex gap-2 shrink-0 self-end sm:self-center">
+                  <div className="flex gap-2 shrink-0 self-end sm:self-center flex-wrap">
+                    {/* Change Password button */}
+                    {onUpdateUserPassword && (
+                      <button
+                        onClick={() => {
+                          const newPass = window.prompt(`Digite a nova senha para o usuário @${u.username}:`, u.password || '123456');
+                          if (newPass !== null) {
+                            if (!newPass.trim()) {
+                              alert('A senha não pode ficar em branco!');
+                              return;
+                            }
+                            onUpdateUserPassword(u.id, newPass.trim());
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500 hover:text-[#0A0A14] hover:border-transparent flex items-center gap-1 cursor-pointer"
+                        title="Alterar senha do usuário"
+                      >
+                        <Key className="w-3 h-3" /> Senha
+                      </button>
+                    )}
+
                     {/* Verify button toggle */}
                     <button
                       onClick={() => onToggleVerifyUser(u.id)}
