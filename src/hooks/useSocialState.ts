@@ -259,6 +259,13 @@ export function useSocialState() {
   };
 
   const updateProfile = (userId: string, updates: Partial<User>) => {
+    // SECURITY GATE: Prevent editing other users' profiles unless the current user is 'admin'
+    if (currentUserId !== userId && currentUserId !== 'admin') {
+      logAction('warning', `SEGURANÇA: Tentativa não autorizada de editar o perfil de outro usuário (Alvo: ${userId}) foi bloqueada.`);
+      alert('Segurança: Você não tem permissão para editar o perfil de outro usuário!');
+      return;
+    }
+
     const target = users.find(u => u.id === userId);
     if (!target) return;
     const updated = { ...target, ...updates };
@@ -776,6 +783,11 @@ export function useSocialState() {
   };
 
   const adminDeleteUser = (userId: string) => {
+    if (currentUserId !== 'admin') {
+      logAction('error', `SEGURANÇA: Tentativa de exclusão de usuário (Alvo: ${userId}) negada por falta de permissões de administrador.`);
+      alert('Segurança: Apenas o administrador pode realizar esta ação!');
+      return;
+    }
     if (userId === 'admin') return;
 
     setUsers(prev => prev.filter(u => u.id !== userId));
@@ -798,6 +810,11 @@ export function useSocialState() {
   };
 
   const adminBlockUser = (userId: string) => {
+    if (currentUserId !== 'admin') {
+      logAction('error', `SEGURANÇA: Tentativa de bloqueio de usuário (Alvo: ${userId}) negada por falta de permissões de administrador.`);
+      alert('Segurança: Apenas o administrador pode realizar esta ação!');
+      return;
+    }
     const u = users.find(user => user.id === userId);
     if (!u) return;
     const updated = { ...u, isBlocked: true };
@@ -807,6 +824,11 @@ export function useSocialState() {
   };
 
   const adminUnblockUser = (userId: string) => {
+    if (currentUserId !== 'admin') {
+      logAction('error', `SEGURANÇA: Tentativa de desbloqueio de usuário (Alvo: ${userId}) negada por falta de permissões de administrador.`);
+      alert('Segurança: Apenas o administrador pode realizar esta ação!');
+      return;
+    }
     const u = users.find(user => user.id === userId);
     if (!u) return;
     const updated = { ...u, isBlocked: false };
@@ -816,6 +838,11 @@ export function useSocialState() {
   };
 
   const adminToggleVerifyUser = (userId: string) => {
+    if (currentUserId !== 'admin') {
+      logAction('error', `SEGURANÇA: Tentativa de alterar verificação de usuário (Alvo: ${userId}) negada por falta de permissões de administrador.`);
+      alert('Segurança: Apenas o administrador pode realizar esta ação!');
+      return;
+    }
     const u = users.find(user => user.id === userId);
     if (!u) return;
     const updated = { ...u, isVerified: !u.isVerified };
@@ -825,12 +852,22 @@ export function useSocialState() {
   };
 
   const adminDeletePost = (postId: string) => {
+    if (currentUserId !== 'admin') {
+      logAction('error', `SEGURANÇA: Tentativa de remoção de postagem (ID: ${postId}) negada por falta de permissões de administrador.`);
+      alert('Segurança: Apenas o administrador pode realizar esta ação!');
+      return;
+    }
     setPosts(prev => prev.filter(p => p.id !== postId));
     deleteDoc(doc(db, 'posts', postId)).catch(e => console.error(e));
     logAction('warning', `MODERAÇÃO: Postagem #${postId.slice(-4)} removida por violar regras comunitárias.`);
   };
 
   const adminDeleteAd = (adId: string) => {
+    if (currentUserId !== 'admin') {
+      logAction('error', `SEGURANÇA: Tentativa de remoção de anúncio (ID: ${adId}) negada por falta de permissões de administrador.`);
+      alert('Segurança: Apenas o administrador pode realizar esta ação!');
+      return;
+    }
     setAds(prev => prev.filter(a => a.id !== adId));
     deleteDoc(doc(db, 'ads', adId)).catch(e => console.error(e));
     logAction('warning', `MODERAÇÃO: Campanha de anúncio #${adId.slice(-4)} excluída pelo administrador.`);
