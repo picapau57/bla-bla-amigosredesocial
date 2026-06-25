@@ -277,8 +277,16 @@ export function useSocialState() {
   };
 
   const updateProfile = (userId: string, updates: Partial<User>) => {
-    // SECURITY GATE: Prevent editing other users' profiles unless the current user is 'admin'
-    if (currentUserId !== userId && currentUserId !== 'admin') {
+    // SECURITY GATE 1: Block profile updates if we are currently simulating a user (e.g. admin is logged in but acting as 'user-2')
+    // or if the current logged-in user is editing a profile other than their own.
+    const isSimulating = isAdminSessionActive && currentUserId !== 'admin';
+    if (isSimulating) {
+      logAction('warning', `SEGURANÇA: Tentativa de editar perfil de simulação '${userId}' bloqueada.`);
+      alert('Segurança: Você está em modo de simulação (leitura). Não é permitido alterar fotos, capas ou dados de outros perfis.');
+      return;
+    }
+
+    if (currentUserId !== userId) {
       logAction('warning', `SEGURANÇA: Tentativa não autorizada de editar o perfil de outro usuário (Alvo: ${userId}) foi bloqueada.`);
       alert('Segurança: Você não tem permissão para editar o perfil de outro usuário!');
       return;

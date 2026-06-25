@@ -593,6 +593,7 @@ export default function App() {
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             logs={social.logs}
+            isAdminSessionActive={social.isAdminSessionActive}
           />
 
           <div className="max-w-7xl mx-auto w-full px-4 md:px-8 py-6 flex-1 flex flex-col lg:flex-row gap-6 relative">
@@ -607,6 +608,7 @@ export default function App() {
                 setShowPremiumModal(true);
               }}
               onUpdateProfile={social.updateProfile}
+              isAdminSessionActive={social.isAdminSessionActive}
             />
 
             {/* CENTRAL WORKSPACE STAGE */}

@@ -34,6 +34,7 @@ interface SidebarProps {
   setActiveTab: (tab: string) => void;
   onUpgradePlan: () => void;
   onUpdateProfile?: (userId: string, updates: Partial<User>) => void;
+  isAdminSessionActive?: boolean;
 }
 
 export default function Sidebar({
@@ -41,8 +42,11 @@ export default function Sidebar({
   activeTab,
   setActiveTab,
   onUpgradePlan,
-  onUpdateProfile
+  onUpdateProfile,
+  isAdminSessionActive
 }: SidebarProps) {
+
+  const isSimulating = isAdminSessionActive && currentUser.id !== 'admin';
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editFullName, setEditFullName] = useState(currentUser.fullName);
@@ -172,14 +176,16 @@ export default function Sidebar({
       <div className="bg-[#121225] border border-white/10 rounded-2xl overflow-hidden shadow-xl" id="sidebar-profile-card">
         {/* Banner */}
         <div 
-          onClick={handleOpenEditModal}
-          className="h-20 w-full relative bg-cover bg-center cursor-pointer group" 
+          onClick={isSimulating ? undefined : handleOpenEditModal}
+          className={`h-20 w-full relative bg-cover bg-center ${isSimulating ? '' : 'cursor-pointer group'}`} 
           style={{ backgroundImage: `url(${currentUser.cover})` }}
-          title="Clique para editar capa"
+          title={isSimulating ? undefined : "Clique para editar capa"}
         >
-          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center text-xs text-white font-semibold font-mono gap-1">
-            <Camera className="w-3.5 h-3.5" /> Mudar Capa
-          </div>
+          {!isSimulating && (
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center text-xs text-white font-semibold font-mono gap-1">
+              <Camera className="w-3.5 h-3.5" /> Mudar Capa
+            </div>
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-[#121225] via-transparent to-transparent" />
         </div>
 
@@ -187,20 +193,22 @@ export default function Sidebar({
         <div className="px-5 pb-5 pt-0 relative flex flex-col items-center">
           {/* Interactive Profile Photo */}
           <div 
-            onClick={handleOpenEditModal}
-            className="relative -mt-9 z-10 w-18 h-18 rounded-full border-4 border-[#121225] shadow-xl overflow-hidden group cursor-pointer"
-            title="Clique para alterar sua foto de perfil"
+            onClick={isSimulating ? undefined : handleOpenEditModal}
+            className={`relative -mt-9 z-10 w-18 h-18 rounded-full border-4 border-[#121225] shadow-xl overflow-hidden ${isSimulating ? '' : 'group cursor-pointer'}`}
+            title={isSimulating ? undefined : "Clique para alterar sua foto de perfil"}
           >
             <img
               src={currentUser.avatar}
               alt={currentUser.fullName}
               referrerPolicy="no-referrer"
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+              className={`w-full h-full object-cover ${isSimulating ? '' : 'group-hover:scale-110 transition-transform duration-300'}`}
             />
-            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center text-white">
-              <Camera className="w-4 h-4 text-[#00E5FF] animate-pulse" />
-              <span className="text-[8px] font-bold uppercase mt-0.5 tracking-tighter">Editar</span>
-            </div>
+            {!isSimulating && (
+              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center text-white">
+                <Camera className="w-4 h-4 text-[#00E5FF] animate-pulse" />
+                <span className="text-[8px] font-bold uppercase mt-0.5 tracking-tighter">Editar</span>
+              </div>
+            )}
           </div>
           
           <div className="text-center mt-2">
@@ -211,6 +219,11 @@ export default function Sidebar({
               )}
             </h3>
             <p className="text-[#00E5FF] text-xs font-mono">ID: {currentUser.username}</p>
+            {isSimulating && (
+              <span className="inline-block mt-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[9px] font-bold font-mono px-2 py-0.5 rounded uppercase tracking-wider animate-pulse">
+                Modo Simulação
+              </span>
+            )}
           </div>
 
           <p className="text-gray-400 text-xs text-center mt-2 line-clamp-2 italic px-2 font-sans">
@@ -218,13 +231,23 @@ export default function Sidebar({
           </p>
 
           {/* Edit Profile Quick Button */}
-          <button
-            onClick={handleOpenEditModal}
-            className="w-full mt-3 bg-[#1A1A32] hover:bg-[#25254A] border border-white/5 hover:border-[#00E5FF]/30 text-xs font-semibold py-1.5 px-3 rounded-xl transition-all duration-300 text-gray-300 hover:text-white flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
-          >
-            <Settings className="w-3.5 h-3.5 text-[#00E5FF]" />
-            Editar Perfil / Foto
-          </button>
+          {isSimulating ? (
+            <div
+              className="w-full mt-3 bg-[#16162a] border border-white/5 text-gray-500 text-xs font-semibold py-1.5 px-3 rounded-xl flex items-center justify-center gap-1.5 cursor-not-allowed select-none"
+              title="Edição desabilitada no modo de simulação"
+            >
+              <Settings className="w-3.5 h-3.5 text-gray-600" />
+              Sessão de Simulação
+            </div>
+          ) : (
+            <button
+              onClick={handleOpenEditModal}
+              className="w-full mt-3 bg-[#1A1A32] hover:bg-[#25254A] border border-white/5 hover:border-[#00E5FF]/30 text-xs font-semibold py-1.5 px-3 rounded-xl transition-all duration-300 text-gray-300 hover:text-white flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+            >
+              <Settings className="w-3.5 h-3.5 text-[#00E5FF]" />
+              Editar Perfil / Foto
+            </button>
+          )}
 
           {/* Badges */}
           {currentUser.badges && currentUser.badges.length > 0 && (

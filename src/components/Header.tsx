@@ -11,6 +11,7 @@ interface HeaderProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   logs: SystemLog[];
+  isAdminSessionActive?: boolean;
 }
 
 export default function Header({
@@ -20,7 +21,8 @@ export default function Header({
   onSearch,
   activeTab,
   setActiveTab,
-  logs
+  logs,
+  isAdminSessionActive
 }: HeaderProps) {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
@@ -274,7 +276,7 @@ export default function Header({
           )}
 
           {/* SIMULATION EXIT LINK (RETURN TO ADMIN) */}
-          {currentUser.id !== 'admin' && localStorage.getItem('bb_admin_session_active') === 'true' && (
+          {currentUser.id !== 'admin' && isAdminSessionActive && (
             <button
               onClick={() => {
                 onSelectUser('admin');
