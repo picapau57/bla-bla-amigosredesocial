@@ -11,6 +11,7 @@ import GroupsSection from './components/GroupsSection';
 import EventsSection from './components/EventsSection';
 import PagesSection from './components/PagesSection';
 import AdminSection from './components/AdminSection';
+import UserProfileModal from './components/UserProfileModal';
 
 import { 
   Network, Sparkles, ShieldCheck, ChevronRight, CheckCircle, 
@@ -31,6 +32,7 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState('feed');
   const [searchTerm, setSearchTerm] = useState('');
+  const [viewingUser, setViewingUser] = useState<any | null>(null);
 
   // Landing form states
   const [isRegisterMode, setIsRegisterMode] = useState(false);
@@ -660,6 +662,7 @@ export default function App() {
                         onShare={social.handleShare}
                         onAdClick={social.trackAdClick}
                         onTrackAdImpression={social.trackAdImpression}
+                        onViewProfile={setViewingUser}
                       />
                     </>
                   )}
@@ -673,6 +676,7 @@ export default function App() {
                       messages={social.messages}
                       onSendMessage={social.sendMessage}
                       onStartChat={social.startDirectChat}
+                      onViewProfile={setViewingUser}
                     />
                   )}
 
@@ -755,6 +759,7 @@ export default function App() {
                 onAdClick={social.trackAdClick}
                 onTrackImpression={social.trackAdImpression}
                 setActiveTab={setActiveTab}
+                onViewProfile={setViewingUser}
               />
             )}
 
@@ -955,6 +960,26 @@ export default function App() {
 
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {viewingUser && (
+          <UserProfileModal
+            isOpen={!!viewingUser}
+            onClose={() => setViewingUser(null)}
+            user={viewingUser}
+            currentUser={social.currentUser}
+            posts={social.posts}
+            users={social.users}
+            onToggleReaction={social.toggleReaction}
+            onAddComment={social.addComment}
+            onStartChat={(uid) => {
+              social.startDirectChat(uid);
+              setActiveTab('chats');
+            }}
+            onFriendToggle={social.toggleFriend}
+          />
         )}
       </AnimatePresence>
 

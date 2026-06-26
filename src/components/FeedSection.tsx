@@ -17,6 +17,7 @@ interface FeedSectionProps {
   onShare: (postId: string) => void;
   onAdClick: (adId: string) => void;
   onTrackAdImpression: (adId: string) => void;
+  onViewProfile?: (user: User) => void;
 }
 
 function ReelsVideoPlayer({ mediaUrl }: { mediaUrl: string }) {
@@ -102,7 +103,8 @@ export default function FeedSection({
   onAddComment,
   onShare,
   onAdClick,
-  onTrackAdImpression
+  onTrackAdImpression,
+  onViewProfile
 }: FeedSectionProps) {
   const [newPostContent, setNewPostContent] = useState('');
   const [newPostMedia, setNewPostMedia] = useState('');
@@ -362,7 +364,10 @@ export default function FeedSection({
                 
                 {/* AUTHOR BANNER */}
                 <div className="px-4.5 pt-4.5 pb-2.5 flex items-center justify-between animate-fade-in-up">
-                  <div className="flex items-center gap-3">
+                  <div 
+                    onClick={() => onViewProfile?.(author)}
+                    className="flex items-center gap-3 cursor-pointer hover:opacity-85 transition-opacity"
+                  >
                     <img
                       src={author.avatar}
                       alt={author.fullName}
@@ -539,11 +544,15 @@ export default function FeedSection({
                                   src={commenter.avatar}
                                   alt={commenter.fullName}
                                   referrerPolicy="no-referrer"
-                                  className="w-7 h-7 rounded-full object-cover shrink-0 ring-1 ring-white/10"
+                                  className="w-7 h-7 rounded-full object-cover shrink-0 ring-1 ring-white/10 cursor-pointer hover:scale-105 transition-transform"
+                                  onClick={() => onViewProfile?.(commenter)}
                                 />
                                 <div className="min-w-0 flex-1 font-sans">
                                   <div className="flex items-center justify-between">
-                                    <span className="font-extrabold text-[11px] text-white">
+                                    <span 
+                                      className="font-extrabold text-[11px] text-white cursor-pointer hover:text-[#00E5FF] transition-colors"
+                                      onClick={() => onViewProfile?.(commenter)}
+                                    >
                                       {commenter.fullName}
                                     </span>
                                     <span className="text-[9px] text-gray-500 font-mono">

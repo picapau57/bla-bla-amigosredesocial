@@ -13,6 +13,7 @@ interface ChatSectionProps {
   messages: Message[];
   onSendMessage: (chatId: string, text: string, mediaUrl?: string, mediaType?: 'image' | 'video' | 'file' | 'audio') => void;
   onStartChat: (userId: string) => string;
+  onViewProfile?: (user: User) => void;
 }
 
 export default function ChatSection({
@@ -21,7 +22,8 @@ export default function ChatSection({
   chats,
   messages,
   onSendMessage,
-  onStartChat
+  onStartChat,
+  onViewProfile
 }: ChatSectionProps) {
   const [activeChatId, setActiveChatId] = useState<string | null>(chats[0]?.id || null);
   const [inputText, setInputText] = useState('');
@@ -180,9 +182,19 @@ export default function ChatSection({
             {/* VIEWPORT HEADER */}
             {(() => {
               const details = getChatDetails(activeChat);
+              const otherUserId = !activeChat.isGroup ? (activeChat.members.find(id => id !== currentUser.id) || currentUser.id) : null;
+              const otherUser = otherUserId ? users.find(u => u.id === otherUserId) : null;
+
               return (
                 <div className="px-5 py-3 border-b border-white/10 bg-[#0A0A14]/50 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                  <div 
+                    onClick={() => {
+                      if (otherUser && onViewProfile) {
+                        onViewProfile(otherUser);
+                      }
+                    }}
+                    className={`flex items-center gap-3 ${otherUser ? 'cursor-pointer hover:opacity-85' : ''}`}
+                  >
                     <img
                       src={details.avatar}
                       alt={details.name}
@@ -192,6 +204,9 @@ export default function ChatSection({
                     <div>
                       <h4 className="text-xs md:text-sm font-extrabold text-white flex items-center gap-1.5">
                         {details.name}
+                        {otherUser?.isVerified && (
+                          <span className="w-3.5 h-3.5 rounded-full bg-[#00E5FF] inline-flex items-center justify-center text-[8px] text-[#0A0A14] font-black shrink-0">✓</span>
+                        )}
                       </h4>
                       <p className="text-[10px] text-gray-500 truncate mt-0.5">{details.subtitle}</p>
                     </div>
@@ -230,7 +245,8 @@ export default function ChatSection({
                         src={sender.avatar}
                         alt="author"
                         referrerPolicy="no-referrer"
-                        className="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-white/10 mt-1"
+                        onClick={() => onViewProfile?.(sender)}
+                        className="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-white/10 mt-1 cursor-pointer hover:scale-105 transition-all"
                       />
                     )}
                     <div>

@@ -12,6 +12,7 @@ interface RightRailProps {
   onAdClick: (id: string) => void;
   onTrackImpression: (id: string) => void;
   setActiveTab: (tab: string) => void;
+  onViewProfile?: (user: User) => void;
 }
 
 export default function RightRail({
@@ -22,7 +23,8 @@ export default function RightRail({
   onFriendToggle,
   onAdClick,
   onTrackImpression,
-  setActiveTab
+  setActiveTab,
+  onViewProfile
 }: RightRailProps) {
 
   // Fetch sponsored ads for top and bottom rails
@@ -126,7 +128,10 @@ export default function RightRail({
           ) : (
             recommendedUsers.map(user => (
               <div key={user.id} className="flex items-center justify-between gap-3 bg-[#1E1E30]/50 p-2 rounded-xl border border-white/5">
-                <div className="flex items-center gap-2 max-w-[150px] truncate">
+                <div 
+                  onClick={() => onViewProfile?.(user)}
+                  className="flex items-center gap-2 max-w-[150px] truncate cursor-pointer hover:opacity-80 transition-all"
+                >
                   <img
                     src={user.avatar}
                     alt={user.fullName}
@@ -134,7 +139,12 @@ export default function RightRail({
                     className="w-8.5 h-8.5 rounded-full object-cover shrink-0 ring-1 ring-white/10"
                   />
                   <div className="truncate font-sans">
-                    <div className="text-xs font-semibold text-white truncate">{user.fullName}</div>
+                    <div className="text-xs font-semibold text-white truncate flex items-center gap-1">
+                      {user.fullName}
+                      {user.isVerified && (
+                        <span className="w-3 h-3 rounded-full bg-[#00E5FF] inline-flex items-center justify-center text-[7px] text-[#0A0A14] font-black shrink-0">✓</span>
+                      )}
+                    </div>
                     <div className="text-[10px] text-[#00E5FF] font-mono">ID: {user.username}</div>
                   </div>
                 </div>
