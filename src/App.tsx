@@ -743,6 +743,9 @@ export default function App() {
                       currentUser={social.currentUser}
                       users={social.users}
                       onViewProfile={setViewingUser}
+                      ads={social.ads}
+                      onPurchaseAd={social.purchaseAd}
+                      onApproveAd={social.approveAd}
                     />
                   )}
 

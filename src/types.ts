@@ -80,7 +80,7 @@ export interface Ad {
   imageUrl: string;
   link: string;
   type: 'gratis' | 'patrocinado';
-  position: 'lateral-top' | 'lateral-bottom' | 'feed' | 'profile' | 'home';
+  position: 'lateral-top' | 'lateral-bottom' | 'feed' | 'profile' | 'home' | 'game-spot-1' | 'game-spot-2' | 'game-spot-3';
   plan?: 'diario' | 'semanal' | 'mensal' | 'trimestral';
   price?: number;
   status: 'active' | 'pending' | 'ended';
