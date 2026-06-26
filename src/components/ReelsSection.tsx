@@ -3,12 +3,12 @@ import { User } from '../types';
 import { 
   Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Pause, 
   Send, Plus, X, Sparkles, Film, ArrowUp, ArrowDown, ExternalLink,
-  ChevronRight, BadgeCheck
+  ChevronRight, BadgeCheck, Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   collection, onSnapshot, addDoc, updateDoc, doc, arrayUnion, arrayRemove,
-  query, orderBy, serverTimestamp 
+  query, orderBy, serverTimestamp, deleteDoc
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
@@ -175,6 +175,7 @@ export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectio
   const [newCaption, setNewCaption] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -245,6 +246,18 @@ export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectio
     if (currentIndex > 0) {
       setCurrentIndex(prev => prev - 1);
       setIsPlaying(true);
+    }
+  };
+
+  const handleDeleteReel = async (reelId: string) => {
+    try {
+      await deleteDoc(doc(db, 'reels', reelId));
+      setDeletingId(null);
+      if (currentIndex >= reels.length - 1) {
+        setCurrentIndex(Math.max(0, reels.length - 2));
+      }
+    } catch (err) {
+      console.error('Error deleting reel:', err);
     }
   };
 
@@ -417,6 +430,40 @@ export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectio
               )}
             </AnimatePresence>
 
+            {/* Inline Deletion Confirmation Overlay */}
+            <AnimatePresence>
+              {deletingId === currentReel.id && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center z-40 rounded-3xl"
+                >
+                  <div className="p-3 bg-red-500/25 rounded-full border border-red-500/35 text-red-500 mb-2.5 animate-bounce">
+                    <Trash2 className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-xs font-bold text-white mb-1.5 uppercase tracking-wider font-mono">Excluir este vídeo?</h3>
+                  <p className="text-[10px] text-gray-400 max-w-[200px] mb-4 leading-relaxed">
+                    Você tem certeza de que deseja excluir seu vídeo permanentemente? Essa ação não pode ser desfeita.
+                  </p>
+                  <div className="flex gap-2.5 w-full max-w-[200px]">
+                    <button
+                      onClick={() => setDeletingId(null)}
+                      className="flex-1 py-1.5 bg-white/10 hover:bg-white/15 border border-white/10 text-white font-bold text-[10px] rounded-lg transition-all cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={() => handleDeleteReel(currentReel.id)}
+                      className="flex-1 py-1.5 bg-red-500 hover:bg-red-600 text-white font-bold text-[10px] rounded-lg transition-all cursor-pointer shadow-lg shadow-red-900/30"
+                    >
+                      Excluir
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Overlay dark gradients */}
             <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-black/80 to-transparent pointer-events-none z-10" />
             <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none z-10" />
@@ -445,16 +492,30 @@ export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectio
                 </div>
               </div>
 
-              {/* Sound Button */}
-              {(isDirectVideoUrl(currentReel.videoUrl) || getYouTubeEmbedUrl(currentReel.videoUrl, muted) !== null) && (
-                <button
-                  onClick={() => setMuted(!muted)}
-                  className="p-2 bg-black/40 hover:bg-black/60 border border-white/10 rounded-full text-white transition-all cursor-pointer shadow-md"
-                  title={muted ? "Ativar som" : "Mutar som"}
-                >
-                  {muted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-green-400" />}
-                </button>
-              )}
+              {/* Top Controls Action Bar */}
+              <div className="flex items-center gap-1.5">
+                {/* Sound Button */}
+                {(isDirectVideoUrl(currentReel.videoUrl) || getYouTubeEmbedUrl(currentReel.videoUrl, muted) !== null) && (
+                  <button
+                    onClick={() => setMuted(!muted)}
+                    className="p-2 bg-black/40 hover:bg-black/60 border border-white/10 rounded-full text-white transition-all cursor-pointer shadow-md"
+                    title={muted ? "Ativar som" : "Mutar som"}
+                  >
+                    {muted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-green-400" />}
+                  </button>
+                )}
+
+                {/* Delete Button (Only for post owner or administrator) */}
+                {(currentReel.userId === currentUser.id || currentUser.id === 'admin') && (
+                  <button
+                    onClick={() => setDeletingId(currentReel.id)}
+                    className="p-2 bg-black/40 hover:bg-red-600/95 border border-white/10 hover:border-red-500/50 rounded-full text-red-400 hover:text-white transition-all cursor-pointer shadow-md"
+                    title="Excluir este vídeo"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* PLAY/PAUSE CENTER INDICATOR */}
@@ -528,7 +589,7 @@ export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectio
             </div>
 
             {/* PREV/NEXT ASSIST CONTROLS */}
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-20">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-20">
               <button
                 disabled={currentIndex === 0}
                 onClick={handlePrevReel}
