@@ -10,7 +10,8 @@ import {
   INITIAL_BUSINESS_PAGES,
   INITIAL_CHATS,
   INITIAL_MESSAGES,
-  INITIAL_LOGS
+  INITIAL_LOGS,
+  INITIAL_JOBS
 } from '../data/mockData';
 
 export async function seedDatabaseIfEmpty() {
@@ -105,6 +106,14 @@ export async function seedDatabaseIfEmpty() {
       console.log('Seeding initial logs to Firestore...');
       for (const l of INITIAL_LOGS) {
         await setDoc(doc(db, 'logs', l.id), l);
+      }
+    }
+
+    const jobsSnapshot = await getDocs(collection(db, 'jobs'));
+    if (jobsSnapshot.empty) {
+      console.log('Seeding initial jobs to Firestore...');
+      for (const j of INITIAL_JOBS) {
+        await setDoc(doc(db, 'jobs', j.id), j);
       }
     }
   } catch (error) {

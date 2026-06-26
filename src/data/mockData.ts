@@ -1,4 +1,4 @@
-import { User, Post, Chat, Message, Ad, Community, Event, Story, BusinessPage, SystemLog } from '../types';
+import { User, Post, Chat, Message, Ad, Community, Event, Story, BusinessPage, SystemLog, Job } from '../types';
 
 export const INITIAL_USERS: User[] = [
   {
@@ -550,3 +550,90 @@ export const INITIAL_LOGS: SystemLog[] = [
     timestamp: '2026-06-21T21:00:00-03:00'
   }
 ];
+
+export const INITIAL_JOBS: Job[] = [
+  {
+    id: 'job-1',
+    userId: 'user-4',
+    title: 'Desenvolvedor React / Node.js Sênior',
+    companyName: 'Tecnologia Cerrado S.A.',
+    companyLogo: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=150',
+    location: 'Goiânia, GO',
+    modality: 'Híbrido',
+    level: 'Sênior',
+    salary: 'R$ 11.500 - R$ 14.000',
+    description: 'Buscamos um desenvolvedor sênior apaixonado por criar produtos web escaláveis, modernos e fluidos. Você trabalhará no desenvolvimento do nosso novo portal corporativo, colaborando diretamente com designers e gerentes de produto em Goiânia.\n\nPrincipais responsabilidades:\n- Desenvolver interfaces de usuário limpas e performáticas em React e Tailwind CSS;\n- Desenvolver e otimizar APIs eficientes em Node.js / Express;\n- Trabalhar na otimização de consultas e modelagem de banco de dados no Google Cloud / Firestore.\n\nOferecemos:\n- Vale Refeição premium;\n- Plano de saúde completo Unimed Goiânia;\n- Participação nos Lucros (PLR);\n- Horário flexível e ambiente de trabalho acolhedor.',
+    requirements: 'Mínimo de 5 anos de experiência com ecossistema JavaScript/TypeScript, React, Node.js e ferramentas do Google Cloud Platform.',
+    contactEmail: 'recrutamento@tecnologiacerrado.com.br',
+    contactPhone: '(62) 3212-4000',
+    applicants: ['user-1'],
+    createdAt: '2026-06-21T10:00:00Z'
+  },
+  {
+    id: 'job-2',
+    userId: 'user-4',
+    title: 'Analista de Marketing Digital e Tráfego',
+    companyName: 'Goiânia Promo Express',
+    companyLogo: 'https://images.unsplash.com/photo-1434626881859-194d67b2b86f?auto=format&fit=crop&q=80&w=150',
+    location: 'Aparecida de Goiânia, GO',
+    modality: 'Presencial',
+    level: 'Pleno',
+    salary: 'R$ 4.500 - R$ 5.800',
+    description: 'Oportunidade para analista pleno de tráfego pago e marketing digital focado em gerar leads qualificados e impulsionar vendas para nossos clientes comerciais de Goiás.\n\nSeus desafios diários:\n- Gerenciar campanhas de alta performance no Meta Ads (Facebook/Instagram) e Google Ads;\n- Analisar funis de conversão e propor melhorias de design de landing pages;\n- Elaborar relatórios semanais de performance utilizando Google Analytics.\n\nDiferenciais:\n- Conhecimento em Copywriting e ferramentas de automação;\n- Certificações do Google Ads e Meta Blueprint.',
+    requirements: 'Experiência comprovada de 2+ anos com gerenciamento de contas e otimização de tráfego. Conhecimento em funis de venda.',
+    contactEmail: 'vagas@goianiapromo.com',
+    contactPhone: '(62) 3514-9090',
+    applicants: [],
+    createdAt: '2026-06-22T14:30:00Z'
+  },
+  {
+    id: 'job-3',
+    userId: 'user-5',
+    title: 'Engenheiro Agrônomo de Vendas',
+    companyName: 'AgroCerrado Distribuidora',
+    companyLogo: 'https://images.unsplash.com/photo-1589923188900-85dae440342b?auto=format&fit=crop&q=80&w=150',
+    location: 'Rio Verde, GO',
+    modality: 'Presencial',
+    level: 'Pleno',
+    salary: 'R$ 7.500 + Comissões',
+    description: 'Procuramos engenheiro agrônomo para atuar na região de Rio Verde de Goiás, prestando consultoria técnica aos produtores agrícolas locais e promovendo nosso catálogo de sementes e fertilizantes inteligentes.\n\nRequisitos da rotina:\n- Visitar propriedades agrícolas e prestar assistência técnica especializada;\n- Desenvolver estratégias de manejo sustentável para aumento de produtividade de soja e milho;\n- Negociar contratos de fornecimento.\n\nBenefícios:\n- Veículo fornecido pela empresa;\n- Ajuda de custo para viagens;\n- Seguro de vida premium;\n- Bônus semestral por metas batidas.',
+    requirements: 'Graduação completa em Engenharia Agronômica, registro ativo no CREA-GO, CNH categoria B e disponibilidade total para viagens regionais.',
+    contactEmail: 'carreira@agrocerrado.com.br',
+    applicants: [],
+    createdAt: '2026-06-23T08:00:00Z'
+  },
+  {
+    id: 'job-4',
+    userId: 'user-2',
+    title: 'Designer Gráfico / UI Júnior',
+    companyName: 'Estúdio Goiânia Criativo',
+    companyLogo: 'https://images.unsplash.com/photo-1561070791-26c113006238?auto=format&fit=crop&q=80&w=150',
+    location: 'Goiânia, GO',
+    modality: 'Remoto',
+    level: 'Júnior',
+    salary: 'R$ 3.200 - R$ 4.000',
+    description: 'Procuramos um Designer Júnior motivado a crescer, com paixão por identidades visuais brilhantes, mídias sociais e conceitos básicos de UI Design para criar belas interfaces.\n\nO que você fará:\n- Criar peças publicitárias e banners artísticos para redes sociais de marcas de Goiânia;\n- Apoiar na prototipação de wireframes básicos para portais web e aplicativos;\n- Colaborar na escolha de paletas cromáticas e tipografias inovadoras.\n\nTrabalho 100% home office (qualquer cidade do estado de Goiás).',
+    requirements: 'Portfólio com trabalhos autorais de design gráfico ou mockups de interface. Conhecimento em Figma e Adobe Creative Cloud.',
+    contactEmail: 'talentos@goianiacriativo.design',
+    applicants: ['user-3'],
+    createdAt: '2026-06-24T11:15:00Z'
+  },
+  {
+    id: 'job-5',
+    userId: 'user-4',
+    title: 'Coordenador de Logística de Distribuição',
+    companyName: 'Anápolis Trans-Log',
+    companyLogo: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=150',
+    location: 'Anápolis, GO',
+    modality: 'Presencial',
+    level: 'Gerência',
+    salary: 'R$ 8.200 - R$ 9.500',
+    description: 'Vaga de coordenação no polo industrial de Anápolis (DAIA). O profissional gerenciará equipes de distribuição interestadual e controle de armazéns refrigerados de alta tecnologia.\n\nResponsabilidades principais:\n- Otimizar rotas de entrega para diminuir custos operacionais;\n- Garantir o cumprimento de prazos de entregas industriais de medicamentos e alimentos;\n- Monitorar indicadores de desempenho logístico (KPIs) e segurança da frota.\n\nBenefícios adicionais:\n- Refeitório na fábrica;\n- Estacionamento privativo;\n- Plano de saúde estendido para dependentes.',
+    requirements: 'Graduação em Logística ou Administração de Empresas. Mínimo de 3 anos liderando equipes de armazenagem e transporte logístico.',
+    contactEmail: 'rh@anapolistranslog.com.br',
+    contactPhone: '(62) 3310-8500',
+    applicants: [],
+    createdAt: '2026-06-25T09:00:00Z'
+  }
+];
+

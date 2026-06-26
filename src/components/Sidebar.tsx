@@ -3,7 +3,7 @@ import { User } from '../types';
 import { 
   Rss, MessageSquare, Megaphone, Users, Calendar, Building2, ShieldCheck, 
   MapPin, Globe, Sparkles, Award, Star, Gem, CheckCircle, ShieldAlert,
-  Pencil, X, Camera, Save, Settings
+  Pencil, X, Camera, Save, Settings, Briefcase
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -170,6 +170,7 @@ export default function Sidebar({
     { id: 'groups', name: 'Grupos e Comunidades', icon: Users, color: 'text-emerald-400 font-bold' },
     { id: 'events', name: 'Eventos da Rede', icon: Calendar, color: 'text-pink-400 font-bold' },
     { id: 'pages', name: 'Páginas Comerciais', icon: Building2, color: 'text-blue-400 font-bold' },
+    { id: 'jobs', name: 'Empregos e Vagas GO', icon: Briefcase, color: 'text-amber-400 font-bold' },
     ...(currentUser.id === 'admin' ? [{ id: 'admin', name: 'Painel do Administrador', icon: ShieldCheck, color: 'text-rose-400 font-bold' }] : [])
   ];
 

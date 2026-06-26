@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { 
   User, Post, Chat, Message, Ad, Community, Event, Story, BusinessPage, 
-  SystemLog, Comment, CatalogProduct, EmailConfig 
+  SystemLog, Comment, CatalogProduct, EmailConfig, Job 
 } from '../types';
 import {
   INITIAL_USERS,
@@ -13,7 +13,8 @@ import {
   INITIAL_BUSINESS_PAGES,
   INITIAL_CHATS,
   INITIAL_MESSAGES,
-  INITIAL_LOGS
+  INITIAL_LOGS,
+  INITIAL_JOBS
 } from '../data/mockData';
 import { db } from '../lib/firebase';
 import { seedDatabaseIfEmpty } from '../lib/firebaseSeeder';
@@ -41,6 +42,7 @@ export function useSocialState() {
   const [chats, setChats] = useState<Chat[]>(INITIAL_CHATS);
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [logs, setLogs] = useState<SystemLog[]>(INITIAL_LOGS);
+  const [jobs, setJobs] = useState<Job[]>(INITIAL_JOBS);
 
   const [currentUserId, setCurrentUserId] = useState<string>(() => {
     const saved = localStorage.getItem('bb_current_uid');
@@ -164,6 +166,16 @@ export function useSocialState() {
         if (isMounted) handleFirestoreError(err, OperationType.GET, 'logs');
       });
       activeUnsubs.push(unsubLogs);
+
+      const unsubJobs = onSnapshot(collection(db, 'jobs'), (snapshot) => {
+        const list: Job[] = [];
+        snapshot.forEach(doc => list.push(doc.data() as Job));
+        list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        if (isMounted) setJobs(list);
+      }, (err) => {
+        if (isMounted) handleFirestoreError(err, OperationType.GET, 'jobs');
+      });
+      activeUnsubs.push(unsubJobs);
 
       const unsubEmailConfig = onSnapshot(doc(db, 'email_config', 'main'), (snapshot) => {
         if (snapshot.exists() && isMounted) {
@@ -959,6 +971,67 @@ export function useSocialState() {
     logAction('success', `E-mail Transacional: Configurações do SMTP atualizadas (Provedor: ${config.provider.toUpperCase()}).`);
   };
 
+  const createJob = (inputs: {
+    title: string;
+    companyName: string;
+    companyLogo: string;
+    location: string;
+    modality: 'Presencial' | 'Híbrido' | 'Remoto';
+    level: 'Estágio' | 'Júnior' | 'Pleno' | 'Sênior' | 'Gerência';
+    salary: string;
+    description: string;
+    requirements: string;
+    contactEmail: string;
+    contactPhone?: string;
+  }) => {
+    const newJob: Job = {
+      ...inputs,
+      id: `job-${Date.now()}`,
+      userId: currentUser.id,
+      applicants: [],
+      createdAt: new Date().toISOString()
+    };
+
+    setJobs(prev => [newJob, ...prev]);
+    setDoc(doc(db, 'jobs', newJob.id), newJob)
+      .then(() => {
+        logAction('success', `Vaga de Emprego '${newJob.title}' em ${newJob.location} publicada por @${currentUser.username}.`);
+      })
+      .catch(err => console.error('Error creating job in Firestore:', err));
+  };
+
+  const deleteJob = (jobId: string) => {
+    const job = jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    setJobs(prev => prev.filter(j => j.id !== jobId));
+    deleteDoc(doc(db, 'jobs', jobId))
+      .then(() => {
+        logAction('warning', `Vaga de Emprego '${job.title}' removida por @${currentUser.username}.`);
+      })
+      .catch(err => console.error('Error deleting job in Firestore:', err));
+  };
+
+  const toggleApplyJob = (jobId: string) => {
+    const j = jobs.find(job => job.id === jobId);
+    if (!j) return;
+
+    const applied = j.applicants.includes(currentUser.id);
+    let applicants = [...j.applicants];
+
+    if (applied) {
+      applicants = applicants.filter(id => id !== currentUser.id);
+      logAction('info', `@${currentUser.username} retirou a candidatura para a vaga '${j.title}'.`);
+    } else {
+      applicants.push(currentUser.id);
+      logAction('success', `@${currentUser.username} se candidatou para a vaga '${j.title}' em ${j.location}.`);
+    }
+
+    const updatedJob = { ...j, applicants };
+    setJobs(prev => prev.map(job => job.id === jobId ? updatedJob : job));
+    setDoc(doc(db, 'jobs', jobId), updatedJob).catch(err => console.error('Error updating job applicants in Firestore:', err));
+  };
+
   return {
     currentUser,
     users,
@@ -971,6 +1044,10 @@ export function useSocialState() {
     chats,
     messages,
     logs,
+    jobs,
+    createJob,
+    deleteJob,
+    toggleApplyJob,
     isAdminActive: currentUser.id === 'admin',
     isAdminSessionActive,
     loginAs,

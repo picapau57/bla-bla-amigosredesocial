@@ -11,6 +11,7 @@ import GroupsSection from './components/GroupsSection';
 import EventsSection from './components/EventsSection';
 import PagesSection from './components/PagesSection';
 import AdminSection from './components/AdminSection';
+import JobsSection from './components/JobsSection';
 import UserProfileModal from './components/UserProfileModal';
 
 import { 
@@ -719,6 +720,19 @@ export default function App() {
                       onCreatePage={social.createBusinessPage}
                       onAddProduct={social.addProductToPage}
                       onLikePage={social.toggleLikePage}
+                    />
+                  )}
+
+                  {/* JOBS IN GOIAS BOARD */}
+                  {activeTab === 'jobs' && (
+                    <JobsSection
+                      currentUser={social.currentUser}
+                      users={social.users}
+                      jobs={social.jobs}
+                      onCreateJob={social.createJob}
+                      onDeleteJob={social.deleteJob}
+                      onToggleApplyJob={social.toggleApplyJob}
+                      onViewProfile={setViewingUser}
                     />
                   )}
 

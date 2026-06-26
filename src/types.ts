@@ -177,3 +177,22 @@ export interface EmailConfig {
   publicKey: string;
   provider: 'emailjs' | 'disabled';
 }
+
+export interface Job {
+  id: string;
+  userId: string; // Creator ID
+  title: string;
+  companyName: string;
+  companyLogo: string;
+  location: string; // e.g., "Goiânia, GO", "Aparecida de Goiânia, GO", "Anápolis, GO", "Rio Verde, GO"
+  modality: 'Presencial' | 'Híbrido' | 'Remoto';
+  level: 'Estágio' | 'Júnior' | 'Pleno' | 'Sênior' | 'Gerência';
+  salary: string; // e.g., "R$ 4.500 - R$ 6.000" or "A combinar"
+  description: string;
+  requirements: string;
+  contactEmail: string;
+  contactPhone?: string;
+  applicants: string[]; // User IDs who applied
+  createdAt: string;
+}
+
