@@ -165,7 +165,7 @@ export default function Sidebar({
 
   const navItems = [
     { id: 'feed', name: 'Feed de Notícias', icon: Rss, color: 'text-cyan-400 font-bold' },
-    { id: 'chats', name: 'Conversas em Tempo Real', icon: MessageSquare, color: 'text-indigo-400 font-bold' },
+    { id: 'chats', name: 'Bate-Papo em Tempo Real', icon: MessageSquare, color: 'text-indigo-400 font-bold' },
     { id: 'ads', name: 'Marketplace & Propagandas', icon: Megaphone, color: 'text-orange-400 font-bold' },
     { id: 'groups', name: 'Grupos e Comunidades', icon: Users, color: 'text-emerald-400 font-bold' },
     { id: 'events', name: 'Eventos da Rede', icon: Calendar, color: 'text-pink-400 font-bold' },

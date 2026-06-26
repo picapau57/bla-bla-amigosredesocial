@@ -96,9 +96,12 @@ export default function ChatSection({
       <div className="w-full md:w-80 border-r border-white/10 flex flex-col h-full bg-[#0A0A14]/30" id="chats-conversations-list">
         <div className="p-4 border-b border-white/10 bg-[#0A0A14]/50">
           <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#00E5FF] font-mono">
-            Suas Mensagens
+            Bate-Papo
           </h3>
-          <p className="text-[10px] text-gray-500 mt-0.5">Sincronizado via Sockets Simulado</p>
+          <p className="text-[10px] text-green-400 font-mono mt-0.5 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping" />
+            Conectado em tempo real
+          </p>
         </div>
 
         <div className="flex-1 overflow-y-auto divide-y divide-white/5">

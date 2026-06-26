@@ -1,6 +1,6 @@
 import { useState, useEffect, ChangeEvent } from 'react';
 import { User, SystemLog } from '../types';
-import { Network, Bell, Search, Shuffle, ShieldAlert, BadgeCheck, Compass } from 'lucide-react';
+import { Network, Bell, Search, Shuffle, ShieldAlert, BadgeCheck, Compass, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface HeaderProps {
@@ -86,6 +86,25 @@ export default function Header({
         {/* UTILITIES / PERSPECTIVE SWITCHERS */}
         <div className="flex items-center gap-2.5 md:gap-4">
           
+          {/* BATE-PAPO REALTIME SHORTCUT BUTTON */}
+          <button
+            onClick={() => setActiveTab('chats')}
+            className={`flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full border text-xs font-black transition-all duration-300 active:scale-95 cursor-pointer ${
+              activeTab === 'chats'
+                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-indigo-400/50 shadow-[0_0_15px_rgba(99,102,241,0.5)]'
+                : 'bg-white/5 border-white/5 text-gray-300 hover:text-white hover:border-indigo-500/30 hover:bg-indigo-500/10'
+            }`}
+            title="Abrir Bate-Papo em Tempo Real"
+            id="header-bate-papo-shortcut"
+          >
+            <MessageSquare className={`w-4 h-4 ${activeTab === 'chats' ? 'text-white animate-bounce' : 'text-[#00E5FF]'}`} />
+            <span className="font-sans">Bate-Papo</span>
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </span>
+          </button>
+
           {/* USER SWAPPER (SIMULATE SESSIONS) */}
           <div className="relative" id="header-user-swapper">
             {currentUser.id === 'admin' ? (
