@@ -1,4 +1,4 @@
-import { useState, ChangeEvent } from 'react';
+import { useState, useEffect, ChangeEvent } from 'react';
 import { User, SystemLog } from '../types';
 import { Network, Bell, Search, Shuffle, ShieldAlert, BadgeCheck, Compass } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -8,6 +8,7 @@ interface HeaderProps {
   users: User[];
   onSelectUser: (id: string) => void;
   onSearch: (term: string) => void;
+  searchTerm?: string;
   activeTab: string;
   setActiveTab: (tab: string) => void;
   logs: SystemLog[];
@@ -19,6 +20,7 @@ export default function Header({
   users,
   onSelectUser,
   onSearch,
+  searchTerm: parentSearchTerm = '',
   activeTab,
   setActiveTab,
   logs,
@@ -26,7 +28,11 @@ export default function Header({
 }: HeaderProps) {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(parentSearchTerm);
+
+  useEffect(() => {
+    setSearchTerm(parentSearchTerm);
+  }, [parentSearchTerm]);
 
   const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);

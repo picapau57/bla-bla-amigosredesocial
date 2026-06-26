@@ -13,6 +13,7 @@ import PagesSection from './components/PagesSection';
 import AdminSection from './components/AdminSection';
 import JobsSection from './components/JobsSection';
 import GamesSection from './components/GamesSection';
+import ReelsSection from './components/ReelsSection';
 import UserProfileModal from './components/UserProfileModal';
 
 import { 
@@ -609,6 +610,7 @@ export default function App() {
               }
             }}
             onSearch={(term) => setSearchTerm(term)}
+            searchTerm={searchTerm}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             logs={social.logs}
@@ -746,6 +748,14 @@ export default function App() {
                       ads={social.ads}
                       onPurchaseAd={social.purchaseAd}
                       onApproveAd={social.approveAd}
+                    />
+                  )}
+
+                  {/* REELS & SHORT VIDEOS SECTION VIEW */}
+                  {activeTab === 'reels' && (
+                    <ReelsSection
+                      currentUser={social.currentUser}
+                      onViewProfile={setViewingUser}
                     />
                   )}
 

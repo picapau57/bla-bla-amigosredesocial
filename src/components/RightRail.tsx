@@ -13,6 +13,7 @@ interface RightRailProps {
   onTrackImpression: (id: string) => void;
   setActiveTab: (tab: string) => void;
   onViewProfile?: (user: User) => void;
+  onSearch?: (term: string) => void;
 }
 
 export default function RightRail({
@@ -24,7 +25,8 @@ export default function RightRail({
   onAdClick,
   onTrackImpression,
   setActiveTab,
-  onViewProfile
+  onViewProfile,
+  onSearch
 }: RightRailProps) {
 
   // Fetch sponsored ads for top and bottom rails
@@ -171,14 +173,18 @@ export default function RightRail({
         </div>
         <div className="space-y-3">
           {hashtags.map((h, index) => (
-            <div key={index} className="flex items-center justify-between text-xs py-1 hover:bg-[#1E1E30]/40 px-1 rounded-lg transition-colors font-sans">
+            <div 
+              key={index} 
+              onClick={() => onSearch?.(h.tag)}
+              className="flex items-center justify-between text-xs py-1.5 hover:bg-[#1E1E30]/60 px-2.5 rounded-xl transition-all font-sans cursor-pointer active:scale-[0.98] border border-transparent hover:border-white/5 group"
+            >
               <div>
-                <span className="font-semibold text-[#00E5FF] hover:underline cursor-pointer block text-xs">
+                <span className="font-semibold text-[#00E5FF] group-hover:text-cyan-300 hover:underline block text-xs">
                   #{h.tag}
                 </span>
-                <span className="text-[10px] text-gray-400">{h.posts} posts recentes</span>
+                <span className="text-[10px] text-gray-400 group-hover:text-gray-300">{h.posts} posts recentes</span>
               </div>
-              <span className="text-[10px] bg-[#1E1E30] font-mono text-gray-300 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] bg-[#1E1E30] group-hover:bg-[#252545] font-mono text-gray-300 group-hover:text-white px-2 py-0.5 rounded-full transition-all">
                 {index + 1}º
               </span>
             </div>
