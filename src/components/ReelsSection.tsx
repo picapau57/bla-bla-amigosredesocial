@@ -12,6 +12,16 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
+function getYouTubeEmbedUrl(url: string): string | null {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/|live\/)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  if (match && match[2].length === 11) {
+    return `https://www.youtube.com/embed/${match[2]}?autoplay=1&mute=1&loop=1&playlist=${match[2]}&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1`;
+  }
+  return null;
+}
+
 interface ReelComment {
   id: string;
   userId: string;
@@ -249,10 +259,10 @@ export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectio
       <div className="flex-1 flex flex-col items-center">
         
         {/* Title and Post Button */}
-        <div className="w-full max-w-[380px] flex items-center justify-between mb-4">
+        <div className="w-full max-w-[310px] flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Film className="w-6 h-6 text-rose-500 animate-pulse" />
-            <h2 className="text-xl font-extrabold text-white tracking-tight font-mono">
+            <h2 className="text-lg font-extrabold text-white tracking-tight font-mono">
               REELS & VÍDEOS
             </h2>
           </div>
@@ -265,19 +275,30 @@ export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectio
         </div>
 
         {reels.length > 0 && currentReel ? (
-          <div className="relative w-full max-w-[380px] aspect-[9/16] bg-black rounded-3xl overflow-hidden shadow-[0_15px_50px_rgba(0,0,0,0.8)] border border-white/10 flex flex-col justify-between">
+          <div className="relative w-full max-w-[310px] aspect-[9/16] bg-black rounded-3xl overflow-hidden shadow-[0_15px_50px_rgba(0,0,0,0.8)] border border-white/10 flex flex-col justify-between">
             
-            {/* HTML5 Video Element */}
-            <video
-              ref={videoRef}
-              src={currentReel.videoUrl}
-              loop
-              muted={muted}
-              playsInline
-              onClick={() => setIsPlaying(!isPlaying)}
-              onDoubleClick={handleToggleLike}
-              className="absolute inset-0 w-full h-full object-cover z-0 cursor-pointer"
-            />
+            {getYouTubeEmbedUrl(currentReel.videoUrl) ? (
+              <iframe
+                src={getYouTubeEmbedUrl(currentReel.videoUrl) || undefined}
+                title={currentReel.caption}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-auto"
+                style={{ border: 0 }}
+              />
+            ) : (
+              /* HTML5 Video Element */
+              <video
+                ref={videoRef}
+                src={currentReel.videoUrl}
+                loop
+                muted={muted}
+                playsInline
+                onClick={() => setIsPlaying(!isPlaying)}
+                onDoubleClick={handleToggleLike}
+                className="absolute inset-0 w-full h-full object-cover z-0 cursor-pointer"
+              />
+            )}
 
             {/* Simulated overlay double-click heart animation */}
             <AnimatePresence>
@@ -423,7 +444,7 @@ export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectio
 
           </div>
         ) : (
-          <div className="w-full max-w-[380px] aspect-[9/16] bg-[#121225] border border-white/10 rounded-3xl flex flex-col items-center justify-center p-6 text-center gap-3">
+          <div className="w-full max-w-[310px] aspect-[9/16] bg-[#121225] border border-white/10 rounded-3xl flex flex-col items-center justify-center p-6 text-center gap-3">
             <Film className="w-12 h-12 text-gray-600 animate-pulse" />
             <h3 className="text-gray-300 font-bold text-sm">Nenhum Reel publicado ainda</h3>
             <p className="text-gray-500 text-xs">Seja o primeiro a publicar um vídeo de humor, turismo ou jogo goiano!</p>
@@ -582,15 +603,17 @@ export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectio
 
                 {/* Video URL input */}
                 <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">URL do Vídeo (MP4)</label>
+                  <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">URL do Vídeo (MP4 ou YouTube)</label>
                   <input 
                     type="text" 
                     value={newVideoUrl}
                     onChange={(e) => setNewVideoUrl(e.target.value)}
-                    placeholder="https://assets.mixkit.co/videos/preview/..."
+                    placeholder="Cole um link MP4 direto (.mp4) ou um link do YouTube / YouTube Shorts"
                     className="w-full bg-[#1A1A32] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-500"
                   />
-                  <p className="text-[9px] text-gray-500">Deixe em branco para usar o template selecionado automaticamente.</p>
+                  <p className="text-[9px] text-gray-400">
+                    Sua URL deve ser um link de vídeo direto (terminando em <strong>.mp4</strong>) ou qualquer link do <strong>YouTube / YouTube Shorts</strong>!
+                  </p>
                 </div>
 
                 {/* Caption input */}
