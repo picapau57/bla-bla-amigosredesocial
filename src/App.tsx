@@ -12,6 +12,7 @@ import EventsSection from './components/EventsSection';
 import PagesSection from './components/PagesSection';
 import AdminSection from './components/AdminSection';
 import JobsSection from './components/JobsSection';
+import GamesSection from './components/GamesSection';
 import UserProfileModal from './components/UserProfileModal';
 
 import { 
@@ -732,6 +733,15 @@ export default function App() {
                       onCreateJob={social.createJob}
                       onDeleteJob={social.deleteJob}
                       onToggleApplyJob={social.toggleApplyJob}
+                      onViewProfile={setViewingUser}
+                    />
+                  )}
+
+                  {/* GAMES AND ENTERTAINMENT BOARD */}
+                  {activeTab === 'games' && (
+                    <GamesSection
+                      currentUser={social.currentUser}
+                      users={social.users}
                       onViewProfile={setViewingUser}
                     />
                   )}
