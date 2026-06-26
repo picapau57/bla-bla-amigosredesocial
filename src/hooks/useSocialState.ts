@@ -325,7 +325,23 @@ export function useSocialState() {
       .catch(err => console.error('Error updating profile: ', err));
   };
 
-  const addPost = (content: string, mediaUrl?: string, mediaType?: 'image' | 'video') => {
+  const addPost = async (content: string, mediaUrl?: string, mediaType?: 'image' | 'video') => {
+    // 1. Moderate content in real-time
+    try {
+      const res = await fetch('/api/moderate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: content, mediaUrl, mediaType })
+      });
+      const data = await res.json();
+      if (data.success && data.isRestricted) {
+        logAction('error', `POST EXPULSO: Postagem de @${currentUser.username} continha infração de direitos autorais/restrições. Detalhes: ${data.reason}`);
+        return { success: false, isRestricted: true, reason: data.reason };
+      }
+    } catch (err) {
+      console.error('Real-time moderation failed, allowing post as fallback:', err);
+    }
+
     const newPost: Post = {
       id: `post-${Date.now()}`,
       userId: currentUser.id,
@@ -344,11 +360,14 @@ export function useSocialState() {
     
     setPosts(prev => [newPost, ...prev]);
     
-    setDoc(doc(db, 'posts', newPost.id), newPost)
-      .then(() => {
-        logAction('success', `Anfitrião @${currentUser.username} publicou uma nova postagem.`);
-      })
-      .catch(err => console.error('Error adding post: ', err));
+    try {
+      await setDoc(doc(db, 'posts', newPost.id), newPost);
+      logAction('success', `Anfitrião @${currentUser.username} publicou uma nova postagem.`);
+      return { success: true, isRestricted: false };
+    } catch (err) {
+      console.error('Error adding post: ', err);
+      return { success: false };
+    }
   };
 
   const toggleReaction = (postId: string, type: 'likes' | 'loves' | 'applauds') => {

@@ -318,6 +318,30 @@ export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectio
     const videoSource = newVideoUrl.trim() || PRESET_REELS[Math.floor(Math.random() * PRESET_REELS.length)].videoUrl;
 
     try {
+      // 1. Moderate content in real-time
+      const modRes = await fetch('/api/moderate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: newCaption.trim(), mediaUrl: videoSource, mediaType: 'video' })
+      });
+      const modData = await modRes.json();
+      
+      if (modData.success && modData.isRestricted) {
+        alert(`🚫 VÍDEO EXCLUÍDO AUTOMATICAMENTE NA HORA!\n\nO sistema de inteligência artificial em tempo real detectou restrições de direitos autorais ou infrações de termos.\n\nMotivo da exclusão imediata:\n👉 ${modData.reason || 'Restrição detectada.'}`);
+        
+        // Log to Admin / System Logs
+        await addDoc(collection(db, 'logs'), {
+          id: `log-${Date.now()}-${Math.random()}`,
+          type: 'error',
+          message: `REEL EXCLUÍDO AUTOMATICAMENTE: Vídeo de @${currentUser.username} foi moderado e deletado na hora para evitar restrição de direitos autorais. Motivo: ${modData.reason}`,
+          timestamp: new Date().toISOString()
+        });
+        
+        setIsSubmitting(false);
+        return;
+      }
+
+      // 2. Publish if safe
       await addDoc(collection(db, 'reels'), {
         userId: currentUser.id,
         username: currentUser.username,
@@ -335,7 +359,7 @@ export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectio
       setIsPublishModalOpen(false);
       setCurrentIndex(reels.length); // switch to the latest
     } catch (err) {
-      console.error(err);
+      console.error('Error publishing Reel with moderation:', err);
     } finally {
       setIsSubmitting(false);
     }

@@ -11,7 +11,7 @@ interface FeedSectionProps {
   users: User[];
   posts: Post[];
   ads: Ad[];
-  onAddPost: (content: string, mediaUrl?: string, mediaType?: 'image' | 'video') => void;
+  onAddPost: (content: string, mediaUrl?: string, mediaType?: 'image' | 'video') => Promise<{ success: boolean; isRestricted?: boolean; reason?: string }>;
   onToggleReaction: (postId: string, type: 'likes' | 'loves' | 'applauds') => void;
   onAddComment: (postId: string, content: string) => void;
   onShare: (postId: string) => void;
@@ -110,6 +110,7 @@ export default function FeedSection({
   const [newPostMedia, setNewPostMedia] = useState('');
   const [mediaType, setMediaType] = useState<'image' | 'video'>('image');
   const [showMediaInput, setShowMediaInput] = useState(false);
+  const [isModeratingPost, setIsModeratingPost] = useState(false);
   
   // Track open comment trays
   const [activeCommentsPostId, setActiveCommentsPostId] = useState<string | null>(null);
@@ -126,14 +127,25 @@ export default function FeedSection({
     'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800'
   ];
 
-  const handleCreatePost = (e: FormEvent) => {
+  const handleCreatePost = async (e: FormEvent) => {
     e.preventDefault();
     if (!newPostContent.trim() && !newPostMedia) return;
 
-    onAddPost(newPostContent, newPostMedia || undefined, newPostMedia ? mediaType : undefined);
-    setNewPostContent('');
-    setNewPostMedia('');
-    setShowMediaInput(false);
+    setIsModeratingPost(true);
+    try {
+      const result = await onAddPost(newPostContent, newPostMedia || undefined, newPostMedia ? mediaType : undefined);
+      if (result && !result.success && result.isRestricted) {
+        alert(`🚫 POST EXCLUÍDO AUTOMATICAMENTE NA HORA!\n\nNosso moderador de inteligência artificial em tempo real barrou esta postagem para evitar restrições e proteger direitos autorais de terceiros.\n\nMotivo da exclusão imediata:\n👉 ${result.reason || 'Restrição de direitos autorais detectada.'}`);
+      } else {
+        setNewPostContent('');
+        setNewPostMedia('');
+        setShowMediaInput(false);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsModeratingPost(false);
+    }
   };
 
   const handleCommentChange = (postId: string, value: string) => {
@@ -283,11 +295,20 @@ export default function FeedSection({
 
               <button
                 type="submit"
-                disabled={!newPostContent.trim() && !newPostMedia}
+                disabled={(!newPostContent.trim() && !newPostMedia) || isModeratingPost}
                 className="bg-gradient-to-r from-[#7C4DFF] via-[#00E5FF] to-[#00E676] hover:brightness-110 disabled:opacity-30 disabled:pointer-events-none text-white font-extrabold text-xs py-2 px-5 rounded-xl shadow-lg flex items-center gap-1.5 cursor-pointer uppercase tracking-wider h-9 transition-all"
               >
-                <span>Publicar</span>
-                <Send className="w-3.5 h-3.5" />
+                {isModeratingPost ? (
+                  <>
+                    <span className="animate-pulse">Moderando...</span>
+                    <Sparkles className="w-3.5 h-3.5 animate-spin text-[#00E5FF]" />
+                  </>
+                ) : (
+                  <>
+                    <span>Publicar</span>
+                    <Send className="w-3.5 h-3.5" />
+                  </>
+                )}
               </button>
             </div>
           </form>
