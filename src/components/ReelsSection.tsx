@@ -12,7 +12,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
-function getYouTubeEmbedUrl(url: string): string | null {
+function getYouTubeEmbedUrl(url: string, muted: boolean = true): string | null {
   if (!url) return null;
   const cleanUrl = url.trim();
   
@@ -82,7 +82,7 @@ function getYouTubeEmbedUrl(url: string): string | null {
 
   // Ensure it's exactly 11 characters to avoid broken embeds
   if (videoId && videoId.length === 11) {
-    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=1&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1`;
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=${muted ? 1 : 0}&loop=1&playlist=${videoId}&controls=1&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1`;
   }
 
   return null;
@@ -166,7 +166,7 @@ const PRESET_REELS = [
 export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectionProps) {
   const [reels, setReels] = useState<Reel[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [muted, setMuted] = useState(true);
+  const [muted, setMuted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -358,9 +358,9 @@ export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectio
         {reels.length > 0 && currentReel ? (
           <div className="relative w-full max-w-[310px] aspect-[9/16] bg-black rounded-3xl overflow-hidden shadow-[0_15px_50px_rgba(0,0,0,0.8)] border border-white/10 flex flex-col justify-between">
             
-            {getYouTubeEmbedUrl(currentReel.videoUrl) ? (
+            {getYouTubeEmbedUrl(currentReel.videoUrl, muted) ? (
               <iframe
-                src={getYouTubeEmbedUrl(currentReel.videoUrl) || undefined}
+                src={getYouTubeEmbedUrl(currentReel.videoUrl, muted) || undefined}
                 title={currentReel.caption}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
@@ -446,10 +446,11 @@ export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectio
               </div>
 
               {/* Sound Button */}
-              {isDirectVideoUrl(currentReel.videoUrl) && (
+              {(isDirectVideoUrl(currentReel.videoUrl) || getYouTubeEmbedUrl(currentReel.videoUrl, muted) !== null) && (
                 <button
                   onClick={() => setMuted(!muted)}
                   className="p-2 bg-black/40 hover:bg-black/60 border border-white/10 rounded-full text-white transition-all cursor-pointer shadow-md"
+                  title={muted ? "Ativar som" : "Mutar som"}
                 >
                   {muted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-green-400" />}
                 </button>
