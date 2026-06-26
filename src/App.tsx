@@ -15,6 +15,7 @@ import JobsSection from './components/JobsSection';
 import GamesSection from './components/GamesSection';
 import ReelsSection from './components/ReelsSection';
 import UserProfileModal from './components/UserProfileModal';
+import FriendsSection from './components/FriendsSection';
 
 import { 
   Network, Sparkles, ShieldCheck, ChevronRight, CheckCircle, 
@@ -681,6 +682,26 @@ export default function App() {
                       onSendMessage={social.sendMessage}
                       onStartChat={social.startDirectChat}
                       onViewProfile={setViewingUser}
+                    />
+                  )}
+
+                  {/* FRIENDS PORTAL VIEW */}
+                  {activeTab === 'friends' && (
+                    <FriendsSection
+                      currentUser={social.currentUser}
+                      users={social.users}
+                      friendRequests={social.friendRequests}
+                      onSendFriendRequest={social.sendFriendRequest}
+                      onAcceptFriendRequest={social.acceptFriendRequest}
+                      onDeclineFriendRequest={social.declineFriendRequest}
+                      onCancelFriendRequest={social.cancelFriendRequest}
+                      onRemoveFriend={social.removeFriend}
+                      onStartChat={(uid) => {
+                        const cid = social.startDirectChat(uid);
+                        setActiveTab('chats');
+                        return cid;
+                      }}
+                      onSendMessage={social.sendMessage}
                     />
                   )}
 

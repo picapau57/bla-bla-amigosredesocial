@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { 
   User, Post, Chat, Message, Ad, Community, Event, Story, BusinessPage, 
-  SystemLog, Comment, CatalogProduct, EmailConfig, Job 
+  SystemLog, Comment, CatalogProduct, EmailConfig, Job, FriendRequest 
 } from '../types';
 import {
   INITIAL_USERS,
@@ -43,6 +43,7 @@ export function useSocialState() {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [logs, setLogs] = useState<SystemLog[]>(INITIAL_LOGS);
   const [jobs, setJobs] = useState<Job[]>(INITIAL_JOBS);
+  const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
 
   const [currentUserId, setCurrentUserId] = useState<string>(() => {
     const saved = localStorage.getItem('bb_current_uid');
@@ -185,6 +186,15 @@ export function useSocialState() {
         if (isMounted) handleFirestoreError(err, OperationType.GET, 'email_config/main');
       });
       activeUnsubs.push(unsubEmailConfig);
+
+      const unsubFriendRequests = onSnapshot(collection(db, 'friend_requests'), (snapshot) => {
+        const list: FriendRequest[] = [];
+        snapshot.forEach(doc => list.push(doc.data() as FriendRequest));
+        if (isMounted) setFriendRequests(list);
+      }, (err) => {
+        if (isMounted) handleFirestoreError(err, OperationType.GET, 'friend_requests');
+      });
+      activeUnsubs.push(unsubFriendRequests);
     };
 
     init();
@@ -487,6 +497,100 @@ export function useSocialState() {
     setDoc(doc(db, 'users', targetUserId), updatedTarg).catch(e => console.error(e));
   };
 
+  const sendFriendRequest = async (receiverId: string) => {
+    if (receiverId === currentUser.id) return;
+    const existing = friendRequests.find(r => 
+      (r.senderId === currentUser.id && r.receiverId === receiverId) ||
+      (r.senderId === receiverId && r.receiverId === currentUser.id)
+    );
+    if (existing) return;
+
+    const newReqId = `req-${Date.now()}`;
+    const newRequest: FriendRequest = {
+      id: newReqId,
+      senderId: currentUser.id,
+      receiverId: receiverId,
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    };
+
+    setFriendRequests(prev => [newRequest, ...prev]);
+    await setDoc(doc(db, 'friend_requests', newReqId), newRequest).catch(e => console.error(e));
+    logAction('info', `@${currentUser.username} enviou um pedido de amizade.`);
+  };
+
+  const acceptFriendRequest = async (requestId: string) => {
+    const req = friendRequests.find(r => r.id === requestId);
+    if (!req) return;
+
+    const updatedRequest: FriendRequest = { ...req, status: 'accepted' };
+    
+    const sender = users.find(u => u.id === req.senderId);
+    const receiver = users.find(u => u.id === req.receiverId);
+    if (!sender || !receiver) return;
+
+    const senderFriends = sender.friends.includes(req.receiverId) ? sender.friends : [...sender.friends, req.receiverId];
+    const receiverFriends = receiver.friends.includes(req.senderId) ? receiver.friends : [...receiver.friends, req.senderId];
+
+    const updatedSender = { ...sender, friends: senderFriends };
+    const updatedReceiver = { ...receiver, friends: receiverFriends };
+
+    setFriendRequests(prev => prev.map(r => r.id === requestId ? updatedRequest : r));
+    setUsers(prev => prev.map(u => {
+      if (u.id === req.senderId) return updatedSender;
+      if (u.id === req.receiverId) return updatedReceiver;
+      return u;
+    }));
+
+    await setDoc(doc(db, 'friend_requests', requestId), updatedRequest).catch(e => console.error(e));
+    await setDoc(doc(db, 'users', req.senderId), updatedSender).catch(e => console.error(e));
+    await setDoc(doc(db, 'users', req.receiverId), updatedReceiver).catch(e => console.error(e));
+    logAction('success', `@${receiver.username} aceitou o pedido de amizade de @${sender.username}.`);
+  };
+
+  const declineFriendRequest = async (requestId: string) => {
+    const req = friendRequests.find(r => r.id === requestId);
+    if (!req) return;
+
+    setFriendRequests(prev => prev.filter(r => r.id !== requestId));
+    await deleteDoc(doc(db, 'friend_requests', requestId)).catch(e => console.error(e));
+    logAction('info', `@${currentUser.username} recusou um pedido de amizade.`);
+  };
+
+  const cancelFriendRequest = async (requestId: string) => {
+    setFriendRequests(prev => prev.filter(r => r.id !== requestId));
+    await deleteDoc(doc(db, 'friend_requests', requestId)).catch(e => console.error(e));
+  };
+
+  const removeFriend = async (targetUserId: string) => {
+    const curr = users.find(u => u.id === currentUser.id);
+    const targ = users.find(u => u.id === targetUserId);
+    if (!curr || !targ) return;
+
+    const currFriends = curr.friends.filter(id => id !== targetUserId);
+    const updatedCurr = { ...curr, friends: currFriends };
+
+    const targFriends = targ.friends.filter(id => id !== currentUser.id);
+    const updatedTarg = { ...targ, friends: targFriends };
+
+    setUsers(prev => prev.map(u => {
+      if (u.id === currentUser.id) return updatedCurr;
+      if (u.id === targetUserId) return updatedTarg;
+      return u;
+    }));
+
+    const associatedReqs = friendRequests.filter(r => 
+      (r.senderId === currentUser.id && r.receiverId === targetUserId) ||
+      (r.senderId === targetUserId && r.receiverId === currentUser.id)
+    );
+    for (const r of associatedReqs) {
+      await deleteDoc(doc(db, 'friend_requests', r.id)).catch(e => console.error(e));
+    }
+
+    await setDoc(doc(db, 'users', currentUser.id), updatedCurr).catch(e => console.error(e));
+    await setDoc(doc(db, 'users', targetUserId), updatedTarg).catch(e => console.error(e));
+    logAction('info', `@${currentUser.username} desfez a amizade com @${targ.username}.`);
+  };
   const startDirectChat = (targetUserId: string) => {
     const existing = chats.find(c => !c.isGroup && c.members.includes(currentUser.id) && c.members.includes(targetUserId));
     if (existing) {
@@ -1102,7 +1206,13 @@ export function useSocialState() {
     adminDeleteAd,
     getAdminStats,
     emailConfig,
-    updateEmailConfig
+    updateEmailConfig,
+    friendRequests,
+    sendFriendRequest,
+    acceptFriendRequest,
+    declineFriendRequest,
+    cancelFriendRequest,
+    removeFriend
   };
 }
 
