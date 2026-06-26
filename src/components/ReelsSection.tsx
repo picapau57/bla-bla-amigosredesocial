@@ -14,12 +14,93 @@ import { db } from '../lib/firebase';
 
 function getYouTubeEmbedUrl(url: string): string | null {
   if (!url) return null;
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/|live\/)([^#\&\?]*).*/;
-  const match = url.match(regExp);
-  if (match && match[2].length === 11) {
-    return `https://www.youtube.com/embed/${match[2]}?autoplay=1&mute=1&loop=1&playlist=${match[2]}&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1`;
+  const cleanUrl = url.trim();
+  
+  // Try to extract the 11 character video ID
+  let videoId: string | null = null;
+
+  try {
+    // 1. YouTube Shorts format: youtube.com/shorts/ID
+    if (cleanUrl.includes('/shorts/')) {
+      const parts = cleanUrl.split('/shorts/');
+      if (parts[1]) {
+        videoId = parts[1].split(/[?&#]/)[0].substring(0, 11);
+      }
+    }
+    
+    // 2. Standard YouTube watch?v=ID format
+    if (!videoId && cleanUrl.includes('v=')) {
+      const parts = cleanUrl.split('v=');
+      if (parts[1]) {
+        videoId = parts[1].split(/[&#]/)[0].substring(0, 11);
+      }
+    }
+
+    // 3. Shortened youtu.be/ID format
+    if (!videoId && cleanUrl.includes('youtu.be/')) {
+      const parts = cleanUrl.split('youtu.be/');
+      if (parts[1]) {
+        videoId = parts[1].split(/[?&#]/)[0].substring(0, 11);
+      }
+    }
+
+    // 4. Embed format: youtube.com/embed/ID
+    if (!videoId && cleanUrl.includes('/embed/')) {
+      const parts = cleanUrl.split('/embed/');
+      if (parts[1]) {
+        videoId = parts[1].split(/[?&#]/)[0].substring(0, 11);
+      }
+    }
+
+    // 5. Live stream format: youtube.com/live/ID
+    if (!videoId && cleanUrl.includes('/live/')) {
+      const parts = cleanUrl.split('/live/');
+      if (parts[1]) {
+        videoId = parts[1].split(/[?&#]/)[0].substring(0, 11);
+      }
+    }
+
+    // 6. Alternative watch with slash format (e.g. youtube.com/v/ID)
+    if (!videoId && cleanUrl.includes('/v/')) {
+      const parts = cleanUrl.split('/v/');
+      if (parts[1]) {
+        videoId = parts[1].split(/[?&#]/)[0].substring(0, 11);
+      }
+    }
+    
+    // Fallback regex match for any 11-char sequence if there's youtu in the domain
+    if (!videoId && (cleanUrl.includes('youtube.com') || cleanUrl.includes('youtu.be'))) {
+      const regExp = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/;
+      const match = cleanUrl.match(regExp);
+      if (match && match[1]) {
+        videoId = match[1];
+      }
+    }
+  } catch (e) {
+    console.error("Error parsing YouTube URL:", e);
   }
+
+  // Ensure it's exactly 11 characters to avoid broken embeds
+  if (videoId && videoId.length === 11) {
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=1&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1`;
+  }
+
   return null;
+}
+
+function isDirectVideoUrl(url: string): boolean {
+  if (!url) return false;
+  const cleanUrl = url.trim().toLowerCase();
+  return (
+    cleanUrl.endsWith('.mp4') ||
+    cleanUrl.endsWith('.webm') ||
+    cleanUrl.endsWith('.ogg') ||
+    cleanUrl.endsWith('.mov') ||
+    cleanUrl.endsWith('.m4v') ||
+    cleanUrl.includes('mixkit.co/videos') ||
+    cleanUrl.includes('pexels.com/video') ||
+    cleanUrl.includes('pixabay.com/videos')
+  );
 }
 
 interface ReelComment {
@@ -286,7 +367,7 @@ export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectio
                 className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-auto"
                 style={{ border: 0 }}
               />
-            ) : (
+            ) : isDirectVideoUrl(currentReel.videoUrl) ? (
               /* HTML5 Video Element */
               <video
                 ref={videoRef}
@@ -298,6 +379,27 @@ export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectio
                 onDoubleClick={handleToggleLike}
                 className="absolute inset-0 w-full h-full object-cover z-0 cursor-pointer"
               />
+            ) : (
+              /* Fallback UI for external social media links or non-direct video links */
+              <div className="absolute inset-0 bg-[#0F0F23] flex flex-col items-center justify-center p-6 text-center z-0 gap-4 pointer-events-auto">
+                <div className="p-3 bg-rose-500/10 rounded-full border border-rose-500/30 text-rose-400 animate-pulse">
+                  <ExternalLink className="w-8 h-8" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono">Vídeo Externo</h4>
+                  <p className="text-[10px] text-gray-400 px-2 leading-relaxed">
+                    Este link aponta para uma página externa ou plataforma de vídeo que não permite reprodução direta aqui por motivos de privacidade ou segurança.
+                  </p>
+                </div>
+                <a
+                  href={currentReel.videoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 text-white font-extrabold text-[10px] rounded-xl transition-all shadow-md flex items-center gap-1.5 active:scale-95 cursor-pointer z-30"
+                >
+                  Abrir Vídeo na Nova Guia <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
             )}
 
             {/* Simulated overlay double-click heart animation */}
@@ -344,16 +446,18 @@ export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectio
               </div>
 
               {/* Sound Button */}
-              <button
-                onClick={() => setMuted(!muted)}
-                className="p-2 bg-black/40 hover:bg-black/60 border border-white/10 rounded-full text-white transition-all cursor-pointer shadow-md"
-              >
-                {muted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-green-400" />}
-              </button>
+              {isDirectVideoUrl(currentReel.videoUrl) && (
+                <button
+                  onClick={() => setMuted(!muted)}
+                  className="p-2 bg-black/40 hover:bg-black/60 border border-white/10 rounded-full text-white transition-all cursor-pointer shadow-md"
+                >
+                  {muted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-green-400" />}
+                </button>
+              )}
             </div>
 
             {/* PLAY/PAUSE CENTER INDICATOR */}
-            {!isPlaying && (
+            {!isPlaying && isDirectVideoUrl(currentReel.videoUrl) && (
               <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
                 <div className="p-4 bg-black/60 border border-white/20 rounded-full text-white/90 animate-ping">
                   <Play className="w-8 h-8 fill-current" />
