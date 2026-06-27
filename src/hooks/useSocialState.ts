@@ -861,7 +861,7 @@ export function useSocialState() {
     price?: number;
     paymentMethod?: 'pix' | 'credit_card' | 'boleto';
   }) => {
-    const newAd: Ad = {
+    const rawAd: any = {
       ...inputs,
       id: `ad-${Date.now()}`,
       userId: currentUser.id,
@@ -870,6 +870,15 @@ export function useSocialState() {
       impressions: 1,
       createdAt: new Date().toISOString()
     };
+
+    // Explicitly delete any undefined keys to prevent Firestore validation errors in any environment
+    Object.keys(rawAd).forEach(key => {
+      if (rawAd[key] === undefined) {
+        delete rawAd[key];
+      }
+    });
+
+    const newAd = rawAd as Ad;
 
     setAds(prev => [newAd, ...prev]);
     setDoc(doc(db, 'ads', newAd.id), newAd)
