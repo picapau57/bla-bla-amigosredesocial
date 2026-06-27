@@ -5,6 +5,7 @@ import {
   MoreVertical, Phone, Video, Users, FileText
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import ImageLightbox from './ImageLightbox';
 
 interface ChatSectionProps {
   currentUser: User;
@@ -28,6 +29,10 @@ export default function ChatSection({
   const [activeChatId, setActiveChatId] = useState<string | null>(chats[0]?.id || null);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+
+  // Lightbox zoom state
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [lightboxAlt, setLightboxAlt] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   // Auto scroll to bottom
@@ -269,8 +274,17 @@ export default function ChatSection({
                       >
                         {/* If image attachment */}
                         {msg.mediaType === 'image' && msg.mediaUrl && (
-                          <div className="rounded-xl overflow-hidden mb-2 border border-[#0A0A14] max-h-40 bg-[#0A0A14]">
-                            <img src={msg.mediaUrl} alt="attachment" className="w-full h-full object-cover" />
+                          <div className="rounded-xl overflow-hidden mb-2 border border-[#0A0A14] max-h-40 bg-[#0A0A14] cursor-zoom-in">
+                            <img 
+                              src={msg.mediaUrl} 
+                              alt="attachment" 
+                              className="w-full h-full object-cover hover:scale-105 transition-all duration-300" 
+                              onClick={() => {
+                                setLightboxImage(msg.mediaUrl || '');
+                                setLightboxAlt('Imagem de Chat');
+                              }}
+                              title="Clique para ampliar a imagem"
+                            />
                           </div>
                         )}
 
@@ -382,6 +396,16 @@ export default function ChatSection({
         )}
       </div>
 
+      {/* Chat Image Lightbox Magnifier */}
+      <ImageLightbox
+        isOpen={!!lightboxImage}
+        imageUrl={lightboxImage || ''}
+        altText={lightboxAlt}
+        onClose={() => {
+          setLightboxImage(null);
+          setLightboxAlt('');
+        }}
+      />
     </div>
   );
 }

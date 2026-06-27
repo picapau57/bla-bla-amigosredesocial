@@ -5,6 +5,7 @@ import {
   MapPin, CheckCircle, Flame, Star, Sparkles, ExternalLink, Bookmark
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import ImageLightbox from './ImageLightbox';
 
 interface FeedSectionProps {
   currentUser: User;
@@ -118,6 +119,10 @@ export default function FeedSection({
 
   // Saved / Bookmark posts
   const [savedPostIds, setSavedPostIds] = useState<string[]>([]);
+
+  // Lightbox zoom state
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [lightboxAlt, setLightboxAlt] = useState<string>('');
 
   // Post suggestions images
   const sampleMediaUrls = [
@@ -442,7 +447,12 @@ export default function FeedSection({
                         src={post.mediaUrl}
                         alt="Post attachment"
                         referrerPolicy="no-referrer"
-                        className="w-full h-full object-contain max-h-[380px] hover:scale-[1.01] transition-transform duration-300"
+                        className="w-full h-full object-contain max-h-[380px] hover:scale-[1.01] transition-transform duration-300 cursor-zoom-in"
+                        onClick={() => {
+                          setLightboxImage(post.mediaUrl || '');
+                          setLightboxAlt(post.content || 'Post attachment');
+                        }}
+                        title="Clique para ampliar a imagem"
                       />
                     )}
                   </div>
@@ -625,6 +635,16 @@ export default function FeedSection({
         )}
       </div>
 
+      {/* Reusable Image Lightbox Magnifier */}
+      <ImageLightbox
+        isOpen={!!lightboxImage}
+        imageUrl={lightboxImage || ''}
+        altText={lightboxAlt}
+        onClose={() => {
+          setLightboxImage(null);
+          setLightboxAlt('');
+        }}
+      />
     </div>
   );
 }

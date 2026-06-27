@@ -6,6 +6,7 @@ import {
   Image as ImageIcon, Video, Heart, ThumbsUp, Sparkles, Send
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import ImageLightbox from './ImageLightbox';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -34,6 +35,10 @@ export default function UserProfileModal({
 }: UserProfileModalProps) {
   const [commentInputs, setCommentInputs] = useState<{ [postId: string]: string }>({});
   const [activeCommentsPostId, setActiveCommentsPostId] = useState<string | null>(null);
+  
+  // Lightbox zoom state
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [lightboxAlt, setLightboxAlt] = useState<string>('');
 
   if (!isOpen) return null;
 
@@ -297,7 +302,12 @@ export default function UserProfileModal({
                             src={post.mediaUrl} 
                             alt="Post Media" 
                             referrerPolicy="no-referrer"
-                            className="w-full max-h-80 object-contain"
+                            className="w-full max-h-80 object-contain cursor-zoom-in hover:scale-[1.01] transition-transform duration-300"
+                            onClick={() => {
+                              setLightboxImage(post.mediaUrl || '');
+                              setLightboxAlt(post.content || 'Post Media');
+                            }}
+                            title="Clique para ampliar a imagem"
                           />
                         )}
                       </div>
@@ -421,6 +431,17 @@ export default function UserProfileModal({
           </div>
         </div>
       </motion.div>
+
+      {/* Profile Image Lightbox Magnifier */}
+      <ImageLightbox
+        isOpen={!!lightboxImage}
+        imageUrl={lightboxImage || ''}
+        altText={lightboxAlt}
+        onClose={() => {
+          setLightboxImage(null);
+          setLightboxAlt('');
+        }}
+      />
     </div>
   );
 }
