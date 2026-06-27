@@ -30,9 +30,17 @@ export default function App() {
     return localStorage.getItem('bb_is_logged_in') === 'true';
   });
 
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    return (localStorage.getItem('bb_theme') as 'light' | 'dark') || 'light';
+  });
+
   useEffect(() => {
     localStorage.setItem('bb_is_logged_in', isLoggedIn ? 'true' : 'false');
   }, [isLoggedIn]);
+
+  useEffect(() => {
+    localStorage.setItem('bb_theme', theme);
+  }, [theme]);
 
   const [activeTab, setActiveTab] = useState('feed');
   const [searchTerm, setSearchTerm] = useState('');
@@ -597,7 +605,7 @@ export default function App() {
         </div>
       ) : (
         /* AUTHENTICATED PORTAL WORKSPACE */
-        <div className="flex-1 flex flex-col min-h-screen bg-[#f3f4f6] text-slate-800" id="authenticated-workspace">
+        <div className={`flex-1 flex flex-col min-h-screen transition-colors duration-300 ${theme === 'light' ? 'light-theme bg-[#f3f4f6] text-slate-800' : 'bg-[#0A0A14] text-gray-100'}`} id="authenticated-workspace" data-theme={theme}>
           
           <Header
             currentUser={social.currentUser}
@@ -616,6 +624,8 @@ export default function App() {
             setActiveTab={setActiveTab}
             logs={social.logs}
             isAdminSessionActive={social.isAdminSessionActive}
+            theme={theme}
+            setTheme={setTheme}
           />
 
           <div className="max-w-7xl mx-auto w-full px-4 md:px-8 py-6 flex-1 flex flex-col lg:flex-row gap-6 relative">

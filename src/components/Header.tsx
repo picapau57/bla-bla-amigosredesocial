@@ -1,6 +1,6 @@
 import { useState, useEffect, ChangeEvent } from 'react';
 import { User, SystemLog } from '../types';
-import { Network, Bell, Search, Shuffle, ShieldAlert, BadgeCheck, Compass, MessageSquare } from 'lucide-react';
+import { Network, Bell, Search, Shuffle, ShieldAlert, BadgeCheck, Compass, MessageSquare, Sun, Moon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface HeaderProps {
@@ -13,6 +13,8 @@ interface HeaderProps {
   setActiveTab: (tab: string) => void;
   logs: SystemLog[];
   isAdminSessionActive?: boolean;
+  theme?: 'light' | 'dark';
+  setTheme?: (theme: 'light' | 'dark') => void;
 }
 
 export default function Header({
@@ -24,7 +26,9 @@ export default function Header({
   activeTab,
   setActiveTab,
   logs,
-  isAdminSessionActive
+  isAdminSessionActive,
+  theme = 'light',
+  setTheme
 }: HeaderProps) {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
@@ -104,6 +108,38 @@ export default function Header({
               <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
             </span>
           </button>
+
+          {/* THEME SWITCHER */}
+          {setTheme && (
+            <div className="flex items-center bg-black/15 p-1 rounded-full border border-white/10 gap-0.5" id="header-theme-switcher">
+              <button
+                onClick={() => setTheme('light')}
+                className={`flex items-center justify-center p-1.5 md:px-2.5 md:py-1 rounded-full text-[10px] font-black transition-all duration-300 active:scale-95 cursor-pointer ${
+                  theme === 'light'
+                    ? 'bg-[#7C4DFF] text-white shadow-md'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+                title="Modo Cinza Claro"
+                aria-label="Modo Cinza Claro"
+              >
+                <Sun className="w-3.5 h-3.5 md:mr-1" />
+                <span className="hidden md:inline">Claro</span>
+              </button>
+              <button
+                onClick={() => setTheme('dark')}
+                className={`flex items-center justify-center p-1.5 md:px-2.5 md:py-1 rounded-full text-[10px] font-black transition-all duration-300 active:scale-95 cursor-pointer ${
+                  theme === 'dark'
+                    ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+                title="Modo Escuro Clássico"
+                aria-label="Modo Escuro Clássico"
+              >
+                <Moon className="w-3.5 h-3.5 md:mr-1" />
+                <span className="hidden md:inline">Escuro</span>
+              </button>
+            </div>
+          )}
 
           {/* USER SWAPPER (SIMULATE SESSIONS) */}
           <div className="relative" id="header-user-swapper">
