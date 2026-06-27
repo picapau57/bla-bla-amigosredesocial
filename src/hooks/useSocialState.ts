@@ -890,6 +890,46 @@ export function useSocialState() {
     return newAd;
   };
 
+  const updateAd = (adId: string, inputs: {
+    title: string;
+    description: string;
+    imageUrl: string;
+    link: string;
+    type: 'gratis' | 'patrocinado';
+    position: 'lateral-top' | 'lateral-bottom' | 'feed' | 'profile' | 'home' | 'game-spot-1' | 'game-spot-2' | 'game-spot-3';
+    plan?: 'diario' | 'semanal' | 'mensal' | 'trimestral';
+    price?: number;
+    paymentMethod?: 'pix' | 'credit_card' | 'boleto';
+  }) => {
+    const a = ads.find(ad => ad.id === adId);
+    if (!a) return;
+
+    let status = a.status;
+    if (inputs.type === 'patrocinado' && a.type === 'gratis') {
+      status = 'pending';
+    }
+
+    const updatedAd: Ad = {
+      ...a,
+      ...inputs,
+      status,
+    };
+
+    const rawAd: any = { ...updatedAd };
+    Object.keys(rawAd).forEach(key => {
+      if (rawAd[key] === undefined) {
+        delete rawAd[key];
+      }
+    });
+
+    setAds(prev => prev.map(ad => ad.id === adId ? (rawAd as Ad) : ad));
+    setDoc(doc(db, 'ads', adId), rawAd)
+      .then(() => {
+        logAction('success', `Anúncio '${inputs.title}' atualizado com sucesso.`);
+      })
+      .catch(err => console.error(err));
+  };
+
   const approveAd = (adId: string) => {
     const a = ads.find(ad => ad.id === adId);
     if (!a) return;
@@ -1272,6 +1312,7 @@ export function useSocialState() {
     createEvent,
     toggleRSVP,
     purchaseAd,
+    updateAd,
     approveAd,
     trackAdClick,
     trackAdImpression,

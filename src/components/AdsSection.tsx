@@ -21,6 +21,17 @@ interface AdsSectionProps {
     price?: number;
     paymentMethod?: 'pix' | 'credit_card' | 'boleto';
   }) => Ad;
+  onUpdateAd: (adId: string, adInputs: {
+    title: string;
+    description: string;
+    imageUrl: string;
+    link: string;
+    type: 'gratis' | 'patrocinado';
+    position: 'lateral-top' | 'lateral-bottom' | 'feed' | 'profile' | 'home' | 'game-spot-1' | 'game-spot-2' | 'game-spot-3';
+    plan?: 'diario' | 'semanal' | 'mensal' | 'trimestral';
+    price?: number;
+    paymentMethod?: 'pix' | 'credit_card' | 'boleto';
+  }) => void;
   onApproveAd: (adId: string) => void;
 }
 
@@ -28,10 +39,14 @@ export default function AdsSection({
   currentUser,
   ads,
   onPurchaseAd,
+  onUpdateAd,
   onApproveAd
 }: AdsSectionProps) {
   const [activeSubTab, setActiveSubTab] = useState<'listings' | 'create' | 'analytics'>('listings');
   
+  // Edit mode state
+  const [editingAdId, setEditingAdId] = useState<string | null>(null);
+
   // Create state inputs for new Ad
   const [adTitle, setAdTitle] = useState('');
   const [adDesc, setAdDesc] = useState('');
@@ -43,6 +58,19 @@ export default function AdsSection({
   const [placement, setPlacement] = useState<'lateral-top' | 'lateral-bottom' | 'feed' | 'profile' | 'home'>('feed');
   const [planPeriod, setPlanPeriod] = useState<'diario' | 'semanal' | 'mensal' | 'trimestral'>('diario');
   const [paymentMethod, setPaymentMethod] = useState<'pix' | 'credit_card' | 'boleto'>('pix');
+
+  const startEditing = (ad: Ad) => {
+    setEditingAdId(ad.id);
+    setAdTitle(ad.title);
+    setAdDesc(ad.description);
+    setAdLink(ad.link);
+    setAdImg(ad.imageUrl);
+    setAdType(ad.type);
+    setPlacement(ad.position as any);
+    if (ad.plan) setPlanPeriod(ad.plan);
+    if (ad.paymentMethod) setPaymentMethod(ad.paymentMethod);
+    setActiveSubTab('create');
+  };
 
   // Checkout phase
   const [pendingAd, setPendingAd] = useState<Ad | null>(null);
@@ -84,6 +112,14 @@ export default function AdsSection({
       paymentMethod: adType === 'patrocinado' ? paymentMethod : undefined
     };
 
+    if (editingAdId) {
+      onUpdateAd(editingAdId, adTemplate);
+      resetForm();
+      setActiveSubTab('listings');
+      alert('Parabéns! Seu anúncio foi atualizado com sucesso!');
+      return;
+    }
+
     const registered = onPurchaseAd(adTemplate);
 
     if (adType === 'patrocinado') {
@@ -118,6 +154,7 @@ export default function AdsSection({
     setAdType('gratis');
     setPendingAd(null);
     setCheckoutStep('none');
+    setEditingAdId(null);
   };
 
   // User's own ads catalog for metrics monitoring
@@ -215,7 +252,7 @@ export default function AdsSection({
                     </p>
                   </div>
 
-                  <div className="border-t border-white/5 pt-3 mt-4 flex items-center justify-between">
+                  <div className="border-t border-white/5 pt-3 mt-4 flex items-center justify-between gap-2">
                     <div>
                       {ad.price ? (
                         <div className="text-sm font-extrabold text-[#FF5722] font-mono">
@@ -228,15 +265,25 @@ export default function AdsSection({
                       )}
                     </div>
 
-                    <a
-                      href={ad.link}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="bg-[#7C4DFF]/10 hover:bg-[#7C4DFF] text-[#00E5FF] hover:text-white font-extrabold text-xs py-1.5 px-3 rounded-lg border border-white/10 hover:border-transparent transition-all flex items-center gap-1 cursor-pointer"
-                    >
-                      <span>Acessar</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
+                    <div className="flex items-center gap-2">
+                      {(ad.userId === currentUser.id || currentUser.id === 'admin') && (
+                        <button
+                          onClick={() => startEditing(ad)}
+                          className="bg-amber-500/10 hover:bg-amber-500 text-amber-400 hover:text-white font-extrabold text-xs py-1.5 px-3 rounded-lg border border-white/5 hover:border-transparent transition-all flex items-center gap-1 cursor-pointer"
+                        >
+                          Editar
+                        </button>
+                      )}
+                      <a
+                        href={ad.link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="bg-[#7C4DFF]/10 hover:bg-[#7C4DFF] text-[#00E5FF] hover:text-white font-extrabold text-xs py-1.5 px-3 rounded-lg border border-white/10 hover:border-transparent transition-all flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>Acessar</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -261,9 +308,14 @@ export default function AdsSection({
               >
                 <div className="pb-2 border-b border-white/10">
                   <h3 className="font-extrabold text-sm text-white uppercase tracking-widest text-[#00E5FF] font-mono">
-                    Cadastrar Novo Anúncio
+                    {editingAdId ? 'Editar Anúncio' : 'Cadastrar Novo Anúncio'}
                   </h3>
-                  <p className="text-[11px] text-gray-500 mt-1">Publique classificados gratuitos ou monte uma campanha patrocinada para alcançar mais potenciais clientes!</p>
+                  <p className="text-[11px] text-gray-500 mt-1">
+                    {editingAdId 
+                      ? 'Atualize as informações do seu anúncio para manter seus clientes e leads atualizados.' 
+                      : 'Publique classificados gratuitos ou monte uma campanha patrocinada para alcançar mais potenciais clientes!'
+                    }
+                  </p>
                 </div>
 
                 {/* Title */}
@@ -411,12 +463,27 @@ export default function AdsSection({
                   )}
                 </AnimatePresence>
 
-                <div className="pt-2">
+                <div className="pt-2 flex gap-3">
+                  {editingAdId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        resetForm();
+                        setActiveSubTab('listings');
+                      }}
+                      className="flex-1 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border border-white/10 font-extrabold text-xs py-3 rounded-xl transition-all uppercase tracking-wider cursor-pointer"
+                    >
+                      Cancelar Edição
+                    </button>
+                  )}
                   <button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-[#7C4DFF] via-[#00E5FF] to-[#00E676] hover:brightness-110 text-white font-extrabold text-xs py-3 rounded-xl shadow-lg transition-all uppercase tracking-wider cursor-pointer"
+                    className="flex-1 bg-gradient-to-r from-[#7C4DFF] via-[#00E5FF] to-[#00E676] hover:brightness-110 text-white font-extrabold text-xs py-3 rounded-xl shadow-lg transition-all uppercase tracking-wider cursor-pointer"
                   >
-                    {adType === 'patrocinado' ? 'Continuar para Pagamento' : 'Publicar nos Classificados'}
+                    {editingAdId 
+                      ? 'Salvar Alterações' 
+                      : (adType === 'patrocinado' ? 'Continuar para Pagamento' : 'Publicar nos Classificados')
+                    }
                   </button>
                 </div>
 
@@ -706,19 +773,27 @@ export default function AdsSection({
                       </div>
                     </div>
 
-                    <div className="flex gap-4 sm:text-right shrink-0 font-mono">
-                      <div className="px-3 border-r border-white/5">
-                        <div className="text-xs font-bold text-gray-300">{c.impressions}</div>
-                        <div className="text-[9px] text-gray-500 font-sans uppercase">Views</div>
+                    <div className="flex items-center gap-4 shrink-0 font-mono">
+                      <div className="flex gap-4 sm:text-right shrink-0">
+                        <div className="px-3 border-r border-white/5">
+                          <div className="text-xs font-bold text-gray-300">{c.impressions}</div>
+                          <div className="text-[9px] text-gray-500 font-sans uppercase">Views</div>
+                        </div>
+                        <div className="px-3 border-r border-white/5">
+                          <div className="text-xs font-bold text-[#00E5FF]">{c.clicks}</div>
+                          <div className="text-[9px] text-gray-500 font-sans uppercase">Clicks</div>
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-[#FF5722]">{ctr}%</div>
+                          <div className="text-[9px] text-gray-500 font-sans uppercase">CTR</div>
+                        </div>
                       </div>
-                      <div className="px-3 border-r border-white/5">
-                        <div className="text-xs font-bold text-[#00E5FF]">{c.clicks}</div>
-                        <div className="text-[9px] text-gray-500 font-sans uppercase">Clicks</div>
-                      </div>
-                      <div>
-                        <div className="text-xs font-bold text-[#FF5722]">{ctr}%</div>
-                        <div className="text-[9px] text-gray-500 font-sans uppercase">CTR</div>
-                      </div>
+                      <button
+                        onClick={() => startEditing(c)}
+                        className="bg-amber-500/10 hover:bg-amber-500 text-amber-400 hover:text-white font-extrabold text-[10px] py-1 px-2.5 rounded-lg border border-white/5 hover:border-transparent transition-all cursor-pointer uppercase tracking-tight"
+                      >
+                        Editar
+                      </button>
                     </div>
                   </div>
                 );

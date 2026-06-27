@@ -721,6 +721,7 @@ export default function App() {
                       currentUser={social.currentUser}
                       ads={social.ads}
                       onPurchaseAd={social.purchaseAd}
+                      onUpdateAd={social.updateAd}
                       onApproveAd={social.approveAd}
                     />
                   )}
