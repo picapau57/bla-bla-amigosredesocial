@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { User, Post, Ad, SystemLog, EmailConfig } from '../types';
+import { User, Post, Ad, SystemLog, EmailConfig, PayoutConfig, PayoutRequest } from '../types';
 import { 
   Users, AlertTriangle, ShieldCheck, CheckCircle, Mail,
-  Trash2, Ban, Unlock, DollarSign, Activity, FileText, CheckCircle2, Key
+  Trash2, Ban, Unlock, DollarSign, Activity, FileText, CheckCircle2, Key,
+  CreditCard, Send, HelpCircle, History, Check, XCircle
 } from 'lucide-react';
 
 interface AdminSectionProps {
@@ -31,6 +32,11 @@ interface AdminSectionProps {
     impressions: number;
     clicks: number;
   };
+  payoutConfig: PayoutConfig;
+  onUpdatePayoutConfig: (config: PayoutConfig) => void;
+  payoutRequests: PayoutRequest[];
+  onCreatePayoutRequest: (amount: number, details: string) => void;
+  onUpdatePayoutRequestStatus: (id: string, status: 'pending' | 'processing' | 'paid' | 'rejected', notes?: string) => void;
 }
 
 export default function AdminSection({
@@ -49,9 +55,42 @@ export default function AdminSection({
   onDeletePost,
   onDeleteAd,
   onApproveAd,
-  getAdminStats
+  getAdminStats,
+  payoutConfig,
+  onUpdatePayoutConfig,
+  payoutRequests,
+  onCreatePayoutRequest,
+  onUpdatePayoutRequestStatus
 }: AdminSectionProps) {
-  const [adminActiveSubTab, setAdminActiveSubTab] = useState<'dashboard' | 'users' | 'posts' | 'ads_moderation' | 'logs' | 'email_settings'>('dashboard');
+  const [adminActiveSubTab, setAdminActiveSubTab] = useState<'dashboard' | 'users' | 'posts' | 'ads_moderation' | 'logs' | 'email_settings' | 'finance_settings'>('dashboard');
+
+  const [editedPayout, setEditedPayout] = useState<PayoutConfig>(() => ({
+    gateway: payoutConfig?.gateway || 'disabled',
+    pixKeyType: payoutConfig?.pixKeyType || 'cpf',
+    pixKey: payoutConfig?.pixKey || '',
+    pixHolderName: payoutConfig?.pixHolderName || '',
+    stripePublicKey: payoutConfig?.stripePublicKey || '',
+    stripeSecretKey: payoutConfig?.stripeSecretKey || '',
+    mercadoPagoPublicKey: payoutConfig?.mercadoPagoPublicKey || '',
+    mercadoPagoAccessToken: payoutConfig?.mercadoPagoAccessToken || '',
+    asaasApiKey: payoutConfig?.asaasApiKey || '',
+    bankName: payoutConfig?.bankName || '',
+    bankAgency: payoutConfig?.bankAgency || '',
+    bankAccount: payoutConfig?.bankAccount || '',
+    bankAccountType: payoutConfig?.bankAccountType || 'corrente',
+    bankHolderName: payoutConfig?.bankHolderName || '',
+    bankHolderDoc: payoutConfig?.bankHolderDoc || ''
+  }));
+
+  const [lastConfig, setLastConfig] = useState<PayoutConfig>(payoutConfig);
+  if (payoutConfig !== lastConfig) {
+    setLastConfig(payoutConfig);
+    setEditedPayout(payoutConfig);
+  }
+
+  const [withdrawAmount, setWithdrawAmount] = useState<string>('');
+
+
 
   const stats = getAdminStats();
   const realUsers = users.filter(u => !['user-1', 'user-2', 'user-3', 'user-4', 'user-5', 'admin'].includes(u.id));
@@ -82,7 +121,8 @@ export default function AdminSection({
           { id: 'posts', name: 'Excluir Conteúdo (' + posts.length + ')', icon: Trash2 },
           { id: 'ads_moderation', name: 'Gerenciar Anúncios', icon: ShieldCheck },
           { id: 'logs', name: 'Logs de Segurança (' + logs.length + ')', icon: FileText },
-          { id: 'email_settings', name: 'E-mail Transacional API', icon: Mail }
+          { id: 'email_settings', name: 'E-mail Transacional API', icon: Mail },
+          { id: 'finance_settings', name: 'Recebimentos e Pix (R$)', icon: DollarSign }
         ].map(tb => {
           const Icon = tb.icon;
           const isActive = adminActiveSubTab === tb.id;
@@ -511,6 +551,488 @@ export default function AdminSection({
               </ol>
             </div>
           </div>
+        </div>
+      )}
+
+      {adminActiveSubTab === 'finance_settings' && (
+        <div className="space-y-6 animate-fade-in" id="admin-panel-finance-tab">
+          
+          {/* TOP INFO & BALANCE CARD */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* GROSS EARNINGS */}
+            <div className="bg-[#0A0A14] p-5 rounded-2xl border border-white/10 space-y-1 relative overflow-hidden">
+              <div className="absolute right-4 top-4 bg-[#00E676]/10 p-2 rounded-xl text-[#00E676]">
+                <Activity className="w-5 h-5" />
+              </div>
+              <p className="text-[10px] uppercase font-mono text-gray-500 font-extrabold tracking-widest">Receita Bruta Total</p>
+              <h4 className="text-2xl font-mono font-black text-white">R$ {stats.earnings.toFixed(2)}</h4>
+              <p className="text-[10px] text-gray-400 font-sans">Soma acumulada de todos os anúncios e assinaturas</p>
+            </div>
+
+            {/* AVAILABLE BALANCE FOR Payout */}
+            {(() => {
+              const totalPaid = payoutRequests
+                .filter(r => r.status === 'paid')
+                .reduce((sum, r) => sum + r.amount, 0);
+              const totalPending = payoutRequests
+                .filter(r => r.status === 'pending' || r.status === 'processing')
+                .reduce((sum, r) => sum + r.amount, 0);
+              const available = Math.max(0, stats.earnings - totalPaid - totalPending);
+
+              return (
+                <>
+                  <div className="bg-[#0A0A14] p-5 rounded-2xl border border-white/10 space-y-1 relative overflow-hidden">
+                    <div className="absolute right-4 top-4 bg-[#00E5FF]/10 p-2 rounded-xl text-[#00E5FF]">
+                      <DollarSign className="w-5 h-5" />
+                    </div>
+                    <p className="text-[10px] uppercase font-mono text-gray-500 font-extrabold tracking-widest">Saldo Disponível para Saque</p>
+                    <h4 className="text-2xl font-mono font-black text-[#00E5FF]">R$ {available.toFixed(2)}</h4>
+                    <p className="text-[10px] text-gray-400 font-sans">Lançamentos compensados prontos para transferência</p>
+                  </div>
+
+                  <div className="bg-[#0A0A14] p-5 rounded-2xl border border-white/10 space-y-1 relative overflow-hidden">
+                    <div className="absolute right-4 top-4 bg-[#7C4DFF]/10 p-2 rounded-xl text-[#7C4DFF]">
+                      <CheckCircle className="w-5 h-5" />
+                    </div>
+                    <p className="text-[10px] uppercase font-mono text-gray-500 font-extrabold tracking-widest">Total Sacado (Pago)</p>
+                    <h4 className="text-2xl font-mono font-black text-[#00E676]">R$ {totalPaid.toFixed(2)}</h4>
+                    <p className="text-[10px] text-gray-400 font-sans">Valores transferidos com sucesso para sua conta externa</p>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            {/* LEFT COLUMN: GATEWAY SETUP (7 cols) */}
+            <div className="lg:col-span-7 bg-[#0A0A14] p-5 rounded-2xl border border-white/10 space-y-4">
+              <h4 className="text-xs font-black font-mono text-[#00E5FF] uppercase tracking-widest border-b border-white/5 pb-2 flex items-center justify-between">
+                <span>Configurar Gateway de Recebimento Real</span>
+                <span className="text-[10px] text-gray-500 font-normal">Configuração Segura no Firebase</span>
+              </h4>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1.5">Meio de Recebimento Preferencial</label>
+                  <select
+                    value={editedPayout.gateway}
+                    onChange={(e) => setEditedPayout({ ...editedPayout, gateway: e.target.value as any })}
+                    className="w-full bg-[#121225] text-white p-3 rounded-xl border border-white/10 text-xs font-semibold focus:outline-none focus:border-[#00E5FF] cursor-pointer"
+                  >
+                    <option value="disabled">Desativado (Simular fluxo sem gateway conectado)</option>
+                    <option value="pix">Chave PIX Direta (Recebimento direto e manual)</option>
+                    <option value="mercado_pago">Mercado Pago (Cartão, Boleto, Pix automático)</option>
+                    <option value="stripe">Stripe Connect (Checkout de cartões internacional)</option>
+                    <option value="asaas">ASAAS Gateway (Cobranças automatizadas via Pix/Boleto)</option>
+                    <option value="bank_transfer">Dados Bancários / Conta de Negócios (TED/DOC)</option>
+                  </select>
+                </div>
+
+                {/* PIX CONFIG FIELDS */}
+                {editedPayout.gateway === 'pix' && (
+                  <div className="bg-[#121225] p-4 rounded-xl border border-white/5 space-y-3.5 animate-fade-in">
+                    <p className="text-[10px] text-amber-400 font-mono font-bold uppercase tracking-wide">● Configurar Recebimento via Chave PIX</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] text-gray-400 font-mono mb-1 uppercase">Tipo de Chave</label>
+                        <select
+                          value={editedPayout.pixKeyType}
+                          onChange={(e) => setEditedPayout({ ...editedPayout, pixKeyType: e.target.value as any })}
+                          className="w-full bg-[#0A0A14] text-white p-2.5 rounded-lg border border-white/10 text-xs focus:outline-none focus:border-[#00E5FF]"
+                        >
+                          <option value="cpf">CPF</option>
+                          <option value="cnpj">CNPJ</option>
+                          <option value="email">E-mail</option>
+                          <option value="phone">Telefone</option>
+                          <option value="random">Chave Aleatória (EVP)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-gray-400 font-mono mb-1 uppercase">Chave PIX</label>
+                        <input
+                          type="text"
+                          placeholder="Digite sua chave pix"
+                          value={editedPayout.pixKey || ''}
+                          onChange={(e) => setEditedPayout({ ...editedPayout, pixKey: e.target.value })}
+                          className="w-full bg-[#0A0A14] text-white p-2.5 rounded-lg border border-white/10 text-xs focus:outline-none focus:border-[#00E5FF]"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-gray-400 font-mono mb-1 uppercase">Nome Completo do Titular</label>
+                      <input
+                        type="text"
+                        placeholder="Nome do favorecido no PIX"
+                        value={editedPayout.pixHolderName || ''}
+                        onChange={(e) => setEditedPayout({ ...editedPayout, pixHolderName: e.target.value })}
+                        className="w-full bg-[#0A0A14] text-white p-2.5 rounded-lg border border-white/10 text-xs focus:outline-none focus:border-[#00E5FF]"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* MERCADO PAGO CONFIG FIELDS */}
+                {editedPayout.gateway === 'mercado_pago' && (
+                  <div className="bg-[#121225] p-4 rounded-xl border border-white/5 space-y-3.5 animate-fade-in">
+                    <p className="text-[10px] text-[#00E5FF] font-mono font-bold uppercase tracking-wide">● Configurar Credenciais do Mercado Pago</p>
+                    <div>
+                      <label className="block text-[10px] text-gray-400 font-mono mb-1 uppercase">Public Key (Credencial de Produção)</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: APP_USR-876e5df..."
+                        value={editedPayout.mercadoPagoPublicKey || ''}
+                        onChange={(e) => setEditedPayout({ ...editedPayout, mercadoPagoPublicKey: e.target.value })}
+                        className="w-full bg-[#0A0A14] text-white p-2.5 rounded-lg border border-white/10 text-xs font-mono focus:outline-none focus:border-[#00E5FF]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-gray-400 font-mono mb-1 uppercase">Access Token (Produção)</label>
+                      <input
+                        type="password"
+                        placeholder="Ex: APP_USR-124976214..."
+                        value={editedPayout.mercadoPagoAccessToken || ''}
+                        onChange={(e) => setEditedPayout({ ...editedPayout, mercadoPagoAccessToken: e.target.value })}
+                        className="w-full bg-[#0A0A14] text-white p-2.5 rounded-lg border border-white/10 text-xs font-mono focus:outline-none focus:border-[#00E5FF]"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* STRIPE CONFIG FIELDS */}
+                {editedPayout.gateway === 'stripe' && (
+                  <div className="bg-[#121225] p-4 rounded-xl border border-white/5 space-y-3.5 animate-fade-in">
+                    <p className="text-[10px] text-[#7C4DFF] font-mono font-bold uppercase tracking-wide">● Configurar Credenciais da Stripe</p>
+                    <div>
+                      <label className="block text-[10px] text-gray-400 font-mono mb-1 uppercase">Stripe Publishable Key</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: pk_live_51M..."
+                        value={editedPayout.stripePublicKey || ''}
+                        onChange={(e) => setEditedPayout({ ...editedPayout, stripePublicKey: e.target.value })}
+                        className="w-full bg-[#0A0A14] text-white p-2.5 rounded-lg border border-white/10 text-xs font-mono focus:outline-none focus:border-[#00E5FF]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-gray-400 font-mono mb-1 uppercase">Stripe Secret Key</label>
+                      <input
+                        type="password"
+                        placeholder="Ex: sk_live_51M..."
+                        value={editedPayout.stripeSecretKey || ''}
+                        onChange={(e) => setEditedPayout({ ...editedPayout, stripeSecretKey: e.target.value })}
+                        className="w-full bg-[#0A0A14] text-white p-2.5 rounded-lg border border-white/10 text-xs font-mono focus:outline-none focus:border-[#00E5FF]"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* ASAAS CONFIG FIELDS */}
+                {editedPayout.gateway === 'asaas' && (
+                  <div className="bg-[#121225] p-4 rounded-xl border border-white/5 space-y-3 animate-fade-in">
+                    <p className="text-[10px] text-[#00E676] font-mono font-bold uppercase tracking-wide">● Configurar Credenciais do ASAAS</p>
+                    <div>
+                      <label className="block text-[10px] text-gray-400 font-mono mb-1 uppercase">ASAAS API Key (Produção)</label>
+                      <input
+                        type="password"
+                        placeholder="Ex: $aae$76e5df..."
+                        value={editedPayout.asaasApiKey || ''}
+                        onChange={(e) => setEditedPayout({ ...editedPayout, asaasApiKey: e.target.value })}
+                        className="w-full bg-[#0A0A14] text-white p-2.5 rounded-lg border border-white/10 text-xs font-mono focus:outline-none focus:border-[#00E5FF]"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* BANK TRANSFER CONFIG FIELDS */}
+                {editedPayout.gateway === 'bank_transfer' && (
+                  <div className="bg-[#121225] p-4 rounded-xl border border-white/5 space-y-3.5 animate-fade-in">
+                    <p className="text-[10px] text-gray-400 font-mono font-bold uppercase tracking-wide">● Dados da Conta Bancária para TED/DOC</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] text-gray-400 font-mono mb-1 uppercase">Banco (Nome/Código)</label>
+                        <input
+                          type="text"
+                          placeholder="Ex: Banco do Brasil"
+                          value={editedPayout.bankName || ''}
+                          onChange={(e) => setEditedPayout({ ...editedPayout, bankName: e.target.value })}
+                          className="w-full bg-[#0A0A14] text-white p-2.5 rounded-lg border border-white/10 text-xs focus:outline-none focus:border-[#00E5FF]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-gray-400 font-mono mb-1 uppercase">Tipo de Conta</label>
+                        <select
+                          value={editedPayout.bankAccountType || 'corrente'}
+                          onChange={(e) => setEditedPayout({ ...editedPayout, bankAccountType: e.target.value as any })}
+                          className="w-full bg-[#0A0A14] text-white p-2.5 rounded-lg border border-white/10 text-xs focus:outline-none focus:border-[#00E5FF]"
+                        >
+                          <option value="corrente">Conta Corrente</option>
+                          <option value="poupanca">Conta Poupança</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] text-gray-400 font-mono mb-1 uppercase">Agência (com dígito se houver)</label>
+                        <input
+                          type="text"
+                          placeholder="Ex: 1234-5"
+                          value={editedPayout.bankAgency || ''}
+                          onChange={(e) => setEditedPayout({ ...editedPayout, bankAgency: e.target.value })}
+                          className="w-full bg-[#0A0A14] text-white p-2.5 rounded-lg border border-white/10 text-xs focus:outline-none focus:border-[#00E5FF]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-gray-400 font-mono mb-1 uppercase">Número da Conta (com dígito)</label>
+                        <input
+                          type="text"
+                          placeholder="Ex: 98765-4"
+                          value={editedPayout.bankAccount || ''}
+                          onChange={(e) => setEditedPayout({ ...editedPayout, bankAccount: e.target.value })}
+                          className="w-full bg-[#0A0A14] text-white p-2.5 rounded-lg border border-white/10 text-xs focus:outline-none focus:border-[#00E5FF]"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] text-gray-400 font-mono mb-1 uppercase">Nome Completo do Titular</label>
+                        <input
+                          type="text"
+                          placeholder="Razão Social ou Nome do Titular"
+                          value={editedPayout.bankHolderName || ''}
+                          onChange={(e) => setEditedPayout({ ...editedPayout, bankHolderName: e.target.value })}
+                          className="w-full bg-[#0A0A14] text-white p-2.5 rounded-lg border border-white/10 text-xs focus:outline-none focus:border-[#00E5FF]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-gray-400 font-mono mb-1 uppercase">CPF ou CNPJ do Titular</label>
+                        <input
+                          type="text"
+                          placeholder="000.000.000-00"
+                          value={editedPayout.bankHolderDoc || ''}
+                          onChange={(e) => setEditedPayout({ ...editedPayout, bankHolderDoc: e.target.value })}
+                          className="w-full bg-[#0A0A14] text-white p-2.5 rounded-lg border border-white/10 text-xs focus:outline-none focus:border-[#00E5FF]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => {
+                    onUpdatePayoutConfig(editedPayout);
+                    alert('Configurações de recebimento salvas com sucesso em seu Firestore!');
+                  }}
+                  className="w-full bg-gradient-to-r from-[#00E676] to-[#00E5FF] hover:brightness-110 text-white font-extrabold text-xs uppercase py-3 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <CheckCircle2 className="w-4 h-4" /> Salvar Credenciais de Recebimento
+                </button>
+              </div>
+            </div>
+
+            {/* RIGHT COLUMN: EDUCATIONAL / EXPLANATION (5 cols) */}
+            <div className="lg:col-span-5 bg-[#0A0A14] p-5 rounded-2xl border border-white/10 space-y-4">
+              <h4 className="text-xs font-black font-mono text-[#FF5722] uppercase tracking-widest border-b border-white/5 pb-2 flex items-center gap-2">
+                <HelpCircle className="w-4 h-4 text-[#FF5722]" /> Como funciona na vida real?
+              </h4>
+
+              <div className="space-y-3.5 text-xs text-gray-300 leading-relaxed font-sans">
+                <p>
+                  Muitas pessoas acham que quando criam um aplicativo, o dinheiro dos usuários fica retido na "loja" ou na plataforma de hospedagem. <strong>Na verdade, é muito mais simples e seguro!</strong>
+                </p>
+                
+                <div className="space-y-2.5 bg-[#121225] p-3.5 rounded-xl border border-white/5">
+                  <div className="flex gap-2">
+                    <span className="text-[#00E5FF] font-mono font-bold">1.</span>
+                    <p>
+                      <strong>Conexão Direta:</strong> Ao conectar sua conta do Mercado Pago, Stripe ou ASAAS, as vendas são cobradas direto na sua própria credencial de comerciante.
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-[#00E5FF] font-mono font-bold">2.</span>
+                    <p>
+                      <strong>Dinheiro em Tempo Real:</strong> Quando um usuário compra uma campanha de anúncios ou se torna Premium, o dinheiro entra <strong>direto na sua conta do banco</strong> em minutos (via Pix) ou dias úteis (via Cartão).
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-[#00E5FF] font-mono font-bold">3.</span>
+                    <p>
+                      <strong>Controle por Webhooks:</strong> Assim que o pagamento é aprovado, o gateway (Stripe/MP) envia uma notificação automática (webhook) para o seu servidor, que atualiza a postagem/anúncio instantaneamente!
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[11px] text-amber-300 leading-normal space-y-1">
+                  <p className="font-bold font-mono text-[10px] uppercase">💡 DICA PARA INICIAR JÁ:</p>
+                  <p>
+                    Se você não quer lidar com APIs de imediato, selecione a opção <strong>"Chave PIX Direta"</strong>. Os usuários farão transferências Pix manuais, e você aprovará o anúncio clicando em <strong>"Aprovar Financeiro"</strong> na aba "Gerenciar Anúncios". É a melhor forma de validar o negócio sem burocracia!
+                  </p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* LOWER SECTION: SOLICITAR SAQUE & HISTÓRICO DE SAQUES */}
+          <div className="bg-[#0A0A14] p-5 rounded-2xl border border-white/10 space-y-5">
+            <div className="border-b border-white/5 pb-2">
+              <h4 className="text-xs font-black font-mono text-[#7C4DFF] uppercase tracking-widest flex items-center gap-1.5">
+                <History className="w-4 h-4" /> Solicitações de Saque & Auditoria Financeira
+              </h4>
+              <p className="text-[10px] text-gray-500 font-sans mt-0.5">Simule saques do saldo acumulado e gerencie suas transferências na plataforma</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+              
+              {/* SOLICITAR SAQUE PANEL (4 cols) */}
+              <div className="md:col-span-4 bg-[#121225] p-4.5 rounded-xl border border-white/5 space-y-3.5 h-fit">
+                <h5 className="text-[11px] font-bold uppercase font-mono text-white tracking-wider">Nova Solicitação de Saque</h5>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-[10px] text-gray-400 font-mono mb-1 uppercase">Valor a Transferir (R$)</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2 text-xs text-gray-500 font-mono font-bold">R$</span>
+                      <input
+                        type="number"
+                        placeholder="0.00"
+                        value={withdrawAmount}
+                        onChange={(e) => setWithdrawAmount(e.target.value)}
+                        className="w-full bg-[#0A0A14] text-white pl-9 p-2 rounded-lg border border-white/10 text-xs font-mono font-bold focus:outline-none focus:border-[#00E5FF]"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      const amountNum = parseFloat(withdrawAmount);
+                      if (isNaN(amountNum) || amountNum <= 0) {
+                        alert('Digite um valor de saque válido!');
+                        return;
+                      }
+
+                      // Calculate available balance
+                      const totalPaid = payoutRequests
+                        .filter(r => r.status === 'paid')
+                        .reduce((sum, r) => sum + r.amount, 0);
+                      const totalPending = payoutRequests
+                        .filter(r => r.status === 'pending' || r.status === 'processing')
+                        .reduce((sum, r) => sum + r.amount, 0);
+                      const available = stats.earnings - totalPaid - totalPending;
+
+                      if (amountNum > available) {
+                        alert(`Saldo disponível insuficiente! Você só pode sacar até R$ ${available.toFixed(2)}`);
+                        return;
+                      }
+
+                      // Generate destination details based on gateway
+                      let dest = '';
+                      if (editedPayout.gateway === 'pix') {
+                        dest = `PIX (${editedPayout.pixKeyType.toUpperCase()}): ${editedPayout.pixKey} - Favorecido: ${editedPayout.pixHolderName}`;
+                      } else if (editedPayout.gateway === 'bank_transfer') {
+                        dest = `BANCÁRIO: Banco ${editedPayout.bankName} - Ag: ${editedPayout.bankAgency} / CC: ${editedPayout.bankAccount} - Favorecido: ${editedPayout.bankHolderName}`;
+                      } else if (editedPayout.gateway === 'stripe') {
+                        dest = `Stripe Connect: Conta integrada do Administrador`;
+                      } else if (editedPayout.gateway === 'mercado_pago') {
+                        dest = `Mercado Pago: Conta vinculada ${editedPayout.mercadoPagoPublicKey ? 'produção' : 'simulada'}`;
+                      } else {
+                        dest = `Transferência Pix de Emergência (Favor configurar dados bancários ou Pix acima)`;
+                      }
+
+                      onCreatePayoutRequest(amountNum, dest);
+                      setWithdrawAmount('');
+                      alert('Solicitação de saque enviada com sucesso! Ela ficará com status Pendente até que o processo seja auditado e aprovado.');
+                    }}
+                    className="w-full bg-gradient-to-r from-[#7C4DFF] to-[#00E5FF] hover:brightness-110 text-white font-extrabold text-[10px] uppercase py-2.5 rounded-lg shadow-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Send className="w-3.5 h-3.5" /> Solicitar Transferência
+                  </button>
+                </div>
+              </div>
+
+              {/* SAQUES LIST (8 cols) */}
+              <div className="md:col-span-8 space-y-3">
+                <h5 className="text-[11px] font-bold uppercase font-mono text-gray-400 tracking-wider">Histórico de Movimentações</h5>
+
+                <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-1">
+                  {payoutRequests.length === 0 ? (
+                    <div className="text-xs text-gray-500 italic p-8 text-center bg-[#121225] rounded-xl border border-white/5">
+                      Nenhuma solicitação de saque feita ainda. Experimente fazer um saque ao lado!
+                    </div>
+                  ) : (
+                    payoutRequests.map(req => (
+                      <div key={req.id} className="bg-[#121225] p-4 rounded-xl border border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 animate-fade-in">
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs font-mono font-black text-[#00E676]">R$ {req.amount.toFixed(2)}</span>
+                            <span className="text-[9px] text-gray-500 font-mono">{new Date(req.requestedAt).toLocaleString()}</span>
+                            <span className={`text-[8px] font-mono px-2 py-0.5 rounded font-extrabold uppercase ${
+                              req.status === 'paid' ? 'bg-[#00E676]/20 text-[#00E676]' :
+                              req.status === 'processing' ? 'bg-[#00E5FF]/20 text-[#00E5FF]' :
+                              req.status === 'rejected' ? 'bg-[#FF1744]/20 text-[#FF1744]' :
+                              'bg-amber-500/20 text-amber-400'
+                            }`}>
+                              {req.status === 'paid' ? 'Pago' :
+                               req.status === 'processing' ? 'Processando' :
+                               req.status === 'rejected' ? 'Recusado' :
+                               'Pendente'}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-gray-400 font-sans leading-tight">
+                            <strong>Destino:</strong> {req.destinationDetails}
+                          </p>
+                          {req.notes && (
+                            <p className="text-[10px] text-amber-400 font-mono italic">
+                              <strong>Nota do Sistema:</strong> {req.notes}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* ADMIN LIFECYCLE ACTION OVERRIDES (since the admin is viewing this panel, let them change status!) */}
+                        <div className="flex gap-1.5 shrink-0 self-end sm:self-center">
+                          {req.status === 'pending' && (
+                            <button
+                              onClick={() => onUpdatePayoutRequestStatus(req.id, 'processing', 'Iniciado processamento de transferência bancária.')}
+                              className="bg-[#00E5FF]/10 hover:bg-[#00E5FF] hover:text-[#0A0A14] text-[#00E5FF] font-mono text-[9px] font-bold px-2.5 py-1.5 rounded transition-all cursor-pointer border border-[#00E5FF]/20 hover:border-transparent uppercase"
+                            >
+                              Processar
+                            </button>
+                          )}
+                          {(req.status === 'pending' || req.status === 'processing') && (
+                            <>
+                              <button
+                                onClick={() => {
+                                  const voucher = window.prompt('Digite o número do comprovante Pix / Autenticação Bancária (opcional):', `COMP-${Date.now()}`);
+                                  if (voucher !== null) {
+                                    onUpdatePayoutRequestStatus(req.id, 'paid', `Transferência realizada com sucesso. Comprovante: ${voucher || 'PIX-OK'}`);
+                                  }
+                                }}
+                                className="bg-[#00E676]/10 hover:bg-[#00E676] hover:text-[#0A0A14] text-[#00E676] font-mono text-[9px] font-bold px-2.5 py-1.5 rounded transition-all cursor-pointer border border-[#00E676]/20 hover:border-transparent uppercase"
+                              >
+                                Pagar
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const reason = window.prompt('Digite a justificativa de recusa:', 'Chave Pix inválida ou dados bancários incorretos.');
+                                  if (reason !== null) {
+                                    onUpdatePayoutRequestStatus(req.id, 'rejected', reason || 'Cancelado pelo usuário.');
+                                  }
+                                }}
+                                className="bg-rose-500/10 hover:bg-[#FF1744] hover:text-white text-rose-400 font-mono text-[9px] font-bold px-2.5 py-1.5 rounded transition-all cursor-pointer border border-rose-500/20 hover:border-transparent uppercase"
+                              >
+                                Recusar
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+            </div>
+          </div>
+
         </div>
       )}
 

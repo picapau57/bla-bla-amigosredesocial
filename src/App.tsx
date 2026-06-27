@@ -809,6 +809,11 @@ export default function App() {
                       onDeleteAd={social.adminDeleteAd}
                       onApproveAd={social.approveAd}
                       getAdminStats={social.getAdminStats}
+                      payoutConfig={social.payoutConfig}
+                      onUpdatePayoutConfig={social.updatePayoutConfig}
+                      payoutRequests={social.payoutRequests}
+                      onCreatePayoutRequest={social.createPayoutRequest}
+                      onUpdatePayoutRequestStatus={social.updatePayoutRequestStatus}
                     />
                   )}
 

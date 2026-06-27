@@ -204,6 +204,44 @@
         "provider": { "type": "string" }
       },
       "required": ["serviceId", "templateId", "publicKey", "provider"]
+    },
+    "PayoutConfig": {
+      "title": "PayoutConfig",
+      "description": "Payment gateway config for platform owner",
+      "type": "object",
+      "properties": {
+        "gateway": { "type": "string" },
+        "pixKeyType": { "type": "string" },
+        "pixKey": { "type": "string" },
+        "pixHolderName": { "type": "string" },
+        "stripePublicKey": { "type": "string" },
+        "stripeSecretKey": { "type": "string" },
+        "mercadoPagoPublicKey": { "type": "string" },
+        "mercadoPagoAccessToken": { "type": "string" },
+        "asaasApiKey": { "type": "string" },
+        "bankName": { "type": "string" },
+        "bankAgency": { "type": "string" },
+        "bankAccount": { "type": "string" },
+        "bankAccountType": { "type": "string" },
+        "bankHolderName": { "type": "string" },
+        "bankHolderDoc": { "type": "string" }
+      },
+      "required": ["gateway"]
+    },
+    "PayoutRequest": {
+      "title": "PayoutRequest",
+      "description": "Withdrawal request created by admin",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string" },
+        "requestedAt": { "type": "string" },
+        "processedAt": { "type": "string" },
+        "notes": { "type": "string" },
+        "destinationDetails": { "type": "string" }
+      },
+      "required": ["id", "amount", "status", "requestedAt", "destinationDetails"]
     }
   },
   "firestore": {
@@ -250,6 +288,14 @@
     "email_config": {
       "schema": "EmailConfig",
       "description": "E-mail credential configuration"
+    },
+    "payout_config": {
+      "schema": "PayoutConfig",
+      "description": "Financial payout receiver setup"
+    },
+    "payout_requests": {
+      "schema": "PayoutRequest",
+      "description": "Withdrawal request histories"
     }
   }
 }

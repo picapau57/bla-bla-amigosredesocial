@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { 
   User, Post, Chat, Message, Ad, Community, Event, Story, BusinessPage, 
-  SystemLog, Comment, CatalogProduct, EmailConfig, Job, FriendRequest 
+  SystemLog, Comment, CatalogProduct, EmailConfig, Job, FriendRequest,
+  PayoutConfig, PayoutRequest
 } from '../types';
 import {
   INITIAL_USERS,
@@ -60,6 +61,26 @@ export function useSocialState() {
     publicKey: '',
     provider: 'disabled'
   });
+
+  const [payoutConfig, setPayoutConfig] = useState<PayoutConfig>({
+    gateway: 'disabled',
+    pixKeyType: 'cpf',
+    pixKey: '',
+    pixHolderName: '',
+    stripePublicKey: '',
+    stripeSecretKey: '',
+    mercadoPagoPublicKey: '',
+    mercadoPagoAccessToken: '',
+    asaasApiKey: '',
+    bankName: '',
+    bankAgency: '',
+    bankAccount: '',
+    bankAccountType: 'corrente',
+    bankHolderName: '',
+    bankHolderDoc: ''
+  });
+
+  const [payoutRequests, setPayoutRequests] = useState<PayoutRequest[]>([]);
 
   const trackedImpressionsRef = useRef(new Set<string>());
 
@@ -186,6 +207,25 @@ export function useSocialState() {
         if (isMounted) handleFirestoreError(err, OperationType.GET, 'email_config/main');
       });
       activeUnsubs.push(unsubEmailConfig);
+
+      const unsubPayoutConfig = onSnapshot(doc(db, 'payout_config', 'main'), (snapshot) => {
+        if (snapshot.exists() && isMounted) {
+          setPayoutConfig(snapshot.data() as PayoutConfig);
+        }
+      }, (err) => {
+        if (isMounted) handleFirestoreError(err, OperationType.GET, 'payout_config/main');
+      });
+      activeUnsubs.push(unsubPayoutConfig);
+
+      const unsubPayoutRequests = onSnapshot(collection(db, 'payout_requests'), (snapshot) => {
+        const list: PayoutRequest[] = [];
+        snapshot.forEach(doc => list.push(doc.data() as PayoutRequest));
+        list.sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime());
+        if (isMounted) setPayoutRequests(list);
+      }, (err) => {
+        if (isMounted) handleFirestoreError(err, OperationType.GET, 'payout_requests');
+      });
+      activeUnsubs.push(unsubPayoutRequests);
 
       const unsubFriendRequests = onSnapshot(collection(db, 'friend_requests'), (snapshot) => {
         const list: FriendRequest[] = [];
@@ -1094,6 +1134,39 @@ export function useSocialState() {
     logAction('success', `E-mail Transacional: Configurações do SMTP atualizadas (Provedor: ${config.provider.toUpperCase()}).`);
   };
 
+  const updatePayoutConfig = (config: PayoutConfig) => {
+    setPayoutConfig(config);
+    setDoc(doc(db, 'payout_config', 'main'), config).catch(e => console.error(e));
+    logAction('success', `Financeiro: Configuração do gateway de recebimento atualizada para ${config.gateway.toUpperCase()}.`);
+  };
+
+  const createPayoutRequest = (amount: number, destinationDetails: string) => {
+    const newRequest: PayoutRequest = {
+      id: `req-${Date.now()}`,
+      amount,
+      status: 'pending',
+      requestedAt: new Date().toISOString(),
+      destinationDetails
+    };
+    setPayoutRequests(prev => [newRequest, ...prev]);
+    setDoc(doc(db, 'payout_requests', newRequest.id), newRequest).catch(e => console.error(e));
+    logAction('info', `Financeiro: Nova solicitação de saque criada no valor de R$ ${amount.toFixed(2)}.`);
+  };
+
+  const updatePayoutRequestStatus = (requestId: string, status: 'pending' | 'processing' | 'paid' | 'rejected', notes?: string) => {
+    const found = payoutRequests.find(r => r.id === requestId);
+    if (!found) return;
+    const updated: PayoutRequest = {
+      ...found,
+      status,
+      notes,
+      processedAt: new Date().toISOString()
+    };
+    setPayoutRequests(prev => prev.map(r => r.id === requestId ? updated : r));
+    setDoc(doc(db, 'payout_requests', requestId), updated).catch(e => console.error(e));
+    logAction('success', `Financeiro: Solicitação de saque #${requestId.slice(-4)} atualizada para ${status.toUpperCase()}.`);
+  };
+
   const createJob = (inputs: {
     title: string;
     companyName: string;
@@ -1207,6 +1280,11 @@ export function useSocialState() {
     getAdminStats,
     emailConfig,
     updateEmailConfig,
+    payoutConfig,
+    updatePayoutConfig,
+    payoutRequests,
+    createPayoutRequest,
+    updatePayoutRequestStatus,
     friendRequests,
     sendFriendRequest,
     acceptFriendRequest,

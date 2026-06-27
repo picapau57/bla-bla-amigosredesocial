@@ -204,4 +204,33 @@ export interface FriendRequest {
   createdAt: string;
 }
 
+export interface PayoutConfig {
+  gateway: 'pix' | 'stripe' | 'mercado_pago' | 'asaas' | 'bank_transfer' | 'disabled';
+  pixKeyType: 'cpf' | 'cnpj' | 'email' | 'phone' | 'random';
+  pixKey: string;
+  pixHolderName: string;
+  stripePublicKey: string;
+  stripeSecretKey: string;
+  mercadoPagoPublicKey: string;
+  mercadoPagoAccessToken: string;
+  asaasApiKey: string;
+  bankName: string;
+  bankAgency: string;
+  bankAccount: string;
+  bankAccountType: 'corrente' | 'poupanca';
+  bankHolderName: string;
+  bankHolderDoc: string;
+}
+
+export interface PayoutRequest {
+  id: string;
+  amount: number;
+  status: 'pending' | 'processing' | 'paid' | 'rejected';
+  requestedAt: string;
+  processedAt?: string;
+  notes?: string;
+  destinationDetails: string;
+}
+
+
 
