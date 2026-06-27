@@ -51,3 +51,296 @@
     transform: translateY(0);
   }
 }
+
+/* ==========================================================================
+   LIGHT THEME OVERRIDES FOR AUTHENTICATED SOCIAL NETWORK
+   ========================================================================== */
+
+#authenticated-workspace {
+  background-color: #f0f2f5 !important; /* Soft Facebook-style light gray */
+  color: #1e293b !important; /* Slate-800 default text */
+}
+
+/* Scrollbars for light theme */
+#authenticated-workspace ::-webkit-scrollbar-track {
+  background: #f1f5f9 !important;
+}
+#authenticated-workspace ::-webkit-scrollbar-thumb {
+  background: #cbd5e1 !important;
+}
+#authenticated-workspace ::-webkit-scrollbar-thumb:hover {
+  background: #7c4dff !important;
+}
+
+/* Header high contrast clean background */
+#authenticated-workspace header {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #1e293b !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.05) !important;
+}
+#authenticated-workspace header .text-transparent {
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+}
+#authenticated-workspace header .bg-gradient-to-r {
+  background-image: linear-gradient(to right, #4f46e5, #7c4dff, #0284c7) !important;
+}
+#authenticated-workspace header input {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+#authenticated-workspace header input::placeholder {
+  color: #94a3b8 !important;
+}
+#authenticated-workspace header button:not(.bg-gradient-to-r):not(.bg-indigo-500):not(.bg-gradient-to-br) {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #334155 !important;
+}
+#authenticated-workspace header button:not(.bg-gradient-to-r):not(.bg-indigo-500):not(.bg-gradient-to-br) svg {
+  color: #4f46e5 !important;
+}
+
+/* Dropdowns in header */
+#authenticated-workspace header .absolute.right-0 {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #1e293b !important;
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05) !important;
+}
+#authenticated-workspace header .absolute.right-0 button:not(.text-rose-400) {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  color: #1e293b !important;
+}
+#authenticated-workspace header .absolute.right-0 button:not(.text-rose-400):hover {
+  background-color: #f1f5f9 !important;
+}
+#authenticated-workspace header .absolute.right-0 div,
+#authenticated-workspace header .absolute.right-0 span,
+#authenticated-workspace header .absolute.right-0 p {
+  color: #1e293b !important;
+}
+#authenticated-workspace header .absolute.right-0 .text-gray-400 {
+  color: #64748b !important;
+}
+
+/* Standard cards and widgets (bg-[#121225]) */
+#authenticated-workspace .bg-\[\#121225\],
+#authenticated-workspace .bg-\[\#121124\] {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Inner containers and blocks */
+#authenticated-workspace .bg-\[\#0A0A14\],
+#authenticated-workspace .bg-\[\#121225\]\/80,
+#authenticated-workspace .bg-\[\#1E1E30\],
+#authenticated-workspace .bg-\[\#16162a\],
+#authenticated-workspace .bg-\[\#1A1A32\],
+#authenticated-workspace .bg-\[\#1A1932\] {
+  background-color: #f8fafc !important; /* Slate-50 light background */
+  border-color: #cbd5e1 !important;
+  color: #1e293b !important;
+}
+
+#authenticated-workspace .bg-\[\#0A0A14\]\/70,
+#authenticated-workspace .bg-\[\#0A0A14\]\/60,
+#authenticated-workspace .bg-\[\#0A0A14\]\/50,
+#authenticated-workspace .bg-\[\#0A0A14\]\/40,
+#authenticated-workspace .bg-\[\#0A0A14\]\/30,
+#authenticated-workspace .bg-\[\#1E1E30\]\/60,
+#authenticated-workspace .bg-\[\#1E1E30\]\/40 {
+  background-color: #f1f5f9 !important; /* Slate-100 */
+}
+
+/* Translucent backdrops */
+#authenticated-workspace .bg-white\/5 {
+  background-color: rgba(15, 23, 42, 0.04) !important;
+}
+#authenticated-workspace .bg-white\/10 {
+  background-color: rgba(15, 23, 42, 0.08) !important;
+}
+#authenticated-workspace .bg-white\/20 {
+  background-color: rgba(15, 23, 42, 0.15) !important;
+}
+
+/* Borders mapping */
+#authenticated-workspace .border-white\/5,
+#authenticated-workspace .border-white\/10,
+#authenticated-workspace .border-white\/20,
+#authenticated-workspace .border-white\/15,
+#authenticated-workspace .border-white\/8,
+#authenticated-workspace .border-slate-800 {
+  border-color: rgba(203, 213, 225, 0.9) !important;
+}
+
+/* Form controls, inputs, and textareas */
+#authenticated-workspace input[type="text"],
+#authenticated-workspace input[type="email"],
+#authenticated-workspace input[type="password"],
+#authenticated-workspace textarea,
+#authenticated-workspace select {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+#authenticated-workspace input::placeholder,
+#authenticated-workspace textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Typographic overrides to ensure perfect contrast on white cards */
+#authenticated-workspace h1,
+#authenticated-workspace h2,
+#authenticated-workspace h3,
+#authenticated-workspace h4,
+#authenticated-workspace h5,
+#authenticated-workspace h6 {
+  color: #0f172a !important; /* Bold high-contrast headings */
+}
+
+/* Light theme descriptions and lists */
+#authenticated-workspace p,
+#authenticated-workspace span,
+#authenticated-workspace li,
+#authenticated-workspace label {
+  color: #334155 !important; /* Slate-700 body text */
+}
+
+/* Subtitles, statistics labels and timestamps */
+#authenticated-workspace .text-gray-400,
+#authenticated-workspace .text-gray-450,
+#authenticated-workspace .text-slate-400,
+#authenticated-workspace .text-gray-500,
+#authenticated-workspace .text-slate-500 {
+  color: #64748b !important; /* Slate-500 subtext */
+}
+
+/* Profiles avatar border */
+#authenticated-workspace .border-\[\#121225\] {
+  border-color: #ffffff !important;
+}
+
+/* Exceptions: Preserve light text inside actual brand badges or primary buttons */
+#authenticated-workspace button span,
+#authenticated-workspace button p,
+#authenticated-workspace .bg-gradient-to-r span,
+#authenticated-workspace .bg-gradient-to-br span,
+#authenticated-workspace .bg-[#7C4DFF] span,
+#authenticated-workspace .bg-[#00E676] span,
+#authenticated-workspace .bg-[#FF5722] span,
+#authenticated-workspace .bg-gradient-to-br p,
+#authenticated-workspace .bg-gradient-to-br h4,
+#authenticated-workspace .bg-gradient-to-br div,
+#authenticated-workspace .bg-gradient-to-r p,
+#authenticated-workspace .bg-gradient-to-r h4,
+#authenticated-workspace .bg-gradient-to-r text,
+#authenticated-workspace .bg-[#00E5FF] span,
+#authenticated-workspace .bg-rose-500 span,
+#authenticated-workspace .bg-indigo-500 span,
+#authenticated-workspace .bg-emerald-500 span,
+#authenticated-workspace .bg-amber-500 span,
+#authenticated-workspace .bg-blue-500 span,
+#authenticated-workspace .bg-slate-900 span {
+  color: #ffffff !important;
+}
+
+#authenticated-workspace button.bg-white span,
+#authenticated-workspace button.bg-white {
+  color: #0f172a !important;
+}
+
+/* Interactive navigation adjustments */
+#authenticated-workspace .hover\:text-white:hover {
+  color: #0f172a !important;
+}
+#authenticated-workspace .hover\:bg-\[\#1E1E30\]\/60:hover,
+#authenticated-workspace .hover\:bg-\[\#1E1E30\]\/40:hover {
+  background-color: #f1f5f9 !important;
+}
+
+/* High contrast color adjustments for interactive highlights and status tags */
+#authenticated-workspace .text-cyan-400,
+#authenticated-workspace .text-\[\#00E5FF\] {
+  color: #0284c7 !important; /* Sky-600 */
+}
+#authenticated-workspace .text-indigo-400 {
+  color: #4f46e5 !important; /* Indigo-600 */
+}
+#authenticated-workspace .text-pink-400 {
+  color: #db2777 !important; /* Pink-600 */
+}
+#authenticated-workspace .text-orange-400 {
+  color: #ea580c !important; /* Orange-650 */
+}
+#authenticated-workspace .text-emerald-400 {
+  color: #16a34a !important; /* Emerald-600 */
+}
+#authenticated-workspace .text-blue-400 {
+  color: #2563eb !important; /* Blue-600 */
+}
+#authenticated-workspace .text-amber-400 {
+  color: #d97706 !important; /* Amber-600 */
+}
+#authenticated-workspace .text-purple-400 {
+  color: #9333ea !important; /* Purple-600 */
+}
+#authenticated-workspace .text-rose-400 {
+  color: #e11d48 !important; /* Rose-600 */
+}
+
+/* Preserve active left indicators */
+#authenticated-workspace .border-\[\#00E5FF\] {
+  border-color: #0284c7 !important;
+}
+#authenticated-workspace .bg-\[\#00E5FF\] {
+  background-color: #0284c7 !important;
+}
+#authenticated-workspace .bg-\[\#00E5FF\]\/10 {
+  background-color: rgba(2, 132, 199, 0.08) !important;
+}
+#authenticated-workspace .from-\[\#00E5FF\]\/10 {
+  --tw-gradient-from: rgba(2, 132, 199, 0.08) var(--tw-gradient-from-position) !important;
+}
+
+/* Modal layers */
+#user-profile-viewer-modal .bg-\[\#121225\],
+#premium-upgrade-modal .bg-\[\#121225\] {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+#user-profile-viewer-modal .text-white,
+#premium-upgrade-modal .text-white {
+  color: #0f172a !important;
+}
+#user-profile-viewer-modal .bg-black\/60 {
+  background-color: rgba(0,0,0,0.1) !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Image lightboxes / zoom overlays (always preserve dark/immersive mask) */
+#authenticated-workspace .fixed.inset-0.bg-black\/95 h3,
+#authenticated-workspace .fixed.inset-0.bg-black\/95 span,
+#authenticated-workspace .fixed.inset-0.bg-black\/95 p,
+#authenticated-workspace .fixed.inset-0.bg-black\/90 h3,
+#authenticated-workspace .fixed.inset-0.bg-black\/90 span,
+#authenticated-workspace .fixed.inset-0.bg-black\/90 p,
+#authenticated-workspace .fixed.inset-0.z-\[100\],
+#authenticated-workspace .fixed.inset-0.z-\[100\] .bg-\[\#0A0A14\],
+#authenticated-workspace .fixed.inset-0.z-\[100\] .bg-\[\#121124\]\/80 {
+  background-color: rgba(10, 10, 20, 0.98) !important;
+  color: #ffffff !important;
+}
+#authenticated-workspace .fixed.inset-0.z-\[100\] h3,
+#authenticated-workspace .fixed.inset-0.z-\[100\] h4,
+#authenticated-workspace .fixed.inset-0.z-\[100\] p,
+#authenticated-workspace .fixed.inset-0.z-\[100\] span,
+#authenticated-workspace .fixed.inset-0.z-\[100\] div {
+  color: #ffffff !important;
+}
+

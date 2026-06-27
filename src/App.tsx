@@ -597,7 +597,7 @@ export default function App() {
         </div>
       ) : (
         /* AUTHENTICATED PORTAL WORKSPACE */
-        <div className="flex-1 flex flex-col min-h-screen">
+        <div className="flex-1 flex flex-col min-h-screen bg-[#f3f4f6] text-slate-800" id="authenticated-workspace">
           
           <Header
             currentUser={social.currentUser}
