@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { User, FriendRequest } from '../types';
 import { 
   Users, UserPlus, Cake, Search, MessageSquare, UserMinus, 
-  Check, X, Hourglass, Gift, MapPin, Sparkles, AlertCircle, Calendar
+  Check, X, Hourglass, Gift, MapPin, Sparkles, AlertCircle, Calendar,
+  Mail, Phone, Share2, Copy, Plus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -33,6 +34,14 @@ export default function FriendsSection({
 }: FriendsSectionProps) {
   const [activeSubTab, setActiveSubTab] = useState<'todos' | 'pedidos' | 'aniversarios'>('todos');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // States for "Convidar Amigos" Modal
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [invitePhone, setInvitePhone] = useState('');
+  const [inviteSearchQuery, setInviteSearchQuery] = useState('');
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [inviteSent, setInviteSent] = useState<'email' | 'phone' | 'none'>('none');
 
   // 1. Filter friends
   const myFriends = users.filter(u => currentUser.friends?.includes(u.id));
@@ -121,6 +130,21 @@ export default function FriendsSection({
             </h2>
             <p className="text-xs text-gray-400 font-mono mt-1">Conecte-se com sua comunidade em tempo real</p>
           </div>
+
+          <button
+            onClick={() => {
+              setInviteSearchQuery('');
+              setInviteEmail('');
+              setInvitePhone('');
+              setInviteSent('none');
+              setShowInviteModal(true);
+            }}
+            className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white text-xs font-black px-4 py-2.5 rounded-xl shadow-[0_4px_12px_rgba(16,185,129,0.25)] flex items-center gap-2 transition-all cursor-pointer self-start md:self-auto active:scale-[0.98]"
+            id="open-invite-friends-modal-btn"
+          >
+            <UserPlus className="w-4 h-4 text-emerald-100 animate-bounce" />
+            <span>Convidar Amigos</span>
+          </button>
 
           <div className="flex p-1 bg-white/5 rounded-xl border border-white/10 self-start md:self-auto">
             <button
@@ -553,6 +577,271 @@ export default function FriendsSection({
 
         </AnimatePresence>
       </div>
+
+      {/* CONVIDAR AMIGOS MODAL OVERLAY */}
+      <AnimatePresence>
+        {showInviteModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-[#02020a]/80 backdrop-blur-md flex items-center justify-center p-4"
+            id="invite-friends-modal-overlay"
+            onClick={() => setShowInviteModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 15 }}
+              className="bg-[#121225] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+              id="invite-friends-modal-content"
+            >
+              {/* Modal Header */}
+              <div className="p-5 border-b border-white/10 bg-[#0A0A14]/50 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <UserPlus className="w-5 h-5 text-emerald-400" />
+                  <div>
+                    <h3 className="font-extrabold text-sm text-white">Convidar Amigos</h3>
+                    <p className="text-[10px] text-gray-400 font-mono">Busque ou envie convites rápidos</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowInviteModal(false)}
+                  className="p-1.5 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-all cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-5 space-y-5 overflow-y-auto max-h-[450px]">
+                {/* Step 1: Search on the platform by email/phone */}
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-gray-300 font-mono uppercase tracking-wider block">
+                    1. Pesquisar usuário na plataforma
+                  </label>
+                  <p className="text-[10px] text-gray-400 leading-relaxed">
+                    Digite o **E-mail** ou **Telefone** cadastrado de quem deseja convidar para ver se a pessoa já possui conta na nossa plataforma!
+                  </p>
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Ex: picapauinformatica@gmail.com ou +5562999999999"
+                      value={inviteSearchQuery}
+                      onChange={(e) => {
+                        setInviteSearchQuery(e.target.value);
+                        setInviteSent('none');
+                      }}
+                      className="w-full bg-[#0A0A14]/60 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 transition-all font-mono"
+                    />
+                  </div>
+                </div>
+
+                {/* Registered User Result Area */}
+                {inviteSearchQuery.trim() && (
+                  <div className="bg-[#0A0A14]/50 border border-white/5 rounded-xl p-3.5 animate-fade-in-up">
+                    {(() => {
+                      const cleanQuery = inviteSearchQuery.trim().toLowerCase();
+                      const foundUser = users.find(u => {
+                        const userEmail = u.email.toLowerCase();
+                        const userPhone = u.phone.replace(/\D/g, '');
+                        const searchDigits = cleanQuery.replace(/\D/g, '');
+                        
+                        return userEmail === cleanQuery || 
+                               u.phone.toLowerCase() === cleanQuery ||
+                               (searchDigits && userPhone.includes(searchDigits));
+                      });
+
+                      if (foundUser) {
+                        const isAlreadyFriend = currentUser.friends?.includes(foundUser.id);
+                        const isMyself = foundUser.id === currentUser.id;
+                        const currentReq = getRequestForUser(foundUser.id);
+
+                        return (
+                          <div className="flex items-center justify-between gap-3" id="invite-search-result-found">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={foundUser.avatar}
+                                alt={foundUser.fullName}
+                                className="w-10 h-10 rounded-full object-cover border border-white/10"
+                                referrerPolicy="no-referrer"
+                              />
+                              <div>
+                                <div className="flex items-center gap-1">
+                                  <span className="font-extrabold text-xs text-white">{foundUser.fullName}</span>
+                                  {foundUser.isVerified && <Sparkles className="w-3 h-3 text-cyan-400" />}
+                                </div>
+                                <span className="text-[10px] text-gray-400 block font-mono">@{foundUser.username}</span>
+                                <span className="text-[9px] text-gray-500 block font-mono">{foundUser.email} • {foundUser.phone}</span>
+                              </div>
+                            </div>
+
+                            <div>
+                              {isMyself ? (
+                                <span className="text-[9px] bg-white/5 text-gray-400 px-2 py-1 rounded-lg font-mono">Você mesmo</span>
+                              ) : isAlreadyFriend ? (
+                                <span className="text-[9px] bg-green-500/10 text-green-400 px-2 py-1 rounded-lg font-mono font-bold">Já é Amigo</span>
+                              ) : currentReq ? (
+                                <span className="text-[9px] bg-indigo-500/10 text-indigo-400 px-2 py-1 rounded-lg font-mono font-bold flex items-center gap-1">
+                                  <Hourglass className="w-2.5 h-2.5 animate-spin" /> Pendente
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() => {
+                                    onSendFriendRequest(foundUser.id);
+                                    alert(`Pedido de amizade enviado com sucesso para ${foundUser.fullName}!`);
+                                  }}
+                                  className="bg-gradient-to-r from-cyan-500 to-indigo-600 hover:brightness-110 text-white text-[10px] font-black px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
+                                >
+                                  Adicionar Amigo
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      } else {
+                        return (
+                          <div className="text-center py-2" id="invite-search-result-not-found">
+                            <p className="text-[11px] text-yellow-500 font-mono">⚠️ Nenhum usuário cadastrado com este e-mail ou telefone.</p>
+                            <p className="text-[10px] text-gray-400 mt-1">Mas você pode enviar um convite externo rápido nos campos abaixo!</p>
+                          </div>
+                        );
+                      }
+                    })()}
+                  </div>
+                )}
+
+                {/* Step 2: External Invitation */}
+                <div className="space-y-3.5 border-t border-white/5 pt-4">
+                  <label className="text-[11px] font-bold text-gray-300 font-mono uppercase tracking-wider block">
+                    2. Enviar Convite Externo Personalizado
+                  </label>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] text-gray-400 font-mono">E-mail do Amigo:</span>
+                      <div className="relative">
+                        <Mail className="w-3.5 h-3.5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="email"
+                          placeholder="amigo@email.com"
+                          value={inviteEmail}
+                          onChange={(e) => setInviteEmail(e.target.value)}
+                          className="w-full bg-[#0A0A14]/40 border border-white/10 rounded-xl py-1.5 pl-9 pr-3 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500/50 transition-all font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] text-gray-400 font-mono">Telefone/WhatsApp:</span>
+                      <div className="relative">
+                        <Phone className="w-3.5 h-3.5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          placeholder="Ex: 62999999999"
+                          value={invitePhone}
+                          onChange={(e) => setInvitePhone(e.target.value)}
+                          className="w-full bg-[#0A0A14]/40 border border-white/10 rounded-xl py-1.5 pl-9 pr-3 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500/50 transition-all font-mono"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                    {/* Send via Email Action */}
+                    <a
+                      href={inviteEmail ? `mailto:${inviteEmail}?subject=${encodeURIComponent('Convite Especial: Conecte-se comigo!')}&body=${encodeURIComponent(`Olá!\n\nQuero te convidar para fazer parte da minha rede no Portal de Amigos!\n\nVocê pode criar sua conta na plataforma e me adicionar buscando pelo meu e-mail (${currentUser.email}) ou telefone (${currentUser.phone}).\n\nLink para acessar: ${window.location.origin}\n\nAbraços,\n${currentUser.fullName}`)}` : '#'}
+                      onClick={(e) => {
+                        if (!inviteEmail) {
+                          e.preventDefault();
+                          alert('Insira o e-mail do seu amigo para enviar o convite!');
+                        } else {
+                          setInviteSent('email');
+                        }
+                      }}
+                      className={`flex-1 border text-center font-bold text-xs py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all ${
+                        inviteEmail 
+                          ? 'bg-[#1b2f25] border-emerald-500/30 text-emerald-300 hover:bg-[#223d2f]' 
+                          : 'border-white/5 bg-white/5 text-gray-500 cursor-not-allowed'
+                      }`}
+                    >
+                      <Mail className="w-3.5 h-3.5" />
+                      Enviar por E-mail
+                    </a>
+
+                    {/* Send via WhatsApp Action */}
+                    <a
+                      href={invitePhone ? `https://api.whatsapp.com/send?phone=${invitePhone.replace(/\D/g, '')}&text=${encodeURIComponent(`Olá! Quero te convidar para fazer parte da minha rede no Portal de Amigos! Crie sua conta e me adicione pelo e-mail: ${currentUser.email} ou telefone: ${currentUser.phone}. Acesse em: ${window.location.origin}`)}` : '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => {
+                        if (!invitePhone) {
+                          e.preventDefault();
+                          alert('Insira o número de telefone do seu amigo para enviar o convite via WhatsApp!');
+                        } else {
+                          setInviteSent('phone');
+                        }
+                      }}
+                      className={`flex-1 border text-center font-bold text-xs py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all ${
+                        invitePhone 
+                          ? 'bg-[#1b2f25] border-emerald-500/30 text-emerald-300 hover:bg-[#223d2f]' 
+                          : 'border-white/5 bg-white/5 text-gray-500 cursor-not-allowed'
+                      }`}
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                      WhatsApp
+                    </a>
+                  </div>
+
+                  {inviteSent !== 'none' && (
+                    <div className="text-[10px] text-green-400 font-mono bg-green-500/10 border border-green-500/20 p-2.5 rounded-lg text-center animate-pulse">
+                      🚀 Convite iniciado com sucesso via {inviteSent === 'email' ? 'E-mail' : 'WhatsApp'}!
+                    </div>
+                  )}
+                </div>
+
+                {/* Step 3: Generic Invite Referral Link */}
+                <div className="bg-[#0A0A14]/40 border border-white/5 rounded-xl p-3 space-y-2">
+                  <span className="text-[10px] font-bold text-gray-300 font-mono uppercase tracking-wider block">
+                    3. Copiar Dados de Convite Rápido
+                  </span>
+                  <p className="text-[9px] text-gray-400">
+                    Compartilhe o texto abaixo com seus amigos em qualquer rede social para que eles se cadastrem e te encontrem:
+                  </p>
+                  <div className="bg-black/50 border border-white/5 rounded-lg p-2.5 flex items-start justify-between gap-3">
+                    <p className="text-[10px] text-gray-300 font-mono leading-relaxed break-all">
+                      Olá! Crie sua conta e conecte-se comigo no Portal de Amigos! Busque-me por E-mail: {currentUser.email} ou Telefone: {currentUser.phone}. Cadastre-se: {window.location.origin}
+                    </p>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`Olá! Crie sua conta e conecte-se comigo no Portal de Amigos! Busque-me por E-mail: ${currentUser.email} ou Telefone: ${currentUser.phone}. Cadastre-se: ${window.location.origin}`);
+                        setCopiedLink(true);
+                        setTimeout(() => setCopiedLink(false), 2000);
+                      }}
+                      className="bg-white/5 hover:bg-white/10 p-1.5 rounded text-gray-400 hover:text-white transition-all shrink-0 cursor-pointer"
+                      title="Copiar texto de convite"
+                    >
+                      {copiedLink ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                  {copiedLink && (
+                    <span className="text-[9px] text-green-400 font-mono block text-right">Texto copiado para a área de transferência!</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer info */}
+              <div className="p-4 border-t border-white/10 bg-[#0A0A14]/60 text-center">
+                <p className="text-[9px] text-gray-500 font-mono">
+                  Seus dados cadastrados: e-mail: <span className="text-gray-400">{currentUser.email}</span> • telefone: <span className="text-gray-400">{currentUser.phone}</span>
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
