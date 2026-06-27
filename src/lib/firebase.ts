@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
@@ -13,6 +13,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firestore with our specific database ID
-export const db = getFirestore(app, "ai-studio-84899bc3-e76b-467e-8f0d-8498c43bf9e0");
+// Initialize Firestore with our specific database ID and enable persistent offline cache
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache()
+}, "ai-studio-84899bc3-e76b-467e-8f0d-8498c43bf9e0");
+
 export const auth = getAuth(app);
