@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { User, Story } from '../types';
 import { Plus, X, ChevronLeft, ChevronRight, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -23,6 +23,11 @@ export default function StoriesSection({
   const [newStoryText, setNewStoryText] = useState('');
   const [newStoryImage, setNewStoryImage] = useState('');
 
+  // Scroll controls for the horizontal carousel
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(true);
+
   // Sample static high resolution stories images that user can choose from quickly
   const sampleStoryImages = [
     'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&q=80&w=400',
@@ -32,13 +37,46 @@ export default function StoriesSection({
     'https://images.unsplash.com/photo-1513829096900-ee825ee22591?auto=format&fit=crop&q=80&w=400'
   ];
 
-  // Filter out mock users' stories
-  const filteredStories = stories.filter(s => !['user-1', 'user-2', 'user-3', 'user-4', 'user-5', 'admin'].includes(s.userId));
+  // We show ALL stories without aggressive mock user filtering, so everything is visible!
+  const filteredStories = stories.filter(s => !!s.mediaUrl);
 
-  // Group stories by user so each user has one main bubble in the bar
-  const usersWithStories = Array.from(new Set(filteredStories.map(s => s.userId)))
-    .map(uid => users.find(u => u.id === uid))
-    .filter((u): u is User => !!u);
+  const checkScroll = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setShowLeftArrow(scrollLeft > 10);
+      setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  };
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) {
+      el.addEventListener('scroll', checkScroll);
+      checkScroll();
+      
+      const observer = new ResizeObserver(() => checkScroll());
+      observer.observe(el);
+
+      // Timeout helper to verify after rendering completes
+      const t = setTimeout(checkScroll, 100);
+
+      return () => {
+        el.removeEventListener('scroll', checkScroll);
+        observer.disconnect();
+        clearTimeout(t);
+      };
+    }
+  }, [stories, filteredStories.length]);
+
+  const handleScroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const scrollAmount = 240;
+      scrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   // When story is active, implement automatic advance logic
   useEffect(() => {
@@ -53,7 +91,7 @@ export default function StoriesSection({
     }, 4500); // 4.5 seconds auto-advance
 
     return () => clearTimeout(timer);
-  }, [activeStoryIdx, filteredStories]);
+  }, [activeStoryIdx, filteredStories.length]);
 
   const handlePostStory = () => {
     const finalImage = newStoryImage.trim() || sampleStoryImages[0];
@@ -63,16 +101,8 @@ export default function StoriesSection({
     setShowCreateModal(false);
   };
 
-  const handleOpenUserStory = (userId: string) => {
-    // Find the first story index of this specific user in the filtered stories array
-    const firstIdx = filteredStories.findIndex(s => s.userId === userId);
-    if (firstIdx !== -1) {
-      setActiveStoryIdx(firstIdx);
-    }
-  };
-
   return (
-    <div className="bg-[#121124] border border-white/10 rounded-2xl p-4 shadow-xl mb-6 relative overflow-hidden" id="applet-stories-section">
+    <div className="bg-[#121124] border border-white/10 rounded-2xl p-4 shadow-xl mb-6 relative" id="applet-stories-section">
       
       {/* HEADER */}
       <div className="flex items-center justify-between mb-3 px-1">
@@ -82,98 +112,125 @@ export default function StoriesSection({
         <span className="text-[10px] text-gray-500 font-mono font-bold">Total: {filteredStories.length}</span>
       </div>
 
-      <div className="flex items-center gap-3.5 overflow-x-auto pb-3 pt-1 scrollbar-none" id="stories-bubbles-container">
+      <div className="relative group/tray">
         
-        {/* CREATE STORY CARD (FACEBOOK STYLE) */}
+        {/* LEFT CAROUSEL ARROW */}
+        {showLeftArrow && (
+          <button
+            onClick={() => handleScroll('left')}
+            className="absolute -left-3 top-1/2 -translate-y-1/2 z-20 bg-white dark:bg-[#1E1D3A] text-gray-700 dark:text-gray-200 w-9 h-9 rounded-full flex items-center justify-center shadow-md border border-gray-200 dark:border-white/10 hover:scale-105 active:scale-95 transition-all cursor-pointer hover:bg-gray-50 dark:hover:bg-[#25244C]"
+            aria-label="Anterior"
+            title="Anterior"
+          >
+            <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-300 stroke-[2.5]" />
+          </button>
+        )}
+
+        {/* RIGHT CAROUSEL ARROW */}
+        {showRightArrow && (
+          <button
+            onClick={() => handleScroll('right')}
+            className="absolute -right-3 top-1/2 -translate-y-1/2 z-20 bg-white dark:bg-[#1E1D3A] text-gray-700 dark:text-gray-200 w-9 h-9 rounded-full flex items-center justify-center shadow-md border border-gray-200 dark:border-white/10 hover:scale-105 active:scale-95 transition-all cursor-pointer hover:bg-gray-50 dark:hover:bg-[#25244C]"
+            aria-label="Próximo"
+            title="Próximo"
+          >
+            <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-300 stroke-[2.5]" />
+          </button>
+        )}
+
+        {/* STORIES LIST CONTAINER */}
         <div 
-          onClick={() => setShowCreateModal(true)}
-          className="relative w-28 sm:w-32 h-44 sm:h-48 rounded-2xl overflow-hidden bg-[#1A1932] border border-white/10 shadow-lg cursor-pointer shrink-0 select-none group transition-all duration-300 hover:shadow-[#00E5FF]/20 hover:border-[#00E5FF]/40 hover:-translate-y-1"
+          ref={scrollRef}
+          className="flex items-center gap-3 overflow-x-auto pb-3 pt-1 scrollbar-none snap-x" 
+          id="stories-bubbles-container"
         >
-          {/* Top image section: current user's avatar */}
-          <div className="w-full h-[70%] overflow-hidden relative bg-[#0D0C1D]">
-            <img 
-              src={currentUser.avatar} 
-              alt={currentUser.fullName}
-              referrerPolicy="no-referrer"
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 brightness-90 filter blur-[0.2px]"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A14]/80 via-transparent to-transparent" />
-          </div>
-          {/* Bottom text section */}
-          <div className="w-full h-[30%] bg-[#0A0A14] flex flex-col items-center justify-end pb-3 relative">
-            {/* Overlapping circular plus button */}
-            <div className="absolute -top-4.5 left-1/2 -translate-x-1/2 p-[3px] rounded-full bg-[#0A0A14]">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#00E5FF] to-[#7C4DFF] flex items-center justify-center text-white shadow-md shadow-[#00E5FF]/30 group-hover:scale-110 transition-transform duration-300">
-                <Plus className="w-4 h-4 stroke-[3px]" />
-              </div>
-            </div>
-            <span className="text-[10px] text-white font-mono font-extrabold tracking-wider uppercase mt-1">
-              Criar Story
-            </span>
-          </div>
-        </div>
-
-        {/* ACTIVE STORIES CARDS (FACEBOOK STYLE) */}
-        {usersWithStories.map(user => {
-          const isCurrentUser = user.id === currentUser.id;
           
-          // Find user's stories
-          const userStories = filteredStories.filter(s => s.userId === user.id);
-          const firstStory = userStories[0];
-          const bgImage = firstStory ? firstStory.mediaUrl : user.avatar;
-
-          return (
-            <div 
-              key={user.id} 
-              onClick={() => handleOpenUserStory(user.id)}
-              className="relative w-28 sm:w-32 h-44 sm:h-48 rounded-2xl overflow-hidden bg-[#0A0A14] border border-white/10 shadow-lg cursor-pointer shrink-0 select-none group transition-all duration-300 hover:shadow-[#7C4DFF]/20 hover:border-[#7C4DFF]/40 hover:-translate-y-1"
-            >
-              {/* Background Story Image */}
+          {/* CREATE STORY CARD */}
+          <div 
+            onClick={() => setShowCreateModal(true)}
+            className="relative w-28 sm:w-32 h-44 sm:h-48 rounded-2xl overflow-hidden bg-white dark:bg-[#1A1932] border border-gray-200 dark:border-white/10 shadow-lg cursor-pointer shrink-0 select-none group transition-all duration-300 hover:shadow-[#00E5FF]/20 hover:border-[#00E5FF]/40 hover:-translate-y-1 flex flex-col snap-start"
+            id="create-story-card"
+          >
+            {/* Top image section: current user's avatar */}
+            <div className="w-full h-[70%] overflow-hidden relative bg-gray-100 dark:bg-[#0D0C1D]">
               <img 
-                src={bgImage} 
-                alt={`${user.fullName}'s story`}
+                src={currentUser.avatar} 
+                alt={currentUser.fullName}
                 referrerPolicy="no-referrer"
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 brightness-95"
               />
-              {/* Soft Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-[#0A0A14]/90" />
+              <div className="absolute inset-0 bg-black/5" />
+            </div>
+            
+            {/* Bottom text section */}
+            <div className="w-full h-[30%] bg-white dark:bg-[#0A0A14] flex flex-col items-center justify-end pb-3 relative create-story-footer">
+              {/* Overlapping circular blue plus button */}
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 p-[2px] rounded-full bg-white dark:bg-[#0A0A14]">
+                <div className="w-8 h-8 rounded-full bg-[#007eff] flex items-center justify-center text-white shadow-md shadow-[#007eff]/30 group-hover:scale-110 transition-transform duration-300">
+                  <Plus className="w-4 h-4 stroke-[3px]" />
+                </div>
+              </div>
+              <span className="text-[10px] sm:text-[11px] text-gray-800 dark:text-white font-sans font-extrabold tracking-wide">
+                Criar story
+              </span>
+            </div>
+          </div>
 
-              {/* User Circular Avatar Badge in the top-left */}
-              <div className="absolute top-3 left-3 z-10 p-[1.5px] rounded-full bg-gradient-to-tr from-[#00E5FF] via-[#7C4DFF] to-[#FF5722] shadow-md animate-pulse-slow">
-                <div className="p-0.5 rounded-full bg-[#0A0A14]">
+          {/* ACTIVE STORIES CARDS */}
+          {filteredStories.map((story, index) => {
+            const user = users.find(u => u.id === story.userId) || {
+              fullName: 'Usuário',
+              avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200',
+              id: story.userId,
+              isVerified: false
+            };
+            const isCurrentUser = user.id === currentUser.id;
+
+            return (
+              <div 
+                key={story.id} 
+                onClick={() => setActiveStoryIdx(index)}
+                className="user-story-card relative w-28 sm:w-32 h-44 sm:h-48 rounded-2xl overflow-hidden bg-[#0A0A14] border border-white/10 shadow-lg cursor-pointer shrink-0 select-none group transition-all duration-300 hover:shadow-[#007eff]/25 hover:border-[#007eff]/50 hover:-translate-y-1 snap-start"
+              >
+                {/* Background Story Image */}
+                <img 
+                  src={story.mediaUrl} 
+                  alt={`${user.fullName}'s story`}
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                />
+                
+                {/* Dark Gradient Overlay for optimal legibility */}
+                <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/85" />
+
+                {/* User Circular Avatar Badge in the top-left (matches screenshot: thick vibrant blue border) */}
+                <div className="absolute top-2.5 left-2.5 z-10 w-9 h-9 rounded-full border-[2.5px] border-[#007eff] bg-white flex items-center justify-center shadow-md">
                   <img
                     src={user.avatar}
                     alt={user.fullName}
                     referrerPolicy="no-referrer"
-                    className="w-7 h-7 rounded-full object-cover border border-white/5"
+                    className="w-full h-full rounded-full object-cover p-[1px]"
                   />
                 </div>
-              </div>
 
-              {/* Multi-story item count indicator */}
-              {userStories.length > 1 && (
-                <div className="absolute top-3 right-3 z-10 bg-black/60 backdrop-blur-md text-[8px] font-mono font-extrabold text-[#00E5FF] border border-[#00E5FF]/30 px-1.5 py-0.5 rounded-full">
-                  {userStories.length}
-                </div>
-              )}
-
-              {/* User Name and Caption snippet at the bottom */}
-              <div className="absolute bottom-3 left-3 right-3 z-10 flex flex-col">
-                <span className="text-[10px] text-white font-mono font-black tracking-wide truncate flex items-center gap-1 drop-shadow-md">
-                  {isCurrentUser ? 'Seu Story' : user.fullName.split(' ')[0]}
-                  {user.isVerified && (
-                    <span className="w-3 h-3 rounded-full bg-[#00E5FF] inline-flex items-center justify-center text-[7px] text-[#0A0A14] font-black shrink-0">✓</span>
-                  )}
-                </span>
-                {firstStory?.text && (
-                  <span className="text-[8px] text-gray-300 font-bold truncate font-mono mt-0.5 opacity-85 group-hover:opacity-100 transition-opacity">
-                    "{firstStory.text}"
+                {/* User Name and Caption snippet at the bottom */}
+                <div className="absolute bottom-2.5 left-2.5 right-2.5 z-10 flex flex-col">
+                  <span className="text-[10px] sm:text-[11px] text-white font-sans font-bold tracking-wide truncate flex items-center gap-1 drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
+                    {isCurrentUser ? 'Seu story' : user.fullName}
+                    {user.isVerified && (
+                      <span className="w-3.5 h-3.5 rounded-full bg-[#007eff] inline-flex items-center justify-center text-[7px] text-white font-black shrink-0">✓</span>
+                    )}
                   </span>
-                )}
+                  {story.text && (
+                    <span className="text-[8px] text-gray-200 font-medium truncate font-sans mt-0.5 opacity-90 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
+                      {story.text}
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       {/* STORY LIGHTBOX MODAL */}

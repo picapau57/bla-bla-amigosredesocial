@@ -367,3 +367,24 @@
   background-color: rgba(15, 23, 42, 0.05) !important;
 }
 
+/* Stories cards layout adjustments matching the screenshot */
+#authenticated-workspace.light-theme #create-story-card {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+#authenticated-workspace.light-theme #create-story-card .create-story-footer {
+  background-color: #ffffff !important;
+}
+#authenticated-workspace.light-theme #create-story-card span {
+  color: #334155 !important;
+}
+#authenticated-workspace.light-theme #create-story-card .rounded-full.bg-white {
+  background-color: #ffffff !important;
+}
+#authenticated-workspace.light-theme #stories-bubbles-container .user-story-card {
+  border-color: #e2e8f0 !important;
+}
+#authenticated-workspace.light-theme #stories-bubbles-container .user-story-card span {
+  color: #ffffff !important; /* Keep white for readability on image backgrounds */
+}
+
