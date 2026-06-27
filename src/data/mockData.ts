@@ -387,9 +387,9 @@ export const INITIAL_ADS: Ad[] = [
   {
     id: 'ad-1',
     userId: 'user-4',
-    title: 'Consultoria Financeira Inova S.A.',
-    description: 'Multiplique seus resultados comerciais de forma auditada e segura. Agende um diagnóstico gratuito da sua infraestrutura e processos de vendas.',
-    imageUrl: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=400',
+    title: 'Inova S.A. - Smart Growth Pro',
+    description: 'Acelere o crescimento de sua empresa com nossa consultoria exclusiva de funis de vendas de alta performance. Diagnóstico automatizado gratuito!',
+    imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=400',
     link: 'https://inovamarketing.com/consultoria',
     type: 'patrocinado',
     position: 'lateral-top',

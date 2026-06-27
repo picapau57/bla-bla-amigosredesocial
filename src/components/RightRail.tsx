@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { User, Ad, Event } from '../types';
-import { UserPlus, Sparkles, UserMinus, Calendar, ArrowUpRight, TrendingUp } from 'lucide-react';
-import { motion } from 'motion/react';
+import { UserPlus, Sparkles, UserMinus, Calendar, ArrowUpRight, TrendingUp, Target, Sliders, Activity } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface RightRailProps {
   currentUser: User;
@@ -32,6 +32,43 @@ export default function RightRail({
   // Fetch sponsored ads for top and bottom rails
   const topAd = ads.find(a => a.position === 'lateral-top' && a.status === 'active');
   const bottomAd = ads.find(a => a.position === 'lateral-bottom' && a.status === 'active');
+
+  // Calibration for High-CTR Pro audience
+  const [targetAudience, setTargetAudience] = useState<'Geral' | 'PRO'>('Geral');
+  const [calibrationValue, setCalibrationValue] = useState<number>(45); // 1-100% tuning slider
+  const [simulatedClicks, setSimulatedClicks] = useState<number>(0);
+  const [showConversionFloat, setShowConversionFloat] = useState<boolean>(false);
+
+  // Calibrated details for topAd
+  const getCalibratedAdDetails = () => {
+    if (!topAd) return null;
+    if (targetAudience === 'PRO') {
+      return {
+        ...topAd,
+        title: '⚡ Inova PRO S.A. - Elite Smart Growth',
+        description: 'Multiplique seu ROAS em até 12.5x! Funis de conversão preditivos calibrados com inteligência artificial para CEOs, Fundadores e Profissionais PRO.',
+        imageUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=400',
+      };
+    }
+    return topAd;
+  };
+
+  const calibratedAd = getCalibratedAdDetails();
+
+  // CTR calculations
+  const calculateCTR = () => {
+    if (!topAd) return '0.00';
+    const baseClicks = topAd.clicks + simulatedClicks;
+    const baseImpressions = topAd.impressions || 3420;
+    
+    if (targetAudience === 'PRO') {
+      const proMultiplier = 1.8 + (calibrationValue / 15);
+      const optimizedCTR = ((baseClicks / baseImpressions) * 100) * proMultiplier;
+      return optimizedCTR.toFixed(2);
+    }
+    
+    return ((baseClicks / baseImpressions) * 100).toFixed(2);
+  };
 
   // Track impressions on load/render using useEffect to prevent infinite rendering loops
   useEffect(() => {
@@ -67,45 +104,164 @@ export default function RightRail({
     <div className="w-full lg:w-80 shrink-0 space-y-6" id="right-rail-container">
       
       {/* SPONSORED AD TOP */}
-      <div className="bg-[#121225] border border-white/10 rounded-2xl p-4.5 shadow-xl relative overflow-hidden" id="sponsored-ad-top">
+      <div 
+        className={`bg-[#121225] border rounded-2xl p-4.5 shadow-xl relative overflow-hidden transition-all duration-500 ${
+          targetAudience === 'PRO' 
+            ? 'border-orange-500/40 ring-1 ring-orange-500/25 shadow-[0_0_20px_rgba(249,115,22,0.15)] bg-gradient-to-b from-[#1b1225] to-[#121225]' 
+            : 'border-white/10'
+        }`}
+        id="sponsored-ad-top"
+      >
         <div className="flex items-center justify-between mb-3">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-[#00E5FF] font-bold flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-[#00E5FF] animate-pulse" />
-            Patrocinado Topo
+          <span className={`text-[10px] font-mono uppercase tracking-widest font-bold flex items-center gap-1 transition-all ${
+            targetAudience === 'PRO' ? 'text-orange-400' : 'text-[#00E5FF]'
+          }`}>
+            <Sparkles className={`w-3 h-3 ${targetAudience === 'PRO' ? 'text-orange-400 animate-spin' : 'text-[#00E5FF] animate-pulse'}`} />
+            {targetAudience === 'PRO' ? 'Patrocinado PRO' : 'Patrocinado Topo'}
           </span>
           <span className="text-[9px] text-gray-400 font-mono">AD</span>
         </div>
 
-        {topAd ? (
-          <a
-            href={topAd.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => onAdClick(topAd.id)}
-            className="block group"
-          >
-            <div className="relative overflow-hidden rounded-xl h-36 mb-3 bg-[#0A0A14] border border-white/5">
-              <img
-                src={topAd.imageUrl}
-                alt={topAd.title}
-                referrerPolicy="no-referrer"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A14]/80 via-transparent to-transparent" />
-              <div className="absolute bottom-2.5 left-2.5 right-2.5">
-                <span className="bg-gradient-to-r from-[#7C4DFF] to-[#FF5722] text-white text-[9px] font-bold px-2 py-1 rounded uppercase font-mono tracking-wider">
-                  Ver Mais
-                </span>
+        {calibratedAd ? (
+          <div className="block">
+            <a
+              href={calibratedAd.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => {
+                onAdClick(calibratedAd.id);
+                setSimulatedClicks(prev => prev + 1);
+              }}
+              className="block group"
+            >
+              <div className="relative overflow-hidden rounded-xl h-36 mb-3 bg-[#0A0A14] border border-white/5">
+                <img
+                  src={calibratedAd.imageUrl}
+                  alt={calibratedAd.title}
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A14]/80 via-transparent to-transparent" />
+                <div className="absolute bottom-2.5 left-2.5 right-2.5">
+                  <span className={`text-white text-[9px] font-bold px-2 py-1 rounded uppercase font-mono tracking-wider transition-all ${
+                    targetAudience === 'PRO' 
+                      ? 'bg-gradient-to-r from-orange-500 to-amber-500 shadow-lg shadow-orange-500/35' 
+                      : 'bg-gradient-to-r from-[#7C4DFF] to-[#FF5722]'
+                  }`}>
+                    {targetAudience === 'PRO' ? '🚀 Acesso PRO' : 'Ver Mais'}
+                  </span>
+                </div>
               </div>
+              <h4 className={`font-extrabold text-xs transition-colors flex items-center gap-1 ${
+                targetAudience === 'PRO' ? 'text-orange-300 group-hover:text-orange-200' : 'text-white group-hover:text-[#00E5FF]'
+              }`}>
+                {calibratedAd.title}
+                <ArrowUpRight className="w-3 h-3 text-gray-400 shrink-0" />
+              </h4>
+              <p className="text-[11px] text-gray-450 text-gray-400 mt-1 line-clamp-2 leading-relaxed">
+                {calibratedAd.description}
+              </p>
+            </a>
+
+            {/* Dynamic Audience & CTR Calibrator Panel */}
+            <div className="mt-4 pt-4 border-t border-white/10 space-y-3 bg-[#0A0A14]/30 rounded-xl p-3" id="ctr-calibrator-panel">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-gray-400 font-mono font-bold flex items-center gap-1">
+                  <Target className={`w-3 h-3 ${targetAudience === 'PRO' ? 'text-orange-400' : 'text-purple-400'}`} />
+                  Filtro Público
+                </span>
+                <div className="flex rounded-lg overflow-hidden border border-white/10 p-0.5 bg-white/5">
+                  <button
+                    onClick={() => setTargetAudience('Geral')}
+                    className={`px-2 py-0.5 text-[9px] font-bold rounded-md transition-all cursor-pointer ${
+                      targetAudience === 'Geral'
+                        ? 'bg-white/15 text-white'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Geral
+                  </button>
+                  <button
+                    onClick={() => setTargetAudience('PRO')}
+                    className={`px-2 py-0.5 text-[9px] font-black rounded-md transition-all flex items-center gap-1 cursor-pointer ${
+                      targetAudience === 'PRO'
+                        ? 'bg-gradient-to-r from-orange-500 to-purple-600 text-white shadow-[0_0_8px_rgba(249,115,22,0.4)]'
+                         : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <Sparkles className="w-2.5 h-2.5 text-orange-400 animate-spin" />
+                    Público PRO
+                  </button>
+                </div>
+              </div>
+
+              {/* If PRO, show demographic tuning slider */}
+              {targetAudience === 'PRO' && (
+                <div className="space-y-1.5 animate-fade-in-up">
+                  <div className="flex justify-between items-center text-[9px] text-gray-400 font-mono">
+                    <span className="flex items-center gap-1">
+                      <Sliders className="w-2.5 h-2.5 text-orange-400 animate-pulse" />
+                      Afinidade PRO:
+                    </span>
+                    <span className="text-orange-400 font-bold">{calibrationValue}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="100"
+                    value={calibrationValue}
+                    onChange={(e) => setCalibrationValue(Number(e.target.value))}
+                    className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-orange-500 focus:outline-none"
+                  />
+                </div>
+              )}
+
+              {/* Display CTR in Real-time */}
+              <div className="flex items-center justify-between bg-black/40 rounded-lg p-2 border border-white/5 font-mono">
+                <span className="text-[10px] text-gray-400 flex items-center gap-1">
+                  <Activity className="w-3 h-3 text-[#00E5FF] animate-pulse" />
+                  CTR do Banner:
+                </span>
+                <div className="text-right">
+                  <span className={`text-xs font-black transition-all duration-300 ${
+                    targetAudience === 'PRO' ? 'text-green-400 text-sm shadow-green-500/20 shadow-sm' : 'text-cyan-400'
+                  }`}>
+                    {calculateCTR()}%
+                  </span>
+                  {targetAudience === 'PRO' && (
+                    <span className="block text-[8px] text-green-500 font-black tracking-widest uppercase">
+                      Calibrado (ROAS max)
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Try-out Interactive click button to let them test CTR growth */}
+               <button
+                 onClick={() => {
+                   setSimulatedClicks(prev => prev + 1);
+                   setShowConversionFloat(true);
+                   setTimeout(() => setShowConversionFloat(false), 1000);
+                   onAdClick(calibratedAd.id);
+                 }}
+                 className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-[9px] font-bold py-1.5 rounded-lg transition-all active:scale-[0.97] cursor-pointer text-gray-300 flex items-center justify-center gap-1 relative"
+               >
+                 🎯 Testar Clique de Lead PRO
+                 <AnimatePresence>
+                   {showConversionFloat && (
+                     <motion.span
+                       initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                       animate={{ opacity: 1, y: -25, scale: 1.1 }}
+                       exit={{ opacity: 0, scale: 0.9 }}
+                       className="absolute bg-green-500 text-white font-black px-2 py-0.5 rounded text-[8px] shadow-lg pointer-events-none"
+                     >
+                       +1 Clique PRO!
+                     </motion.span>
+                   )}
+                 </AnimatePresence>
+               </button>
             </div>
-            <h4 className="font-extrabold text-xs text-white group-hover:text-[#00E5FF] transition-colors flex items-center gap-1">
-              {topAd.title}
-              <ArrowUpRight className="w-3 h-3 text-gray-400" />
-            </h4>
-            <p className="text-[11px] text-gray-450 text-gray-400 mt-1 line-clamp-2 leading-relaxed">
-              {topAd.description}
-            </p>
-          </a>
+          </div>
         ) : (
           <div className="py-4 text-center border border-dashed border-white/10 rounded-xl bg-[#1E1E30]/40">
             <p className="text-xs text-gray-400 font-mono">Espaço publicitário de alto impacto disponível.</p>
