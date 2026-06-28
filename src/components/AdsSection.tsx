@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react';
-import { User, Ad } from '../types';
+import { User, Ad, PayoutConfig } from '../types';
 import { 
   Megaphone, Plus, PlusCircle, CheckCircle, Smartphone, CreditCard, 
   FileText, ShoppingBag, Eye, MousePointerClick, TrendingUp, BarChart2,
@@ -33,6 +33,7 @@ interface AdsSectionProps {
     paymentMethod?: 'pix' | 'credit_card' | 'boleto';
   }) => void;
   onApproveAd: (adId: string) => void;
+  payoutConfig?: PayoutConfig;
 }
 
 export default function AdsSection({
@@ -40,7 +41,8 @@ export default function AdsSection({
   ads,
   onPurchaseAd,
   onUpdateAd,
-  onApproveAd
+  onApproveAd,
+  payoutConfig
 }: AdsSectionProps) {
   const [activeSubTab, setActiveSubTab] = useState<'listings' | 'create' | 'analytics'>('listings');
   
@@ -525,6 +527,33 @@ export default function AdsSection({
                   </div>
                 </div>
 
+                {/* Active Gateway Indicator */}
+                {payoutConfig && (
+                  <div className="bg-[#0A0A14] p-3.5 rounded-xl border border-white/5 flex items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-2.5">
+                      <ShieldCheck className="w-4 h-4 text-[#00E5FF]" />
+                      <div className="text-left">
+                        <div className="font-extrabold text-white font-mono text-[9px] uppercase tracking-wider">Gateway de Recebimento</div>
+                        <p className="text-[10px] text-gray-400 mt-0.5">
+                          {payoutConfig.gateway === 'disabled' && 'Modo de Testes (Simulado)'}
+                          {payoutConfig.gateway === 'pix' && `Chave Pix Ativa (${payoutConfig.pixKeyType.toUpperCase()})`}
+                          {payoutConfig.gateway === 'mercado_pago' && 'API Mercado Pago Ativa'}
+                          {payoutConfig.gateway === 'stripe' && 'API Stripe Ativa'}
+                          {payoutConfig.gateway === 'asaas' && 'API ASAAS Ativa'}
+                          {payoutConfig.gateway === 'bank_transfer' && `Depósito Bancário: ${payoutConfig.bankName}`}
+                        </p>
+                      </div>
+                    </div>
+                    <span className={`text-[8px] font-mono font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider ${
+                      payoutConfig.gateway !== 'disabled' 
+                        ? 'bg-[#00E676]/10 text-[#00E676] border border-[#00E676]/20 animate-pulse' 
+                        : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                    }`}>
+                      {payoutConfig.gateway !== 'disabled' ? 'Produção' : 'Simulado'}
+                    </span>
+                  </div>
+                )}
+
                 {/* Pay systems selects */}
                 <div className="grid grid-cols-3 gap-2.5">
                   <button
@@ -550,6 +579,7 @@ export default function AdsSection({
                     Cartão de Crédito
                   </button>
                   <button
+                    type="button"
                     onClick={() => setPaymentMethod('boleto')}
                     className={`p-3 rounded-xl border text-center flex flex-col items-center gap-1.5 transition-all text-xs cursor-pointer ${
                       paymentMethod === 'boleto'
@@ -563,10 +593,15 @@ export default function AdsSection({
                 </div>
 
                 {/* Sub display based on chosen mechanism */}
-                <div className="bg-[#0A0A14] p-4 rounded-xl border border-white/5 text-xs leading-relaxed text-gray-400">
+                <div className="bg-[#0A0A14] p-4 rounded-xl border border-white/5 text-xs leading-relaxed text-gray-400 text-left">
                   {paymentMethod === 'pix' && (
                     <div className="text-center space-y-3">
-                      <p className="font-semibold text-gray-200">Aprovação instantânea via PIX do Mercado Pago!</p>
+                      <p className="font-semibold text-gray-200">
+                        {payoutConfig?.gateway === 'pix' 
+                          ? 'Transfira o valor usando a Chave PIX oficial cadastrada pelo Administrador:' 
+                          : 'Aprovação instantânea via PIX homologada!'
+                        }
+                      </p>
                       <div className="bg-white p-2 rounded-lg w-28 h-28 mx-auto flex items-center justify-center">
                         {/* Generates a nice mock pixelated visual representing pixel blocks */}
                         <div className="grid grid-cols-4 gap-1 w-24 h-24">
@@ -580,21 +615,57 @@ export default function AdsSection({
                           ))}
                         </div>
                       </div>
-                      <p className="text-[10px] font-mono text-[#00E5FF] break-all select-all">
-                        00020126360014BR.GOV.BCB.PIX0114picapauinfo@MP98754125
-                      </p>
+                      <div className="bg-[#121225] p-3 rounded-xl border border-white/5 text-center font-mono text-xs">
+                        {payoutConfig?.gateway === 'pix' && payoutConfig.pixKey ? (
+                          <>
+                            <span className="text-amber-400 text-[10px] font-bold uppercase tracking-wider block mb-1">
+                              Chave ({payoutConfig.pixKeyType.toUpperCase()})
+                            </span>
+                            <span className="text-[#00E5FF] font-black break-all select-all block text-[11px]">
+                              {payoutConfig.pixKey}
+                            </span>
+                            {payoutConfig.pixHolderName && (
+                              <span className="text-gray-400 text-[10px] block mt-1.5 font-sans">
+                                Favorecido: <strong className="text-white">{payoutConfig.pixHolderName}</strong>
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-gray-500 text-[9px] block mb-1">Chave Pix Comercial Padrão</span>
+                            <span className="text-[#00E5FF] font-black break-all select-all block text-[10px]">
+                              00020126360014BR.GOV.BCB.PIX0114picapauinfo@MP98754125
+                            </span>
+                          </>
+                        )}
+                      </div>
                       <button 
-                        onClick={() => alert('Copiado com sucesso!')}
-                        className="text-[10px] text-gray-500 hover:underline inline-block font-mono cursor-pointer"
+                        type="button"
+                        onClick={() => {
+                          const copyVal = (payoutConfig?.gateway === 'pix' && payoutConfig.pixKey) 
+                            ? payoutConfig.pixKey 
+                            : '00020126360014BR.GOV.BCB.PIX0114picapauinfo@MP98754125';
+                          navigator.clipboard.writeText(copyVal);
+                          alert('Chave PIX copiada para a área de transferência!');
+                        }}
+                        className="text-[10px] text-gray-400 hover:text-white hover:underline inline-block font-mono cursor-pointer"
                       >
-                        [ Copiar Linha Digitável ]
+                        [ Clique para Copiar Chave ]
                       </button>
                     </div>
                   )}
 
                   {paymentMethod === 'credit_card' && (
                     <div className="space-y-3">
-                      <p className="font-semibold text-gray-200 text-center">Processar pagamento do Cartão de Crédito</p>
+                      <p className="font-semibold text-gray-200 text-center">
+                        {payoutConfig?.gateway === 'stripe' 
+                          ? 'Checkout Seguro via Stripe Connect' 
+                          : payoutConfig?.gateway === 'mercado_pago' 
+                            ? 'Checkout Integrado via Mercado Pago' 
+                            : 'Processar pagamento via Cartão de Crédito'
+                        }
+                      </p>
+                      
                       <div className="space-y-2 max-w-xs mx-auto">
                         <input
                           type="text"
@@ -617,16 +688,35 @@ export default function AdsSection({
                           />
                         </div>
                       </div>
+
+                      {payoutConfig?.gateway !== 'disabled' && payoutConfig?.gateway !== 'pix' && (
+                        <p className="text-[10px] text-gray-500 text-center font-mono">
+                          Transação em ambiente real via API do {payoutConfig?.gateway.toUpperCase()}
+                        </p>
+                      )}
                     </div>
                   )}
 
                   {paymentMethod === 'boleto' && (
-                    <div className="text-center space-y-2">
-                      <p className="font-semibold text-gray-200">Gerar Boleto Banco do Brasil homologado</p>
-                      <p className="text-[10px] font-mono break-all select-all text-gray-300">
-                        34191.79001 01043.513184 91020.150008 7 98150000035000
-                      </p>
-                      <p className="text-[9px] text-gray-500">Compensação em até 48 horas úteis.</p>
+                    <div className="text-center space-y-3">
+                      <p className="font-semibold text-gray-200">Gerar Boleto Bancário homologado</p>
+                      
+                      {payoutConfig?.gateway === 'bank_transfer' && payoutConfig.bankName ? (
+                        <div className="bg-[#121225] p-3 rounded-xl border border-white/5 space-y-1.5 text-left font-mono text-[11px]">
+                          <span className="text-amber-400 text-[9px] font-bold uppercase tracking-wider block">Dados de Depósito Direto</span>
+                          <p className="text-white font-bold"><span className="text-gray-400">Banco:</span> {payoutConfig.bankName}</p>
+                          <p className="text-white"><span className="text-gray-400">Agência:</span> {payoutConfig.bankAgency} / <span className="text-gray-400">C/C:</span> {payoutConfig.bankAccount}</p>
+                          <p className="text-white"><span className="text-gray-400">Titular:</span> {payoutConfig.bankHolderName}</p>
+                          <p className="text-gray-400 text-[9px]"><span className="text-gray-400">Doc:</span> {payoutConfig.bankHolderDoc}</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-mono break-all select-all text-gray-300 bg-[#121225] p-2.5 rounded-lg border border-white/5">
+                            34191.79001 01043.513184 91020.150008 7 98150000035000
+                          </p>
+                          <p className="text-[9px] text-gray-500">Compensação em até 48 horas úteis.</p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

@@ -723,6 +723,7 @@ export default function App() {
                       onPurchaseAd={social.purchaseAd}
                       onUpdateAd={social.updateAd}
                       onApproveAd={social.approveAd}
+                      payoutConfig={social.payoutConfig}
                     />
                   )}
 
