@@ -1,8 +1,9 @@
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, ChangeEvent } from 'react';
 import { User, Post, Ad } from '../types';
 import { 
   Image as ImageIcon, Video, Send, Share2, MessageSquare, AlertCircle, 
-  MapPin, CheckCircle, Flame, Star, Sparkles, ExternalLink, Bookmark
+  MapPin, CheckCircle, Flame, Star, Sparkles, ExternalLink, Bookmark,
+  Upload, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ImageLightbox from './ImageLightbox';
@@ -132,6 +133,84 @@ export default function FeedSection({
     'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800'
   ];
 
+  // Local image upload states & logic
+  const [activeMediaSource, setActiveMediaSource] = useState<'upload' | 'url'>('upload');
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1000;
+          const MAX_HEIGHT = 1000;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(event.target?.result as string);
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          resolve(compressedDataUrl);
+        };
+        img.onerror = () => {
+          resolve(event.target?.result as string);
+        };
+      };
+      reader.onerror = (err) => reject(err);
+    });
+  };
+
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setUploadError('Por favor, selecione apenas arquivos de imagem.');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError('A imagem é muito grande. Escolha uma imagem de até 10MB.');
+      return;
+    }
+
+    setIsUploadingFile(true);
+    setUploadError(null);
+    try {
+      const base64 = await compressImage(file);
+      setNewPostMedia(base64);
+      setMediaType('image');
+    } catch (err) {
+      console.error('Error reading/compressing file:', err);
+      setUploadError('Erro ao processar imagem. Tente novamente.');
+    } finally {
+      setIsUploadingFile(false);
+    }
+  };
+
   const handleCreatePost = async (e: FormEvent) => {
     e.preventDefault();
     if (!newPostContent.trim() && !newPostMedia) return;
@@ -220,53 +299,167 @@ export default function FeedSection({
                   exit={{ opacity: 0, height: 0 }}
                   className="mt-3 space-y-3 bg-[#0A0A14] p-3 rounded-xl border border-white/5"
                 >
-                  <div className="flex items-center justify-between text-[11px] font-mono text-gray-450">
-                    <span className="text-gray-400">Vincular Mídia Externa</span>
+                  <div className="flex items-center justify-between text-[11px] font-mono">
                     <div className="flex gap-2">
-                       <button
+                      <span className="text-gray-400 font-bold">Tipo:</span>
+                      <button
                         type="button"
-                        onClick={() => setMediaType('image')}
-                        className={`px-2 py-0.5 rounded cursor-pointer transition-all ${mediaType === 'image' ? 'bg-[#7C4DFF]/20 text-[#00E5FF] font-black' : 'text-gray-400'}`}
+                        onClick={() => {
+                          setMediaType('image');
+                          setActiveMediaSource('upload');
+                        }}
+                        className={`px-2 py-0.5 rounded cursor-pointer transition-all ${mediaType === 'image' ? 'bg-[#7C4DFF]/20 text-[#00E5FF] font-black' : 'text-gray-400 hover:text-white'}`}
                       >
                         Foto
                       </button>
                       <button
                         type="button"
-                        onClick={() => setMediaType('video')}
-                        className={`px-2 py-0.5 rounded cursor-pointer transition-all ${mediaType === 'video' ? 'bg-[#FF5722]/20 text-[#FF5722] font-black' : 'text-gray-400'}`}
+                        onClick={() => {
+                          setMediaType('video');
+                          setActiveMediaSource('url');
+                        }}
+                        className={`px-2 py-0.5 rounded cursor-pointer transition-all ${mediaType === 'video' ? 'bg-[#FF5722]/20 text-[#FF5722] font-black' : 'text-gray-400 hover:text-white'}`}
                       >
                         Vídeo Curto/Reels
                       </button>
                     </div>
+
+                    {mediaType === 'image' && (
+                      <div className="flex gap-1 bg-[#121225] p-0.5 rounded border border-white/5">
+                        <button
+                          type="button"
+                          onClick={() => setActiveMediaSource('upload')}
+                          className={`px-2 py-0.5 rounded text-[10px] cursor-pointer transition-all ${activeMediaSource === 'upload' ? 'bg-white/10 text-white font-bold' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                          Dispositivo
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveMediaSource('url')}
+                          className={`px-2 py-0.5 rounded text-[10px] cursor-pointer transition-all ${activeMediaSource === 'url' ? 'bg-white/10 text-white font-bold' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                          Link Web
+                        </button>
+                      </div>
+                    )}
                   </div>
 
-                  <input
-                    type="text"
-                    placeholder="URL da imagem ou vídeo do Unsplash, Youtube, etc."
-                    value={newPostMedia}
-                    onChange={(e) => setNewPostMedia(e.target.value)}
-                    className="w-full bg-[#121225] border border-white/10 text-gray-200 rounded-lg p-2 text-xs focus:outline-none focus:border-[#00E5FF] font-mono"
-                  />
+                  {/* DISPLAY FILE UPLOADER FOR IMAGE DISPOSITIVO */}
+                  {mediaType === 'image' && activeMediaSource === 'upload' && (
+                    <div className="space-y-3">
+                      {newPostMedia && newPostMedia.startsWith('data:image/') ? (
+                        /* Previews already-uploaded local image */
+                        <div className="relative rounded-lg overflow-hidden border border-[#00E5FF]/20 bg-[#121225]/50 p-2 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <img 
+                              src={newPostMedia} 
+                              alt="Upload Preview" 
+                              className="w-16 h-16 object-cover rounded-lg border border-white/10"
+                            />
+                            <div className="text-left">
+                              <span className="text-[10px] uppercase font-mono tracking-wider font-bold text-[#00E5FF] block">✓ Imagem Carregada</span>
+                              <span className="text-[9px] font-mono text-gray-400 block mt-0.5">Otimizada para publicação instantânea</span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setNewPostMedia('')}
+                            className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-all cursor-pointer border border-red-500/15"
+                            title="Remover Imagem"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        /* File Upload Zone */
+                        <div className="relative">
+                          <label className="flex flex-col items-center justify-center border-2 border-dashed border-white/10 hover:border-[#00E5FF]/40 rounded-xl p-6 bg-[#121225]/40 hover:bg-[#121225]/70 transition-all cursor-pointer group">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleFileChange}
+                              disabled={isUploadingFile}
+                              className="hidden"
+                            />
+                            
+                            {isUploadingFile ? (
+                              <div className="flex flex-col items-center gap-2">
+                                <Upload className="w-8 h-8 text-[#00E5FF] animate-bounce" />
+                                <span className="text-xs font-mono font-bold text-[#00E5FF] animate-pulse">Otimizando imagem...</span>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center gap-2 text-center">
+                                <Upload className="w-8 h-8 text-[#7C4DFF] group-hover:text-[#00E5FF] group-hover:scale-105 transition-all duration-300" />
+                                <span className="text-xs font-medium text-gray-300">Escolha uma foto do seu Celular ou Computador</span>
+                                <span className="text-[9px] text-gray-500 font-mono">Arraste ou clique para buscar fotos</span>
+                              </div>
+                            )}
+                          </label>
 
-                  {/* Suggest random photo options under */}
-                  <div className="flex gap-2 items-center">
-                    <span className="text-[10px] text-gray-500 font-mono">Sugestão:</span>
-                    {sampleMediaUrls.map((preset, pidx) => (
-                      <button
-                        key={pidx}
-                        type="button"
-                        onClick={() => {
-                          setNewPostMedia(preset);
-                          setMediaType('image');
-                        }}
-                        className={`w-9 h-9 rounded-lg overflow-hidden border transition-all ${
-                          newPostMedia === preset ? 'border-[#00E5FF] ring-2 ring-[#00E5FF]/20' : 'border-white/5'
-                        }`}
-                      >
-                        <img src={preset} alt="preset" className="w-full h-full object-cover" />
-                      </button>
-                    ))}
-                  </div>
+                          {uploadError && (
+                            <p className="text-[10px] text-red-400 font-mono mt-1.5 text-left flex items-center gap-1">
+                              <AlertCircle className="w-3.5 h-3.5" />
+                              {uploadError}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* DISPLAY LINK INPUT FOR URL FOR BOTH IMAGES AND VIDEOS */}
+                  {(mediaType === 'video' || (mediaType === 'image' && activeMediaSource === 'url')) && (
+                    <div className="space-y-3 text-left">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder={mediaType === 'image' ? "URL da imagem (ex: https://unsplash.com/...)" : "URL do vídeo do YouTube ou Reels"}
+                          value={newPostMedia}
+                          onChange={(e) => setNewPostMedia(e.target.value)}
+                          className="w-full bg-[#121225] border border-white/10 text-gray-200 rounded-lg p-2.5 text-xs focus:outline-none focus:border-[#00E5FF] font-mono pr-8"
+                        />
+                        {newPostMedia && (
+                          <button
+                            type="button"
+                            onClick={() => setNewPostMedia('')}
+                            className="absolute right-2 top-2.5 p-0.5 text-gray-500 hover:text-white"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Display live preview of URL image if provided and valid */}
+                      {mediaType === 'image' && newPostMedia && newPostMedia.startsWith('http') && (
+                        <div className="rounded-lg overflow-hidden max-h-32 border border-white/5 bg-black/20 flex justify-center items-center">
+                          <img src={newPostMedia} alt="Preview URL" className="max-h-32 object-contain" />
+                        </div>
+                      )}
+
+                      {/* Suggest random photo options under */}
+                      {mediaType === 'image' && (
+                        <div className="flex gap-2 items-center">
+                          <span className="text-[10px] text-gray-500 font-mono">Sugestão rápida:</span>
+                          {sampleMediaUrls.map((preset, pidx) => (
+                            <button
+                              key={pidx}
+                              type="button"
+                              onClick={() => {
+                                setNewPostMedia(preset);
+                                setMediaType('image');
+                                setActiveMediaSource('url');
+                              }}
+                              className={`w-9 h-9 rounded-lg overflow-hidden border transition-all ${
+                                newPostMedia === preset ? 'border-[#00E5FF] ring-2 ring-[#00E5FF]/20' : 'border-white/5'
+                              }`}
+                            >
+                              <img src={preset} alt="preset" className="w-full h-full object-cover" />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -277,8 +470,13 @@ export default function FeedSection({
                 <button
                   type="button"
                   onClick={() => {
-                    setShowMediaInput(!showMediaInput);
-                    setMediaType('image');
+                    if (showMediaInput && mediaType === 'image' && activeMediaSource === 'upload') {
+                      setShowMediaInput(false);
+                    } else {
+                      setShowMediaInput(true);
+                      setMediaType('image');
+                      setActiveMediaSource('upload');
+                    }
                   }}
                   className="flex items-center gap-1.5 text-gray-400 hover:text-[#00E5FF] text-[11px] md:text-xs font-semibold px-2 py-1.5 rounded-lg hover:bg-[#1E1E30]/60 transition-all cursor-pointer"
                 >
@@ -288,8 +486,13 @@ export default function FeedSection({
                 <button
                   type="button"
                   onClick={() => {
-                    setShowMediaInput(!showMediaInput);
-                    setMediaType('video');
+                    if (showMediaInput && mediaType === 'video') {
+                      setShowMediaInput(false);
+                    } else {
+                      setShowMediaInput(true);
+                      setMediaType('video');
+                      setActiveMediaSource('url');
+                    }
                   }}
                   className="flex items-center gap-1.5 text-gray-400 hover:text-[#FF5722] text-[11px] md:text-xs font-semibold px-2 py-1.5 rounded-lg hover:bg-[#1E1E30]/60 transition-all cursor-pointer"
                 >
