@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { User, Ad } from '../types';
 import { 
   Gamepad2, Award, RefreshCw, Trophy, Users, CheckCircle, HelpCircle, 
   Sparkles, X, ChevronRight, Volume2, VolumeX, Flame, Heart, Star,
   Megaphone, PlusCircle, ExternalLink, CreditCard, BadgePercent, QrCode,
-  Trash2, Edit3, ShieldAlert
+  Trash2, Edit3, ShieldAlert, Settings, Coins, Dices, Lock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, onSnapshot, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
 interface GamesSectionProps {
@@ -234,6 +234,51 @@ export default function GamesSection({
       setLeaderboard(defaultScores);
     }
   }, []);
+
+  // Casino affiliate config
+  const [casinoConfig, setCasinoConfig] = useState({
+    betSportsUrl: 'https://www.betano.com',
+    betCasinoUrl: 'https://blaze.com',
+  });
+  const [isCasinoConfigOpen, setIsCasinoConfigOpen] = useState(false);
+  const [editedSportsUrl, setEditedSportsUrl] = useState('');
+  const [editedCasinoUrl, setEditedCasinoUrl] = useState('');
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'casino_config', 'main'), (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        setCasinoConfig({
+          betSportsUrl: data.betSportsUrl || 'https://www.betano.com',
+          betCasinoUrl: data.betCasinoUrl || 'https://blaze.com'
+        });
+      }
+    }, (err) => {
+      console.error('Error fetching casino config:', err);
+    });
+    return () => unsub();
+  }, []);
+
+  const handleSaveCasinoConfig = async (e: FormEvent) => {
+    e.preventDefault();
+    try {
+      await setDoc(doc(db, 'casino_config', 'main'), {
+        betSportsUrl: editedSportsUrl.trim() || 'https://www.betano.com',
+        betCasinoUrl: editedCasinoUrl.trim() || 'https://blaze.com'
+      });
+      setIsCasinoConfigOpen(false);
+      alert('Links dos Cassinos Parceiros atualizados com sucesso no banco de dados!');
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao salvar configurações.');
+    }
+  };
+
+  const handleOpenCasinoConfig = () => {
+    setEditedSportsUrl(casinoConfig.betSportsUrl);
+    setEditedCasinoUrl(casinoConfig.betCasinoUrl);
+    setIsCasinoConfigOpen(true);
+  };
 
   const saveScore = (score: number, gameName: string) => {
     // Update local storage score for current user
@@ -1095,6 +1140,129 @@ export default function GamesSection({
         </div>
 
         {/* ============================================================ */}
+        {/* ESPAÇOS DE AFILIADOS DE CASSINO (BET SPORTS & BET CASINO) */}
+        {/* ============================================================ */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5" id="casino-affiliate-ads-board">
+          
+          {/* CARD 1: Bet Sports */}
+          <div className="bg-[#0c0c16] border border-[#00E676]/20 hover:border-[#00E676]/40 rounded-[28px] p-6 shadow-xl relative overflow-hidden flex flex-col justify-between group transition-all duration-300">
+            {/* Ambient Background Glow matching the top left of the card in the image */}
+            <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-[#00E676]/10 to-transparent rounded-full blur-2xl pointer-events-none" />
+            
+            {/* Header / Admin Config Gear */}
+            <div className="flex justify-between items-start z-10">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-[#00E676] group-hover:scale-105 transition-transform duration-300">
+                  <Dices className="w-6 h-6" />
+                </div>
+                <div className="text-left">
+                  <h4 className="text-base font-extrabold text-white tracking-tight">Bet Sports</h4>
+                  <span className="text-[10px] font-bold text-[#00E676] tracking-wider uppercase flex items-center gap-1 mt-0.5">
+                    PATROCINADO • +18
+                  </span>
+                </div>
+              </div>
+
+              {currentUser?.id === 'admin' && (
+                <button
+                  type="button"
+                  onClick={handleOpenCasinoConfig}
+                  className="p-1.5 bg-white/5 hover:bg-[#00E676]/20 border border-white/10 hover:border-[#00E676]/30 rounded-lg transition-all text-gray-400 hover:text-[#00E676] cursor-pointer"
+                  title="Configurar Links de Afiliado"
+                >
+                  <Settings className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Mid Content */}
+            <div className="mt-5 mb-5 text-left z-10">
+              <h5 className="text-lg font-black text-white tracking-tight leading-snug">
+                Aposte com responsabilidade
+              </h5>
+              <p className="text-gray-400 text-sm mt-1 font-medium leading-relaxed font-sans">
+                Bônus de boas-vindas para novos jogadores
+              </p>
+            </div>
+
+            {/* Action / Button & Footer */}
+            <div className="z-10 text-left space-y-4">
+              <a
+                href={casinoConfig.betSportsUrl.startsWith('http') ? casinoConfig.betSportsUrl : `https://${casinoConfig.betSportsUrl}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#171a28] hover:bg-[#202538] border border-white/5 hover:border-white/10 text-white font-extrabold text-xs rounded-full transition-all cursor-pointer shadow-lg hover:shadow-black/40"
+              >
+                <Trophy className="w-3.5 h-3.5 text-yellow-500" />
+                Jogar agora
+              </a>
+              <p className="text-[10px] text-gray-500 leading-relaxed max-w-sm">
+                Jogue com responsabilidade. Proibido para menores de 18 anos.
+              </p>
+            </div>
+          </div>
+
+          {/* CARD 2: Bet Casino */}
+          <div className="bg-[#0c0c16] border border-amber-500/20 hover:border-amber-500/40 rounded-[28px] p-6 shadow-xl relative overflow-hidden flex flex-col justify-between group transition-all duration-300">
+            {/* Ambient Background Glow matching the top left of the card in the image */}
+            <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-amber-500/10 to-transparent rounded-full blur-2xl pointer-events-none" />
+            
+            {/* Header */}
+            <div className="flex justify-between items-start z-10">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-amber-500 group-hover:scale-105 transition-transform duration-300">
+                  <Coins className="w-6 h-6" />
+                </div>
+                <div className="text-left">
+                  <h4 className="text-base font-extrabold text-white tracking-tight">Bet Casino</h4>
+                  <span className="text-[10px] font-bold text-amber-500 tracking-wider uppercase flex items-center gap-1 mt-0.5">
+                    PATROCINADO • +18
+                  </span>
+                </div>
+              </div>
+
+              {currentUser?.id === 'admin' && (
+                <button
+                  type="button"
+                  onClick={handleOpenCasinoConfig}
+                  className="p-1.5 bg-white/5 hover:bg-amber-500/20 border border-white/10 hover:border-amber-500/30 rounded-lg transition-all text-gray-400 hover:text-amber-500 cursor-pointer"
+                  title="Configurar Links de Afiliado"
+                >
+                  <Settings className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Mid Content */}
+            <div className="mt-5 mb-5 text-left z-10">
+              <h5 className="text-lg font-black text-white tracking-tight leading-snug">
+                Cassino ao vivo
+              </h5>
+              <p className="text-gray-400 text-sm mt-1 font-medium leading-relaxed font-sans">
+                Roleta, blackjack e slots 24/7
+              </p>
+            </div>
+
+            {/* Action / Button & Footer */}
+            <div className="z-10 text-left space-y-4">
+              <a
+                href={casinoConfig.betCasinoUrl.startsWith('http') ? casinoConfig.betCasinoUrl : `https://${casinoConfig.betCasinoUrl}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#171a28] hover:bg-[#202538] border border-white/5 hover:border-white/10 text-white font-extrabold text-xs rounded-full transition-all cursor-pointer shadow-lg hover:shadow-black/40"
+              >
+                <Trophy className="w-3.5 h-3.5 text-yellow-500" />
+                Entrar no cassino
+              </a>
+              <p className="text-[10px] text-gray-500 leading-relaxed max-w-sm">
+                Jogue com responsabilidade. Proibido para menores de 18 anos.
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+        {/* ============================================================ */}
         {/* CHECKOUT MODAL PARA PATROCÍNIO DE JOGOS */}
         {/* ============================================================ */}
         <AnimatePresence>
@@ -1486,6 +1654,88 @@ export default function GamesSection({
           )}
         </div>
       </div>
+
+      {/* ============================================================ */}
+      {/* MODAL DE CONFIGURAÇÃO DE AFILIADOS (SOMENTE ADMIN) */}
+      {/* ============================================================ */}
+      <AnimatePresence>
+        {isCasinoConfigOpen && (
+          <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto" id="admin-casino-config-modal">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="bg-[#121225] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col text-left"
+            >
+              <div className="p-4 border-b border-white/10 flex items-center justify-between bg-[#1A1A32]">
+                <div className="flex items-center gap-2">
+                  <Settings className="w-4.5 h-4.5 text-yellow-400" />
+                  <span className="text-sm font-bold text-white uppercase tracking-wider font-mono">
+                    Links de Afiliados (Admin)
+                  </span>
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => setIsCasinoConfigOpen(false)}
+                  className="p-1.5 hover:bg-white/10 rounded-lg transition-all text-gray-400 hover:text-white cursor-pointer"
+                >
+                  <X className="w-4.5 h-4.5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveCasinoConfig} className="p-5 space-y-4">
+                <div className="bg-yellow-500/10 border border-yellow-500/20 p-3 rounded-xl text-[11px] text-yellow-300 leading-relaxed font-sans flex items-start gap-2.5">
+                  <Lock className="w-4 h-4 shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="block font-bold">Acesso do Administrador Ativo:</strong>
+                    Insira seus links de afiliado (CPA/RevShare) abaixo. Quando os usuários clicarem em "Jogar agora", serão redirecionados por meio deles, permitindo que você monetize seu tráfego!
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Link para Bet Sports</label>
+                  <input
+                    type="url"
+                    required
+                    value={editedSportsUrl}
+                    onChange={(e) => setEditedSportsUrl(e.target.value)}
+                    className="w-full bg-[#0A0A14] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#00E5FF] transition-all font-mono"
+                    placeholder="https://www.betano.com/?ref=seu_codigo"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Link para Bet Casino</label>
+                  <input
+                    type="url"
+                    required
+                    value={editedCasinoUrl}
+                    onChange={(e) => setEditedCasinoUrl(e.target.value)}
+                    className="w-full bg-[#0A0A14] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#00E5FF] transition-all font-mono"
+                    placeholder="https://blaze.com/?ref=seu_codigo"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsCasinoConfigOpen(false)}
+                    className="flex-1 py-2 bg-[#1A1A32] hover:bg-[#25254A] border border-white/10 text-white text-xs font-bold rounded-xl transition-all cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2 bg-gradient-to-r from-[#00E5FF] to-blue-600 hover:opacity-95 text-[#0A0A14] text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-md shadow-[#00E5FF]/10"
+                  >
+                    Salvar Alterações
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
     </div>
   );
