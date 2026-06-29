@@ -1,6 +1,6 @@
 import { useState, useEffect, ChangeEvent } from 'react';
 import { User, SystemLog } from '../types';
-import { Network, Bell, Search, Shuffle, ShieldAlert, BadgeCheck, Compass, MessageSquare, Sun, Moon } from 'lucide-react';
+import { Network, Bell, Search, Shuffle, ShieldAlert, BadgeCheck, Compass, MessageSquare, Sun, Moon, Download, Share, X, Smartphone } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface HeaderProps {
@@ -33,6 +33,53 @@ export default function Header({
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
   const [searchTerm, setSearchTerm] = useState(parentSearchTerm);
+
+  // BBA PWA installation states and events
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
+  const [showIOSModal, setShowIOSModal] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+
+  useEffect(() => {
+    // Detect iOS
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
+    setIsIOS(isIosDevice);
+
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstallable(false);
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (isIOS) {
+      setShowIOSModal(true);
+      return;
+    }
+
+    if (!deferredPrompt) {
+      alert("Para instalar o Bla Bla Amigos (BBA) no seu celular ou computador:\n\n1. Abra o menu de opções do navegador (três pontinhos ou ícone de compartilhar).\n2. Selecione 'Instalar aplicativo' ou 'Adicionar à tela de início'.\n\nPronto! O aplicativo será adicionado com o ícone e sigla BBA oficial.");
+      return;
+    }
+
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`[BBA PWA] User prompt outcome: ${outcome}`);
+    setDeferredPrompt(null);
+    setIsInstallable(false);
+  };
 
   useEffect(() => {
     setSearchTerm(parentSearchTerm);
@@ -106,6 +153,20 @@ export default function Header({
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </span>
+          </button>
+
+          {/* BOTÃO DE INSTALAÇÃO DO APLICATIVO BBA */}
+          <button
+            onClick={handleInstallClick}
+            className="flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-gradient-to-r from-[#00E5FF] via-[#00E676] to-[#00E5FF] hover:brightness-110 text-slate-950 text-xs font-black shadow-[0_0_15px_rgba(0,229,255,0.4)] hover:shadow-[0_0_20px_rgba(0,230,118,0.5)] transition-all duration-300 active:scale-95 cursor-pointer shrink-0"
+            title="Instalar Aplicativo BBA no Celular ou PC"
+            id="header-pwa-install-btn"
+          >
+            <Download className="w-3.5 h-3.5 animate-bounce text-slate-950" />
+            <span className="hidden sm:inline font-sans">Instalar App</span>
+            <span className="bg-slate-950 text-[#00E5FF] text-[8px] px-1 rounded font-mono font-bold">
+              BBA
             </span>
           </button>
 
@@ -352,6 +413,99 @@ export default function Header({
 
         </div>
       </div>
+
+      {/* iOS INSTALL INSTRUCTIONS MODAL */}
+      <AnimatePresence>
+        {showIOSModal && (
+          <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto" id="ios-pwa-install-modal">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="bg-[#121225] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col text-left"
+            >
+              {/* Header */}
+              <div className="p-4 border-b border-white/10 flex items-center justify-between bg-[#1A1A32]">
+                <div className="flex items-center gap-2">
+                  <Smartphone className="w-4.5 h-4.5 text-[#00E5FF] animate-pulse" />
+                  <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+                    Instalar App no iPhone / iPad
+                  </span>
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => setShowIOSModal(false)}
+                  className="p-1.5 hover:bg-white/10 rounded-lg transition-all text-gray-400 hover:text-white cursor-pointer"
+                >
+                  <X className="w-4.5 h-4.5" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 space-y-5">
+                {/* App profile preview */}
+                <div className="flex items-center gap-4 bg-[#0A0A14] p-3.5 rounded-xl border border-white/5">
+                  <img 
+                    src="/icon-512.jpg" 
+                    alt="BBA Logo" 
+                    className="w-14 h-14 rounded-2xl object-cover shadow-lg border border-white/10" 
+                  />
+                  <div>
+                    <h4 className="text-sm font-black text-white leading-tight">Bla Bla Amigos</h4>
+                    <p className="text-[10px] text-[#00E5FF] font-mono tracking-wider font-bold mt-0.5">SIGLA: BBA</p>
+                    <p className="text-[11px] text-gray-400 mt-1 leading-snug">
+                      Adicione o aplicativo à sua tela de início para acessar diretamente em tela cheia!
+                    </p>
+                  </div>
+                </div>
+
+                {/* Steps */}
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[#00E5FF] font-mono font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
+                      1
+                    </div>
+                    <div className="text-xs text-gray-300 leading-relaxed">
+                      Toque no botão de <span className="text-white font-bold inline-flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded border border-white/10"><Share className="w-3 h-3 text-blue-400 inline" /> Compartilhar</span> (na barra inferior ou superior do Safari).
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[#00E5FF] font-mono font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
+                      2
+                    </div>
+                    <div className="text-xs text-gray-300 leading-relaxed">
+                      Role o menu para baixo e selecione a opção <span className="text-white font-bold bg-white/5 px-1.5 py-0.5 rounded border border-white/10">Adicionar à Tela de Início</span>.
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[#00E5FF] font-mono font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
+                      3
+                    </div>
+                    <div className="text-xs text-gray-300 leading-relaxed">
+                      Toque em <span className="text-white font-bold text-blue-400">Adicionar</span> no canto superior direito para confirmar.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl text-[11px] text-emerald-300 leading-relaxed font-sans">
+                  ✨ Pronto! O ícone premium com a sigla <strong className="font-extrabold text-[#00E676]">BBA</strong> será instalado e você poderá usá-lo como um aplicativo nativo completo do Facebook!
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowIOSModal(false)}
+                  className="w-full py-2.5 bg-[#1A1A32] hover:bg-[#25254A] border border-white/10 text-white text-xs font-bold rounded-xl transition-all cursor-pointer"
+                >
+                  Entendi, fechar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </header>
   );
 }

@@ -1,0 +1,22 @@
+{
+  "name": "Bla Bla Amigos",
+  "short_name": "BBA",
+  "description": "Uma plataforma de rede social vibrante, moderna, completa e profissional para se conectar com amigos.",
+  "icons": [
+    {
+      "src": "/icon-512.jpg",
+      "type": "image/jpeg",
+      "sizes": "512x512"
+    },
+    {
+      "src": "/icon-512.jpg",
+      "type": "image/jpeg",
+      "sizes": "192x192"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#121225",
+  "theme_color": "#00E5FF",
+  "display": "standalone",
+  "orientation": "portrait"
+}

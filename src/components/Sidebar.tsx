@@ -342,6 +342,32 @@ export default function Sidebar({
         </nav>
       </div>
 
+      {/* APP INSTALADOR BBA CARD */}
+      <div className="bg-[#121225] border border-white/10 rounded-2xl p-4 shadow-xl text-left" id="sidebar-pwa-install-card">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#00E5FF] to-blue-600 flex items-center justify-center shrink-0 shadow-lg shadow-[#00E5FF]/10 overflow-hidden">
+            <img src="/icon-512.jpg" alt="BBA Icon" className="w-10 h-10 object-cover" />
+          </div>
+          <div>
+            <h4 className="text-white text-xs font-black">Instalar Aplicativo BBA</h4>
+            <p className="text-[10px] text-gray-400 mt-0.5 leading-tight">Instale a rede com a sigla BBA no seu celular ou computador</p>
+          </div>
+        </div>
+        <button
+          onClick={() => {
+            const btn = document.getElementById('header-pwa-install-btn');
+            if (btn) {
+              (btn as HTMLButtonElement).click();
+            } else {
+              alert("Por favor, clique no botão de instalação no topo da página!");
+            }
+          }}
+          className="w-full mt-3 py-2 bg-[#1A1A32] hover:bg-[#25254A] border border-white/5 hover:border-[#00E5FF]/20 text-[11px] font-bold rounded-xl text-[#00E5FF] hover:text-white hover:bg-[#00E5FF]/10 transition-all cursor-pointer text-center flex items-center justify-center gap-1.5"
+        >
+          Baixar Aplicativo BBA
+        </button>
+      </div>
+
       {/* PREMIUM UPGRADE PROMO */}
       <div 
         className="bg-gradient-to-br from-[#7C4DFF] to-[#FF5722] border border-white/10 rounded-2xl p-5 shadow-2xl relative overflow-hidden group cursor-pointer"
