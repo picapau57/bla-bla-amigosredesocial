@@ -14,6 +14,7 @@ import AdminSection from './components/AdminSection';
 import JobsSection from './components/JobsSection';
 import GamesSection from './components/GamesSection';
 import ReelsSection from './components/ReelsSection';
+import IdeasSection from './components/IdeasSection';
 import UserProfileModal from './components/UserProfileModal';
 import FriendsSection from './components/FriendsSection';
 
@@ -768,6 +769,19 @@ export default function App() {
                       onCreateJob={social.createJob}
                       onDeleteJob={social.deleteJob}
                       onToggleApplyJob={social.toggleApplyJob}
+                      onViewProfile={setViewingUser}
+                    />
+                  )}
+
+                  {/* IDEAS FORUM SECTION */}
+                  {activeTab === 'ideas' && (
+                    <IdeasSection
+                      currentUser={social.currentUser}
+                      users={social.users}
+                      ideas={social.ideas || []}
+                      onCreateIdea={social.createIdea}
+                      onDeleteIdea={social.deleteIdea}
+                      onToggleLikeIdea={social.toggleLikeIdea}
                       onViewProfile={setViewingUser}
                     />
                   )}

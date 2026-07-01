@@ -232,5 +232,16 @@ export interface PayoutRequest {
   destinationDetails: string;
 }
 
+export interface Idea {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  text: string;
+  category: 'Ideia' | 'Sugestão' | 'Revolta' | 'Elogio' | string;
+  likes: string[]; // List of user IDs who liked/supported this idea
+  createdAt: string;
+}
+
 
 

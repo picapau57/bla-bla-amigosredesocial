@@ -242,6 +242,22 @@
         "destinationDetails": { "type": "string" }
       },
       "required": ["id", "amount", "status", "requestedAt", "destinationDetails"]
+    },
+    "Idea": {
+      "title": "Idea",
+      "description": "An idea, suggestion, or complaint posted by a user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userAvatar": { "type": "string" },
+        "text": { "type": "string" },
+        "category": { "type": "string" },
+        "likes": { "type": "array" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "text", "category", "createdAt"]
     }
   },
   "firestore": {
@@ -296,6 +312,10 @@
     "payout_requests": {
       "schema": "PayoutRequest",
       "description": "Withdrawal request histories"
+    },
+    "ideas": {
+      "schema": "Idea",
+      "description": "Exponha suas ideias - User ideas, suggestions, and complaints"
     }
   }
 }

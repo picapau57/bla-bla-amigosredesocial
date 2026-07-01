@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { 
   User, Post, Chat, Message, Ad, Community, Event, Story, BusinessPage, 
   SystemLog, Comment, CatalogProduct, EmailConfig, Job, FriendRequest,
-  PayoutConfig, PayoutRequest
+  PayoutConfig, PayoutRequest, Idea
 } from '../types';
 import {
   INITIAL_USERS,
@@ -45,6 +45,7 @@ export function useSocialState() {
   const [logs, setLogs] = useState<SystemLog[]>(INITIAL_LOGS);
   const [jobs, setJobs] = useState<Job[]>(INITIAL_JOBS);
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
+  const [ideas, setIdeas] = useState<Idea[]>([]);
 
   const [currentUserId, setCurrentUserId] = useState<string>(() => {
     const saved = localStorage.getItem('bb_current_uid');
@@ -235,6 +236,16 @@ export function useSocialState() {
         if (isMounted) handleFirestoreError(err, OperationType.GET, 'friend_requests');
       });
       activeUnsubs.push(unsubFriendRequests);
+
+      const unsubIdeas = onSnapshot(collection(db, 'ideas'), (snapshot) => {
+        const list: Idea[] = [];
+        snapshot.forEach(doc => list.push(doc.data() as Idea));
+        list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        if (isMounted) setIdeas(list);
+      }, (err) => {
+        if (isMounted) handleFirestoreError(err, OperationType.GET, 'ideas');
+      });
+      activeUnsubs.push(unsubIdeas);
     };
 
     init();
@@ -1277,6 +1288,57 @@ export function useSocialState() {
     setDoc(doc(db, 'jobs', jobId), updatedJob).catch(err => console.error('Error updating job applicants in Firestore:', err));
   };
 
+  const createIdea = (text: string, category: string) => {
+    const newIdea: Idea = {
+      id: `idea-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      userId: currentUser.id,
+      userName: currentUser.fullName,
+      userAvatar: currentUser.avatar,
+      text,
+      category,
+      likes: [],
+      createdAt: new Date().toISOString()
+    };
+    
+    setIdeas(prev => [newIdea, ...prev]);
+    setDoc(doc(db, 'ideas', newIdea.id), newIdea)
+      .then(() => {
+        logAction('success', `@${currentUser.username} compartilhou uma ideia na seção Exponha suas Ideias.`);
+      })
+      .catch(err => handleFirestoreError(err, OperationType.WRITE, 'ideas'));
+  };
+
+  const deleteIdea = (ideaId: string) => {
+    const idea = ideas.find(i => i.id === ideaId);
+    if (!idea) return;
+
+    setIdeas(prev => prev.filter(i => i.id !== ideaId));
+    deleteDoc(doc(db, 'ideas', ideaId))
+      .then(() => {
+        logAction('warning', `Ideia deletada por @${currentUser.username}.`);
+      })
+      .catch(err => handleFirestoreError(err, OperationType.DELETE, 'ideas'));
+  };
+
+  const toggleLikeIdea = (ideaId: string) => {
+    const idea = ideas.find(i => i.id === ideaId);
+    if (!idea) return;
+
+    const liked = idea.likes.includes(currentUser.id);
+    let likes = [...idea.likes];
+
+    if (liked) {
+      likes = likes.filter(uid => uid !== currentUser.id);
+    } else {
+      likes.push(currentUser.id);
+    }
+
+    const updatedIdea = { ...idea, likes };
+    setIdeas(prev => prev.map(i => i.id === ideaId ? updatedIdea : i));
+    setDoc(doc(db, 'ideas', ideaId), updatedIdea)
+      .catch(err => handleFirestoreError(err, OperationType.WRITE, 'ideas'));
+  };
+
   return {
     currentUser,
     users,
@@ -1290,6 +1352,10 @@ export function useSocialState() {
     messages,
     logs,
     jobs,
+    ideas,
+    createIdea,
+    deleteIdea,
+    toggleLikeIdea,
     createJob,
     deleteJob,
     toggleApplyJob,
