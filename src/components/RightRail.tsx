@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { User, Ad, Event } from '../types';
-import { UserPlus, Sparkles, UserMinus, Calendar, ArrowUpRight, TrendingUp, Target, Sliders, Activity } from 'lucide-react';
+import { UserPlus, Sparkles, UserMinus, Calendar, ArrowUpRight, TrendingUp, Target, Sliders, Activity, ChevronRight, ChevronDown, ChevronUp, Newspaper } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface RightRailProps {
@@ -38,6 +38,104 @@ export default function RightRail({
   const [calibrationValue, setCalibrationValue] = useState<number>(45); // 1-100% tuning slider
   const [simulatedClicks, setSimulatedClicks] = useState<number>(0);
   const [showConversionFloat, setShowConversionFloat] = useState<boolean>(false);
+
+  // States for BBA PWA News & Games
+  const [showAllNews, setShowAllNews] = useState(false);
+  const [showAllGames, setShowAllGames] = useState(false);
+
+  const newsList = [
+    {
+      id: 1,
+      title: 'Plano Safra 2026/27 libera R$ 610 bi e amplia recursos',
+      time: 'Há 2 h',
+      readers: '4.572',
+      tag: 'Economia'
+    },
+    {
+      id: 2,
+      title: 'Os empregos em alta nos esportes e e-sports virtuais',
+      time: 'Há 1 d',
+      readers: '2.687',
+      tag: 'Carreira'
+    },
+    {
+      id: 3,
+      title: 'Menos brasileiros sentem culpa por descansar no fim de semana',
+      time: 'Há 1 d',
+      readers: '858',
+      tag: 'Comportamento'
+    },
+    {
+      id: 4,
+      title: 'Estágio e trainee: veja grandes empresas com vagas abertas',
+      time: 'Há 1 d',
+      readers: '12.302',
+      tag: 'Oportunidades'
+    },
+    {
+      id: 5,
+      title: 'WhatsApp passa a ter suporte oficial a nomes de usuário únicos',
+      time: 'Há 1 d',
+      readers: '842',
+      tag: 'Tecnologia'
+    },
+    {
+      id: 6,
+      title: 'Plataforma BBA atinge recorde histórico de novos amigos conectados',
+      time: 'Há 3 h',
+      readers: '15.420',
+      tag: 'BBA_News'
+    },
+    {
+      id: 7,
+      title: 'Sistemas inteligentes descentralizados remodelam privacidade na web',
+      time: 'Há 5 h',
+      readers: '9.851',
+      tag: 'Inovação'
+    },
+    {
+      id: 8,
+      title: 'Novos filtros holográficos ultra-realistas chegam hoje ao Reels do BBA',
+      time: 'Há 8 h',
+      readers: '3.200',
+      tag: 'Atualização'
+    }
+  ];
+
+  const gamesList = [
+    {
+      id: 'patches',
+      title: 'Patches',
+      score: '106',
+      desc: 'Junte tudo',
+      iconColor: 'bg-[#00E5FF]/20 text-[#00E5FF] border-[#00E5FF]/30',
+      iconEmoji: '🧩'
+    },
+    {
+      id: 'zip',
+      title: 'Zip',
+      score: '471',
+      desc: 'Complete o caminho',
+      iconColor: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+      iconEmoji: '⚡'
+    },
+    {
+      id: 'sudoku',
+      title: 'Mini Sudoku',
+      score: '324',
+      desc: 'Um jogo clássico, em formato mini',
+      iconColor: 'bg-green-500/20 text-green-400 border-green-500/30',
+      iconEmoji: '🔢'
+    },
+    {
+      id: 'tango',
+      title: 'Tango',
+      score: '115',
+      desc: 'Tudo sobre ritmo e conexão',
+      iconColor: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+      iconEmoji: '💃'
+    }
+  ];
 
   // Calibrated details for topAd
   const getCalibratedAdDetails = () => {
@@ -319,33 +417,120 @@ export default function RightRail({
         </div>
       </div>
 
-      {/* HASHTAGS / TRENDING TOPICS */}
-      <div className="bg-[#121225] border border-white/10 rounded-2xl p-4.5 shadow-xl" id="trending-topics">
-        <div className="flex items-center gap-2 mb-3.5">
-          <TrendingUp className="w-4 h-4 text-[#00E5FF]" />
-          <h4 className="text-white font-bold text-xs uppercase tracking-wider">
-            Assuntos Populares
-          </h4>
-        </div>
-        <div className="space-y-3">
-          {hashtags.map((h, index) => (
-            <div 
-              key={index} 
-              onClick={() => onSearch?.(h.tag)}
-              className="flex items-center justify-between text-xs py-1.5 hover:bg-[#1E1E30]/60 px-2.5 rounded-xl transition-all font-sans cursor-pointer active:scale-[0.98] border border-transparent hover:border-white/5 group"
-            >
-              <div>
-                <span className="font-semibold text-[#00E5FF] group-hover:text-cyan-300 hover:underline block text-xs">
-                  #{h.tag}
-                </span>
-                <span className="text-[10px] text-gray-400 group-hover:text-gray-300">{h.posts} posts recentes</span>
+      {/* BLA BLA AMIGOS - NOTÍCIAS (PWA STYLE WITH NEWS & DAILY MINI GAMES) */}
+      <div className="bg-[#121225] border border-white/10 rounded-2xl p-4.5 shadow-xl space-y-5" id="bba-news-section">
+        
+        {/* Assuntos em alta (News Section) */}
+        <div>
+          <div className="flex items-center justify-between mb-3.5 border-b border-white/5 pb-2.5">
+            <h4 className="text-white font-extrabold text-sm tracking-tight flex items-center gap-1.5">
+              <span className="bg-gradient-to-r from-[#00E5FF] to-blue-500 text-transparent bg-clip-text">BLA BLA AMIGOS</span>
+              <span className="text-gray-400 font-normal">| Notícias</span>
+            </h4>
+            <span className="text-[9px] bg-red-500/10 text-red-400 font-mono px-2 py-0.5 rounded-full font-bold border border-red-500/20 animate-pulse">
+              LIVE
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 text-[11px] text-[#00E5FF] font-bold uppercase tracking-wider mb-3">
+            <TrendingUp className="w-3.5 h-3.5" />
+            Assuntos em alta
+          </div>
+
+          <div className="space-y-3.5">
+            {newsList.slice(0, showAllNews ? newsList.length : 5).map((news) => (
+              <div
+                key={news.id}
+                onClick={() => onSearch?.(news.tag)}
+                className="group cursor-pointer hover:bg-white/5 p-1.5 -mx-1.5 rounded-xl transition-all"
+                title={`Clique para pesquisar sobre #${news.tag}`}
+              >
+                <h5 className="text-xs font-semibold text-white group-hover:text-[#00E5FF] transition-colors leading-snug">
+                  {news.title}
+                </h5>
+                <div className="flex items-center gap-1.5 text-[10px] text-gray-400 mt-1 font-sans">
+                  <span>{news.time}</span>
+                  <span>•</span>
+                  <span className="text-[#00E5FF]/80 font-mono font-medium">#{news.tag}</span>
+                  <span>•</span>
+                  <span>{news.readers} leitores</span>
+                </div>
               </div>
-              <span className="text-[10px] bg-[#1E1E30] group-hover:bg-[#252545] font-mono text-gray-300 group-hover:text-white px-2 py-0.5 rounded-full transition-all">
-                {index + 1}º
-              </span>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          <button
+            onClick={() => setShowAllNews(!showAllNews)}
+            className="w-full mt-3.5 pt-2.5 border-t border-white/5 text-[11px] font-bold text-gray-450 hover:text-white transition-colors flex items-center justify-center gap-1 cursor-pointer"
+          >
+            {showAllNews ? (
+              <>
+                Exibir menos notícias <ChevronUp className="w-3.5 h-3.5 text-[#00E5FF]" />
+              </>
+            ) : (
+              <>
+                Exibir mais notícias <ChevronDown className="w-3.5 h-3.5 text-[#00E5FF]" />
+              </>
+            )}
+          </button>
         </div>
+
+        {/* Jogos de hoje (Interactive Mini-Games Section) */}
+        <div className="border-t border-white/10 pt-4">
+          <div className="flex items-center justify-between mb-3.5">
+            <h4 className="text-white font-extrabold text-xs uppercase tracking-wider">
+              Jogos de hoje
+            </h4>
+            <span className="text-[9px] bg-indigo-500/10 text-indigo-300 font-mono px-2 py-0.5 rounded border border-indigo-500/20">Prêmios XP</span>
+          </div>
+
+          <div className="space-y-3">
+            {gamesList.slice(0, showAllGames ? gamesList.length : 3).map((game) => (
+              <div
+                key={game.id}
+                onClick={() => setActiveTab('games')}
+                className="group cursor-pointer flex items-center justify-between p-2 rounded-xl bg-[#1E1E30]/40 hover:bg-[#1E1E30]/80 border border-white/5 hover:border-white/10 transition-all active:scale-[0.98]"
+                title={`Jogar ${game.title} na Central de Jogos`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg border ${game.iconColor} shrink-0`}>
+                    {game.iconEmoji}
+                  </div>
+                  <div className="min-w-0 font-sans">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-white group-hover:text-[#00E5FF] transition-all truncate">
+                        {game.title}
+                      </span>
+                      <span className="text-[9px] bg-white/10 text-gray-300 font-mono px-1 rounded font-bold shrink-0">
+                        {game.score}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-gray-400 truncate leading-normal">
+                      {game.desc}
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0" />
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={() => setShowAllGames(!showAllGames)}
+            className="w-full mt-3 pt-2 text-[11px] font-bold text-gray-450 hover:text-white transition-colors flex items-center justify-center gap-1 cursor-pointer"
+          >
+            {showAllGames ? (
+              <>
+                Exibir menos jogos <ChevronUp className="w-3.5 h-3.5 text-[#00E5FF]" />
+              </>
+            ) : (
+              <>
+                Exibir mais jogos <ChevronDown className="w-3.5 h-3.5 text-[#00E5FF]" />
+              </>
+            )}
+          </button>
+        </div>
+
       </div>
 
       {/* UPCOMING EVENTS PREVIEW */}
