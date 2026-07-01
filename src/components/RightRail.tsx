@@ -49,56 +49,64 @@ export default function RightRail({
       title: 'Plano Safra 2026/27 libera R$ 610 bi e amplia recursos',
       time: 'Há 2 h',
       readers: '4.572',
-      tag: 'Economia'
+      tag: 'Economia',
+      url: 'https://news.google.com/search?q=Plano+Safra+2026+2027+economia'
     },
     {
       id: 2,
       title: 'Os empregos em alta nos esportes e e-sports virtuais',
       time: 'Há 1 d',
       readers: '2.687',
-      tag: 'Carreira'
+      tag: 'Carreira',
+      url: 'https://news.google.com/search?q=empregos+em+alta+nos+esportes+e-sports'
     },
     {
       id: 3,
       title: 'Menos brasileiros sentem culpa por descansar no fim de semana',
       time: 'Há 1 d',
       readers: '858',
-      tag: 'Comportamento'
+      tag: 'Comportamento',
+      url: 'https://news.google.com/search?q=brasileiros+culpa+por+descansar+fim+de+semana'
     },
     {
       id: 4,
       title: 'Estágio e trainee: veja grandes empresas com vagas abertas',
       time: 'Há 1 d',
       readers: '12.302',
-      tag: 'Oportunidades'
+      tag: 'Oportunidades',
+      url: 'https://news.google.com/search?q=vagas+de+estagio+e+trainee+empresas+abertas'
     },
     {
       id: 5,
       title: 'WhatsApp passa a ter suporte oficial a nomes de usuário únicos',
       time: 'Há 1 d',
       readers: '842',
-      tag: 'Tecnologia'
+      tag: 'Tecnologia',
+      url: 'https://news.google.com/search?q=whatsapp+nomes+de+usuario+unicos'
     },
     {
       id: 6,
       title: 'Plataforma BBA atinge recorde histórico de novos amigos conectados',
       time: 'Há 3 h',
       readers: '15.420',
-      tag: 'BBA_News'
+      tag: 'BBA_News',
+      url: 'https://news.google.com/search?q=BBA+Bla+Bla+Amigos'
     },
     {
       id: 7,
       title: 'Sistemas inteligentes descentralizados remodelam privacidade na web',
       time: 'Há 5 h',
       readers: '9.851',
-      tag: 'Inovação'
+      tag: 'Inovação',
+      url: 'https://news.google.com/search?q=sistemas+inteligentes+descentralizados+privacidade+web'
     },
     {
       id: 8,
       title: 'Novos filtros holográficos ultra-realistas chegam hoje ao Reels do BBA',
       time: 'Há 8 h',
       readers: '3.200',
-      tag: 'Atualização'
+      tag: 'Atualização',
+      url: 'https://news.google.com/search?q=filtros+holograficos+reels+bba'
     }
   ];
 
@@ -439,11 +447,17 @@ export default function RightRail({
 
           <div className="space-y-3.5">
             {newsList.slice(0, showAllNews ? newsList.length : 5).map((news) => (
-              <div
+              <a
                 key={news.id}
-                onClick={() => onSearch?.(news.tag)}
-                className="group cursor-pointer hover:bg-white/5 p-1.5 -mx-1.5 rounded-xl transition-all"
-                title={`Clique para pesquisar sobre #${news.tag}`}
+                href={news.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  // Permitir que o link abra, mas opcionalmente pesquisar localmente no Bla Bla Amigos
+                  onSearch?.(news.tag);
+                }}
+                className="block group hover:bg-white/5 p-1.5 -mx-1.5 rounded-xl transition-all decoration-none"
+                title={`Abrir notícia: ${news.title} (Abre em nova aba)`}
               >
                 <h5 className="text-xs font-semibold text-white group-hover:text-[#00E5FF] transition-colors leading-snug">
                   {news.title}
@@ -455,7 +469,7 @@ export default function RightRail({
                   <span>•</span>
                   <span>{news.readers} leitores</span>
                 </div>
-              </div>
+              </a>
             ))}
           </div>
 
