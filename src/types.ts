@@ -246,5 +246,38 @@ export interface Idea {
   createdAt: string;
 }
 
+export interface LiveStream {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  title: string;
+  description?: string;
+  category: string;
+  coverImage?: string;
+  streamKey?: string;
+  viewerCount: number;
+  peakViewers: number;
+  totalEarnings: number; // in credits/reais
+  status: 'live' | 'ended' | 'scheduled';
+  scheduledFor?: string;
+  playbackUrl?: string;
+  createdAt: string;
+  endedAt?: string;
+}
+
+export interface LiveChatMessage {
+  id: string;
+  liveId: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  text: string;
+  createdAt: string;
+  isGift?: boolean;
+  giftType?: 'like' | 'rose' | 'coffee' | 'heart' | 'trophy' | 'diamond' | string;
+  giftValue?: number;
+}
+
 
 

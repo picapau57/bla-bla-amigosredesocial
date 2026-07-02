@@ -1,4 +1,4 @@
-import { User, Post, Chat, Message, Ad, Community, Event, Story, BusinessPage, SystemLog, Job } from '../types';
+import { User, Post, Chat, Message, Ad, Community, Event, Story, BusinessPage, SystemLog, Job, LiveStream } from '../types';
 
 export const INITIAL_USERS: User[] = [
   {
@@ -636,4 +636,56 @@ export const INITIAL_JOBS: Job[] = [
     createdAt: '2026-06-25T09:00:00Z'
   }
 ];
+
+export const INITIAL_LIVES: LiveStream[] = [
+  {
+    id: 'live-1',
+    userId: 'user-2',
+    userName: 'Mariana Dias',
+    userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200',
+    title: 'Criando UI de Apps com Estilo Neon e Vidro Templado! 🎨',
+    description: 'Estou desenhando telas reais ao vivo, respondendo dúvidas sobre paletas de cores, transições e efeitos em vidro de forma descontraída. Chega mais!',
+    category: 'Design & Criatividade',
+    coverImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800',
+    streamKey: 'live_key_mari_0192',
+    viewerCount: 142,
+    peakViewers: 180,
+    totalEarnings: 320,
+    status: 'live',
+    createdAt: new Date(Date.now() - 45 * 60 * 1000).toISOString() // 45 mins ago
+  },
+  {
+    id: 'live-2',
+    userId: 'user-3',
+    userName: 'Juliana Mendes',
+    userAvatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=200',
+    title: 'Treino Funcional de Alta Intensidade (HIIT) Para Fazer em Casa 🏃‍♀️💪',
+    description: 'Bora queimar calorias juntos! Sem aparelhos, apenas peso do corpo. Mande suas perguntas de nutrição e treinos no chat!',
+    category: 'Fitness & Saúde',
+    coverImage: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&q=80&w=800',
+    streamKey: 'live_key_ju_5541',
+    viewerCount: 95,
+    peakViewers: 120,
+    totalEarnings: 150,
+    status: 'live',
+    createdAt: new Date(Date.now() - 20 * 60 * 1000).toISOString() // 20 mins ago
+  },
+  {
+    id: 'live-3',
+    userId: 'user-1',
+    userName: 'Carlos Souza',
+    userAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200',
+    title: 'Bla Bla Amigos: Estratégias Digitais Para Conseguir Usuários 🚀',
+    description: 'Agendado para hoje à noite! Vamos discutir campanhas de indicações, parcerias locais e anúncios que realmente decolam projetos.',
+    category: 'Tecnologia & Negócios',
+    coverImage: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800',
+    status: 'scheduled',
+    viewerCount: 0,
+    peakViewers: 0,
+    totalEarnings: 0,
+    scheduledFor: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(), // in 4 hours
+    createdAt: new Date().toISOString()
+  }
+];
+
 

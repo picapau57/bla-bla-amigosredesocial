@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { 
   User, Post, Chat, Message, Ad, Community, Event, Story, BusinessPage, 
   SystemLog, Comment, CatalogProduct, EmailConfig, Job, FriendRequest,
-  PayoutConfig, PayoutRequest, Idea
+  PayoutConfig, PayoutRequest, Idea, LiveStream, LiveChatMessage
 } from '../types';
 import {
   INITIAL_USERS,
@@ -15,7 +15,8 @@ import {
   INITIAL_CHATS,
   INITIAL_MESSAGES,
   INITIAL_LOGS,
-  INITIAL_JOBS
+  INITIAL_JOBS,
+  INITIAL_LIVES
 } from '../data/mockData';
 import { db } from '../lib/firebase';
 import { seedDatabaseIfEmpty } from '../lib/firebaseSeeder';
@@ -46,6 +47,8 @@ export function useSocialState() {
   const [jobs, setJobs] = useState<Job[]>(INITIAL_JOBS);
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
   const [ideas, setIdeas] = useState<Idea[]>([]);
+  const [lives, setLives] = useState<LiveStream[]>(INITIAL_LIVES);
+  const [liveMessages, setLiveMessages] = useState<LiveChatMessage[]>([]);
 
   const [currentUserId, setCurrentUserId] = useState<string>(() => {
     const saved = localStorage.getItem('bb_current_uid');
@@ -246,6 +249,26 @@ export function useSocialState() {
         if (isMounted) handleFirestoreError(err, OperationType.GET, 'ideas');
       });
       activeUnsubs.push(unsubIdeas);
+
+      const unsubLives = onSnapshot(collection(db, 'lives'), (snapshot) => {
+        const list: LiveStream[] = [];
+        snapshot.forEach(doc => list.push(doc.data() as LiveStream));
+        list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        if (isMounted) setLives(list);
+      }, (err) => {
+        if (isMounted) handleFirestoreError(err, OperationType.GET, 'lives');
+      });
+      activeUnsubs.push(unsubLives);
+
+      const unsubLiveMessages = onSnapshot(collection(db, 'live_messages'), (snapshot) => {
+        const list: LiveChatMessage[] = [];
+        snapshot.forEach(doc => list.push(doc.data() as LiveChatMessage));
+        list.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        if (isMounted) setLiveMessages(list);
+      }, (err) => {
+        if (isMounted) handleFirestoreError(err, OperationType.GET, 'live_messages');
+      });
+      activeUnsubs.push(unsubLiveMessages);
     };
 
     init();
@@ -1427,6 +1450,144 @@ export function useSocialState() {
     return true;
   };
 
+  const createLive = async (
+    title: string, 
+    description: string, 
+    category: string, 
+    coverImage?: string, 
+    scheduledFor?: string
+  ): Promise<string> => {
+    const liveId = `live-${Date.now()}`;
+    const newLive: LiveStream = {
+      id: liveId,
+      userId: currentUser.id,
+      userName: currentUser.fullName,
+      userAvatar: currentUser.avatar,
+      title: title.trim(),
+      description: description.trim(),
+      category,
+      coverImage: coverImage?.trim() || 'https://images.unsplash.com/photo-1516280440614-37939bbacd6a?auto=format&fit=crop&q=80&w=800',
+      streamKey: `live_key_${currentUser.id.slice(-4)}_${Math.floor(Math.random() * 9000 + 1000)}`,
+      viewerCount: scheduledFor ? 0 : 1,
+      peakViewers: scheduledFor ? 0 : 1,
+      totalEarnings: 0,
+      status: scheduledFor ? 'scheduled' : 'live',
+      scheduledFor: scheduledFor || undefined,
+      createdAt: new Date().toISOString()
+    };
+
+    setLives(prev => [newLive, ...prev]);
+    await setDoc(doc(db, 'lives', liveId), newLive)
+      .then(() => {
+        logAction('success', `@${currentUser.username} iniciou uma nova live: "${newLive.title}"!`);
+      })
+      .catch(err => handleFirestoreError(err, OperationType.WRITE, 'lives'));
+    return liveId;
+  };
+
+  const endLive = async (liveId: string) => {
+    const targetLive = lives.find(l => l.id === liveId);
+    if (!targetLive) return;
+
+    const updatedLive: LiveStream = {
+      ...targetLive,
+      status: 'ended',
+      endedAt: new Date().toISOString()
+    };
+
+    setLives(prev => prev.map(l => l.id === liveId ? updatedLive : l));
+    await setDoc(doc(db, 'lives', liveId), updatedLive)
+      .then(() => {
+        logAction('warning', `@${currentUser.username} encerrou a transmissão "${targetLive.title}".`);
+      })
+      .catch(err => handleFirestoreError(err, OperationType.WRITE, 'lives'));
+  };
+
+  const sendLiveMessage = async (
+    liveId: string, 
+    text: string, 
+    isGift?: boolean, 
+    giftType?: string, 
+    giftValue?: number
+  ) => {
+    const msgId = `live-msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const newMsg: LiveChatMessage = {
+      id: msgId,
+      liveId,
+      userId: currentUser.id,
+      userName: currentUser.fullName,
+      userAvatar: currentUser.avatar,
+      text: text.trim(),
+      createdAt: new Date().toISOString(),
+      isGift,
+      giftType,
+      giftValue
+    };
+
+    setLiveMessages(prev => [...prev, newMsg]);
+    await setDoc(doc(db, 'live_messages', msgId), newMsg)
+      .catch(err => handleFirestoreError(err, OperationType.WRITE, 'live_messages'));
+  };
+
+  const sendLiveGift = async (
+    liveId: string, 
+    giftType: 'like' | 'rose' | 'coffee' | 'heart' | 'trophy' | 'diamond', 
+    giftValue: number
+  ): Promise<boolean> => {
+    const currentCredits = currentUser.adCredits !== undefined ? currentUser.adCredits : 100;
+    if (currentCredits < giftValue) {
+      alert(`Você não tem créditos suficientes para enviar este presente! Saldo atual: R$ ${currentCredits.toFixed(2)}. Indique amigos no menu "Indique & Ganhe" para ganhar R$ 50,00 grátis!`);
+      return false;
+    }
+
+    // 1. Deduct from sender
+    const updatedSenderCredits = currentCredits - giftValue;
+    const updatedCurrentUser = {
+      ...currentUser,
+      adCredits: updatedSenderCredits
+    };
+    setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedCurrentUser : u));
+    await setDoc(doc(db, 'users', currentUser.id), updatedCurrentUser).catch(err => console.error(err));
+
+    // 2. Find and add to host
+    const liveObj = lives.find(l => l.id === liveId);
+    if (liveObj) {
+      const hostUser = users.find(u => u.id === liveObj.userId);
+      if (hostUser) {
+        const hostCredits = hostUser.adCredits !== undefined ? hostUser.adCredits : 100;
+        const updatedHost = {
+          ...hostUser,
+          adCredits: hostCredits + giftValue
+        };
+        setUsers(prev => prev.map(u => u.id === hostUser.id ? updatedHost : u));
+        await setDoc(doc(db, 'users', hostUser.id), updatedHost).catch(err => console.error(err));
+      }
+
+      // 3. Update live's total earnings
+      const updatedLive: LiveStream = {
+        ...liveObj,
+        totalEarnings: (liveObj.totalEarnings || 0) + giftValue
+      };
+      setLives(prev => prev.map(l => l.id === liveId ? updatedLive : l));
+      await setDoc(doc(db, 'lives', liveId), updatedLive).catch(err => console.error(err));
+    }
+
+    // 4. Send the gift message
+    const giftLabels: Record<string, string> = {
+      like: 'enviou uma Super Reação',
+      rose: 'enviou uma Rosa Virtual',
+      coffee: 'enviou um Cafezinho',
+      heart: 'enviou um Super Coração',
+      trophy: 'enviou um Troféu BBA',
+      diamond: 'enviou um Diamante Raro'
+    };
+
+    const label = giftLabels[giftType] || 'enviou um presente';
+    await sendLiveMessage(liveId, `🎁 ${label} (R$ ${giftValue.toFixed(2)})!`, true, giftType, giftValue);
+
+    return true;
+  };
+
   return {
     currentUser,
     users,
@@ -1441,6 +1602,12 @@ export function useSocialState() {
     logs,
     jobs,
     ideas,
+    lives,
+    liveMessages,
+    createLive,
+    endLive,
+    sendLiveMessage,
+    sendLiveGift,
     simulateReferral,
     payAdWithCredits,
     createIdea,

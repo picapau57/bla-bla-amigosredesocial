@@ -16,6 +16,7 @@ import GamesSection from './components/GamesSection';
 import ReelsSection from './components/ReelsSection';
 import IdeasSection from './components/IdeasSection';
 import ReferralsSection from './components/ReferralsSection';
+import LivesSection from './components/LivesSection';
 import UserProfileModal from './components/UserProfileModal';
 import FriendsSection from './components/FriendsSection';
 
@@ -737,6 +738,20 @@ export default function App() {
                       users={social.users}
                       onSimulateReferral={social.simulateReferral}
                       setActiveTab={setActiveTab}
+                    />
+                  )}
+
+                  {/* LIVE STREAMING SPACE */}
+                  {activeTab === 'lives' && (
+                    <LivesSection
+                      currentUser={social.currentUser}
+                      users={social.users}
+                      lives={social.lives}
+                      liveMessages={social.liveMessages}
+                      createLive={social.createLive}
+                      endLive={social.endLive}
+                      sendLiveMessage={social.sendLiveMessage}
+                      sendLiveGift={social.sendLiveGift}
                     />
                   )}
 
