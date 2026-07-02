@@ -25,7 +25,7 @@ export default function ReferralsSection({
   const [showSimSuccess, setShowSimSuccess] = useState<boolean>(false);
   const [lastReferredName, setLastReferredName] = useState<string>('');
 
-  const referralLink = `https://blablaamigos.com/join?ref=${currentUser.inviteCode || 'BBA-' + currentUser.id.slice(-4)}`;
+  const referralLink = `https://bla-bla-amigosredesocial.onrender.com/?ref=${currentUser.inviteCode || 'BBA-' + currentUser.id.slice(-4)}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(referralLink);
