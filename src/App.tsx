@@ -15,6 +15,7 @@ import JobsSection from './components/JobsSection';
 import GamesSection from './components/GamesSection';
 import ReelsSection from './components/ReelsSection';
 import IdeasSection from './components/IdeasSection';
+import ReferralsSection from './components/ReferralsSection';
 import UserProfileModal from './components/UserProfileModal';
 import FriendsSection from './components/FriendsSection';
 
@@ -725,6 +726,17 @@ export default function App() {
                       onUpdateAd={social.updateAd}
                       onApproveAd={social.approveAd}
                       payoutConfig={social.payoutConfig}
+                      onPayWithCredits={social.payAdWithCredits}
+                    />
+                  )}
+
+                  {/* REFERRALS / INVITE & EARN HUB */}
+                  {activeTab === 'referrals' && (
+                    <ReferralsSection
+                      currentUser={social.currentUser}
+                      users={social.users}
+                      onSimulateReferral={social.simulateReferral}
+                      setActiveTab={setActiveTab}
                     />
                   )}
 

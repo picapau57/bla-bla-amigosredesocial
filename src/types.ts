@@ -22,6 +22,9 @@ export interface User {
   following: string[]; // List of user IDs
   createdAt: string;
   password?: string;
+  adCredits?: number; // Ad Credits balance (reais)
+  referredUsers?: string[]; // List of user IDs referred by this user
+  inviteCode?: string; // Unique invite code for referrals
 }
 
 export interface Comment {

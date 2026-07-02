@@ -268,7 +268,13 @@ export function useSocialState() {
     localStorage.setItem('bb_admin_session_active', isAdminSessionActive ? 'true' : 'false');
   }, [isAdminSessionActive]);
 
-  const currentUser = users.find(u => u.id === currentUserId) || users[0] || INITIAL_USERS[0];
+  const rawCurrentUser = users.find(u => u.id === currentUserId) || users[0] || INITIAL_USERS[0];
+  const currentUser: User = {
+    ...rawCurrentUser,
+    adCredits: rawCurrentUser.adCredits !== undefined ? rawCurrentUser.adCredits : 100,
+    referredUsers: rawCurrentUser.referredUsers || [],
+    inviteCode: rawCurrentUser.inviteCode || `BBA-${(rawCurrentUser.username || 'user').toUpperCase().replace(/[^A-Z0-9]/g, '')}-${rawCurrentUser.id.slice(-4)}`
+  };
 
   const logAction = (type: 'info' | 'warning' | 'success' | 'error', message: string) => {
     const newLog: SystemLog = {
@@ -1339,6 +1345,88 @@ export function useSocialState() {
       .catch(err => handleFirestoreError(err, OperationType.WRITE, 'ideas'));
   };
 
+  const simulateReferral = (friendName: string, friendEmail: string) => {
+    const cleanUsername = friendName.toLowerCase().trim().replace(/\s+/g, '.').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const randomAvatarNum = Math.floor(Math.random() * 70);
+    const newUserId = `user-ref-${Date.now()}`;
+    const newFriendUser: User = {
+      id: newUserId,
+      fullName: friendName.trim(),
+      username: `${cleanUsername}.${Math.floor(Math.random() * 900 + 100)}`,
+      email: friendEmail.trim().toLowerCase(),
+      phone: '(11) 9' + Math.floor(Math.random() * 90000 + 10000) + '-' + Math.floor(Math.random() * 9000 + 1000),
+      birthDate: '1999-01-01',
+      city: currentUser.city || 'São Paulo',
+      state: currentUser.state || 'SP',
+      country: 'Brasil',
+      avatar: `https://i.pravatar.cc/150?img=${randomAvatarNum}`,
+      cover: 'https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&q=80&w=800',
+      gender: 'Não Especificado',
+      bio: `Membro indicado por @${currentUser.username} via programa Indique & Ganhe BBA! 🚀`,
+      website: '',
+      isVerified: false,
+      badges: ['Indicado', 'Membro Novo'],
+      premiumPlan: 'free',
+      isBlocked: false,
+      friends: [currentUser.id],
+      followers: [],
+      following: [currentUser.id],
+      createdAt: new Date().toISOString()
+    };
+
+    const updatedReferredList = [...(currentUser.referredUsers || []), newFriendUser.id];
+    const currentCredits = currentUser.adCredits !== undefined ? currentUser.adCredits : 100;
+    const updatedCredits = currentCredits + 50;
+
+    const updatedCurrentUser = {
+      ...currentUser,
+      referredUsers: updatedReferredList,
+      adCredits: updatedCredits
+    };
+
+    setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedCurrentUser : u).concat(newFriendUser));
+
+    setDoc(doc(db, 'users', newUserId), newFriendUser).catch(err => console.error('Error creating simulated referred user in Firestore:', err));
+    setDoc(doc(db, 'users', currentUser.id), updatedCurrentUser)
+      .then(() => {
+        logAction('success', `@${currentUser.username} indicou ${friendName} para a rede. Ambos ganharam créditos de anúncio (R$ 50,00 adicionados para @${currentUser.username})!`);
+      })
+      .catch(err => handleFirestoreError(err, OperationType.WRITE, 'users'));
+  };
+
+  const payAdWithCredits = (adId: string, cost: number) => {
+    const currentCredits = currentUser.adCredits !== undefined ? currentUser.adCredits : 100;
+    if (currentCredits < cost) {
+      alert('Você não possui saldo de créditos suficiente para pagar este anúncio! Indique mais amigos para ganhar mais.');
+      return false;
+    }
+
+    const updatedCredits = currentCredits - cost;
+    const updatedCurrentUser = {
+      ...currentUser,
+      adCredits: updatedCredits
+    };
+
+    setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedCurrentUser : u));
+    setDoc(doc(db, 'users', currentUser.id), updatedCurrentUser).catch(err => console.error(err));
+
+    const targetAd = ads.find(a => a.id === adId);
+    if (targetAd) {
+      const updatedAd = {
+        ...targetAd,
+        status: 'active' as const,
+        paymentMethod: 'credit_card' as const
+      };
+      setAds(prev => prev.map(ad => ad.id === adId ? updatedAd : ad));
+      setDoc(doc(db, 'ads', adId), updatedAd)
+        .then(() => {
+          logAction('success', `@${currentUser.username} ativou o anúncio patrocinado '${targetAd.title}' utilizando R$ ${cost.toFixed(2)} de Créditos de Anúncio BBA!`);
+        })
+        .catch(err => console.error(err));
+    }
+    return true;
+  };
+
   return {
     currentUser,
     users,
@@ -1353,6 +1441,8 @@ export function useSocialState() {
     logs,
     jobs,
     ideas,
+    simulateReferral,
+    payAdWithCredits,
     createIdea,
     deleteIdea,
     toggleLikeIdea,

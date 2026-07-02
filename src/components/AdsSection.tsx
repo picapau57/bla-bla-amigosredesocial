@@ -3,7 +3,7 @@ import { User, Ad, PayoutConfig } from '../types';
 import { 
   Megaphone, Plus, PlusCircle, CheckCircle, Smartphone, CreditCard, 
   FileText, ShoppingBag, Eye, MousePointerClick, TrendingUp, BarChart2,
-  DollarSign, Sparkles, ShieldCheck, QrCode, ExternalLink
+  DollarSign, Sparkles, ShieldCheck, QrCode, ExternalLink, Gift
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -34,6 +34,7 @@ interface AdsSectionProps {
   }) => void;
   onApproveAd: (adId: string) => void;
   payoutConfig?: PayoutConfig;
+  onPayWithCredits?: (adId: string, cost: number) => boolean;
 }
 
 export default function AdsSection({
@@ -42,7 +43,8 @@ export default function AdsSection({
   onPurchaseAd,
   onUpdateAd,
   onApproveAd,
-  payoutConfig
+  payoutConfig,
+  onPayWithCredits
 }: AdsSectionProps) {
   const [activeSubTab, setActiveSubTab] = useState<'listings' | 'create' | 'analytics'>('listings');
   
@@ -59,7 +61,7 @@ export default function AdsSection({
   // Placement & Pricing
   const [placement, setPlacement] = useState<'lateral-top' | 'lateral-bottom' | 'feed' | 'profile' | 'home'>('feed');
   const [planPeriod, setPlanPeriod] = useState<'diario' | 'semanal' | 'mensal' | 'trimestral'>('diario');
-  const [paymentMethod, setPaymentMethod] = useState<'pix' | 'credit_card' | 'boleto'>('pix');
+  const [paymentMethod, setPaymentMethod] = useState<'pix' | 'credit_card' | 'boleto' | 'credits'>('pix');
 
   const startEditing = (ad: Ad) => {
     setEditingAdId(ad.id);
@@ -555,8 +557,9 @@ export default function AdsSection({
                 )}
 
                 {/* Pay systems selects */}
-                <div className="grid grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-2 gap-2.5">
                   <button
+                    type="button"
                     onClick={() => setPaymentMethod('pix')}
                     className={`p-3 rounded-xl border text-center flex flex-col items-center gap-1.5 transition-all text-xs cursor-pointer ${
                       paymentMethod === 'pix'
@@ -568,6 +571,7 @@ export default function AdsSection({
                     PIX / QrCode
                   </button>
                   <button
+                    type="button"
                     onClick={() => setPaymentMethod('credit_card')}
                     className={`p-3 rounded-xl border text-center flex flex-col items-center gap-1.5 transition-all text-xs cursor-pointer ${
                       paymentMethod === 'credit_card'
@@ -589,6 +593,18 @@ export default function AdsSection({
                   >
                     <FileText className="w-5 h-5 text-[#FF5722]" />
                     Boleto Bancário
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('credits')}
+                    className={`p-3 rounded-xl border text-center flex flex-col items-center gap-1.5 transition-all text-xs cursor-pointer ${
+                      paymentMethod === 'credits'
+                        ? 'bg-[#0A0A14] border-rose-500 text-rose-400 font-bold'
+                        : 'bg-[#121225] border-white/10 text-gray-400 hover:text-rose-400'
+                    }`}
+                  >
+                    <Gift className="w-5 h-5 text-rose-500 animate-pulse" />
+                    Créditos de Anúncio BBA
                   </button>
                 </div>
 
@@ -719,6 +735,33 @@ export default function AdsSection({
                       )}
                     </div>
                   )}
+
+                  {paymentMethod === 'credits' && (
+                    <div className="text-center space-y-3">
+                      <p className="font-semibold text-gray-200">Pagar com Créditos de Anúncio BBA</p>
+                      <div className="bg-[#121225] p-3 rounded-xl border border-white/5 text-left space-y-2">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-400">Seu saldo disponível:</span>
+                          <span className="text-rose-400 font-bold font-mono">R$ {(currentUser.adCredits !== undefined ? currentUser.adCredits : 100).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-400">Valor deste anúncio:</span>
+                          <span className="text-white font-bold font-mono">R$ {(pendingAd?.price || 0).toFixed(2)}</span>
+                        </div>
+                        <div className="border-t border-white/5 my-1.5 pt-1.5 flex justify-between text-xs font-bold">
+                          <span className="text-gray-200">Saldo restante após compra:</span>
+                          <span className={`${((currentUser.adCredits !== undefined ? currentUser.adCredits : 100) >= (pendingAd?.price || 0)) ? 'text-emerald-400' : 'text-red-400'} font-mono`}>
+                            R$ {((currentUser.adCredits !== undefined ? currentUser.adCredits : 100) - (pendingAd?.price || 0)).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                      {((currentUser.adCredits !== undefined ? currentUser.adCredits : 100) < (pendingAd?.price || 0)) && (
+                        <p className="text-[10px] text-red-400 font-semibold text-center">
+                          ⚠️ Seu saldo de créditos é insuficiente para realizar esta compra. Indique mais amigos para ganhar mais créditos de anúncio de R$ 50,00 cada!
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex gap-3">
@@ -728,12 +771,35 @@ export default function AdsSection({
                   >
                     Cancelar
                   </button>
-                  <button
-                    onClick={executeCheckoutSimulation}
-                    className="flex-1 bg-gradient-to-r from-[#00E5FF] to-[#00E676] text-[#0A0A14] font-black text-xs py-3 rounded-xl shadow-lg transition-all uppercase tracking-wider cursor-pointer"
-                  >
-                    Simular Pagamento
-                  </button>
+                  {paymentMethod === 'credits' ? (
+                    <button
+                      onClick={() => {
+                        if (onPayWithCredits && pendingAd) {
+                          const success = onPayWithCredits(pendingAd.id, pendingAd.price || 0);
+                          if (success) {
+                            setCheckoutStep('done');
+                          }
+                        } else {
+                          alert('Função de pagamento com créditos iniciada.');
+                        }
+                      }}
+                      disabled={(currentUser.adCredits !== undefined ? currentUser.adCredits : 100) < (pendingAd?.price || 0)}
+                      className={`flex-1 font-black text-xs py-3 rounded-xl shadow-lg transition-all uppercase tracking-wider cursor-pointer ${
+                        (currentUser.adCredits !== undefined ? currentUser.adCredits : 100) >= (pendingAd?.price || 0)
+                          ? 'bg-gradient-to-r from-rose-500 to-purple-600 text-white hover:brightness-110'
+                          : 'bg-white/5 border border-white/10 text-gray-500 cursor-not-allowed'
+                      }`}
+                    >
+                      Pagar com Créditos BBA
+                    </button>
+                  ) : (
+                    <button
+                      onClick={executeCheckoutSimulation}
+                      className="flex-1 bg-gradient-to-r from-[#00E5FF] to-[#00E676] text-[#0A0A14] font-black text-xs py-3 rounded-xl shadow-lg transition-all uppercase tracking-wider cursor-pointer"
+                    >
+                      Simular Pagamento
+                    </button>
+                  )}
                 </div>
               </motion.div>
             )}
