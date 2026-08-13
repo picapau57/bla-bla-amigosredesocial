@@ -18,11 +18,14 @@ import {
   INITIAL_JOBS,
   INITIAL_LIVES
 } from '../data/mockData';
-import { db } from '../lib/firebase';
+import { db, auth } from '../lib/firebase';
 import { seedDatabaseIfEmpty } from '../lib/firebaseSeeder';
 import { 
   collection, doc, setDoc, deleteDoc, onSnapshot 
 } from 'firebase/firestore';
+import {
+  createUserWithEmailAndPassword, signInWithEmailAndPassword
+} from 'firebase/auth';
 import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
 
 const autoRep = (name: string, originalText: string, defaultText: string) => {
@@ -331,7 +334,7 @@ export function useSocialState() {
     logAction('info', `Sessão de usuário desconectada.`);
   };
 
-  const registerUser = (inputs: {
+  const registerUser = async (inputs: {
     fullName: string;
     username: string;
     email: string;
@@ -352,31 +355,79 @@ export function useSocialState() {
       return { success: false, message: 'Este nome de usuário já está em uso.' };
     }
 
-    const newUser: User = {
-      ...inputs,
-      password: inputs.password ? inputs.password.trim() : '123456',
-      id: `user-${Date.now()}`,
-      isVerified: false,
-      badges: ['Novato', 'Pioneiro'],
-      premiumPlan: 'free',
-      isBlocked: false,
-      friends: [],
-      followers: [],
-      following: [],
-      createdAt: new Date().toISOString()
-    };
+    const passwordToUse = (inputs.password || '').trim();
+    if (passwordToUse.length < 6) {
+      return { success: false, message: 'A senha precisa ter pelo menos 6 caracteres.' };
+    }
 
-    setUsers(prev => [...prev, newUser]);
-    setCurrentUserId(newUser.id);
-    
-    // Save to firestore asynchronously
-    setDoc(doc(db, 'users', newUser.id), newUser)
-      .then(() => {
-        logAction('success', `Nova conta de usuário criada: ${newUser.fullName} (@${newUser.username}).`);
-      })
-      .catch(err => console.error('Error registering user: ', err));
+    try {
+      // Create the real, securely-stored credential in Firebase Authentication.
+      // The password itself is NEVER written to Firestore.
+      const credential = await createUserWithEmailAndPassword(auth, inputs.email, passwordToUse);
+      const uid = credential.user.uid;
 
-    return { success: true };
+      const { password, ...profileFields } = inputs;
+
+      const newUser: User = {
+        ...profileFields,
+        id: uid,
+        isVerified: false,
+        badges: ['Novato', 'Pioneiro'],
+        premiumPlan: 'free',
+        isBlocked: false,
+        friends: [],
+        followers: [],
+        following: [],
+        createdAt: new Date().toISOString()
+      };
+
+      setUsers(prev => [...prev, newUser]);
+      setCurrentUserId(newUser.id);
+
+      await setDoc(doc(db, 'users', newUser.id), newUser);
+      logAction('success', `Nova conta de usuário criada: ${newUser.fullName} (@${newUser.username}).`);
+
+      return { success: true };
+    } catch (err: any) {
+      let message = 'Não foi possível criar sua conta. Tente novamente.';
+      if (err?.code === 'auth/email-already-in-use') {
+        message = 'Já existe uma conta cadastrada com este e-mail.';
+      } else if (err?.code === 'auth/invalid-email') {
+        message = 'O e-mail informado é inválido.';
+      } else if (err?.code === 'auth/weak-password') {
+        message = 'A senha é muito fraca. Use pelo menos 6 caracteres.';
+      }
+      console.error('Error registering user: ', err);
+      return { success: false, message };
+    }
+  };
+
+  // Real login for actual registered users: verifies the password securely
+  // through Firebase Authentication (never compares it against Firestore data).
+  const loginWithEmail = async (email: string, password: string) => {
+    try {
+      const credential = await signInWithEmailAndPassword(auth, email, password);
+      const uid = credential.user.uid;
+      const u = users.find(x => x.id === uid);
+
+      if (!u) {
+        return { success: false, message: 'Conta autenticada, mas o perfil não foi encontrado. Tente novamente em instantes.' };
+      }
+      if (u.isBlocked) {
+        logAction('error', `Acesso bloqueado: Usuário '${u.username}' tentou fazer login mas está bloqueado.`);
+        return { success: false, message: 'Esta conta está temporariamente bloqueada pela moderação.' };
+      }
+
+      setCurrentUserId(uid);
+      logAction('info', `Usuário '${u.fullName}' (@${u.username}) conectou-se à rede.`);
+      return { success: true };
+    } catch (err: any) {
+      let message = 'Não foi possível entrar. Verifique seu e-mail e senha.';
+      if (err?.code === 'auth/invalid-credential' || err?.code === 'auth/wrong-password' || err?.code === 'auth/user-not-found') {
+        message = 'E-mail ou senha incorretos.';
+      }
+      return { success: false, message };
+    }
   };
 
   const updateProfile = (userId: string, updates: Partial<User>) => {
@@ -1619,6 +1670,7 @@ export function useSocialState() {
     isAdminActive: currentUser.id === 'admin',
     isAdminSessionActive,
     loginAs,
+    loginWithEmail,
     logout,
     registerUser,
     updateProfile,
@@ -1668,4 +1720,3 @@ export function useSocialState() {
 }
 
 export type UseSocialStateReturn = ReturnType<typeof useSocialState>;
-
