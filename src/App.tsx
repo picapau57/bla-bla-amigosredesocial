@@ -146,7 +146,9 @@ export default function App() {
     }
   };
 
-  const handleVerifyCodeSubmit = (e: FormEvent) => {
+  const [isRegistering, setIsRegistering] = useState(false);
+
+  const handleVerifyCodeSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     if (verificationCode.trim() !== expectedCode) {
@@ -154,8 +156,9 @@ export default function App() {
       return;
     }
 
+    setIsRegistering(true);
     // Complete registration
-    const res = social.registerUser({
+    const res = await social.registerUser({
       fullName: regFullName,
       username: regUsername.toLowerCase(),
       email: regEmail,
@@ -171,6 +174,7 @@ export default function App() {
       website: '',
       password: regPassword
     });
+    setIsRegistering(false);
 
     if (res.success) {
       setRegStep('success');
@@ -184,23 +188,30 @@ export default function App() {
     }
   };
 
-  const handleManualLogin = (e: FormEvent) => {
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  const handleManualLogin = async (e: FormEvent) => {
     e.preventDefault();
-    const u = social.users.find(x => x.username.toLowerCase() === loginUserText.toLowerCase().trim() || x.email.toLowerCase() === loginUserText.toLowerCase().trim());
-    if (u) {
-      const expectedPassword = u.password || (u.id === 'admin' ? 'admin123' : '123456');
-      if (loginPassText !== expectedPassword) {
-        alert('Senha de segurança incorreta! Verifique sua senha cadastrada e tente novamente.');
-        return;
-      }
-      const res = social.loginAs(u.id);
-      if (res.success) {
-        setIsLoggedIn(true);
-      } else {
-        alert(res.message);
-      }
+    const typed = loginUserText.toLowerCase().trim();
+
+    // The login field accepts a username or an e-mail, but Firebase
+    // Authentication needs the e-mail — so resolve a username to its
+    // e-mail first (this lookup only reads public profile fields, never
+    // a password).
+    const u = social.users.find(x => x.username.toLowerCase() === typed || x.email.toLowerCase() === typed);
+    if (!u) {
+      alert('Usuário não encontrado. Verifique se digitou o e-mail ou nome de usuário corretamente, ou crie uma nova conta grátis!');
+      return;
+    }
+
+    setIsLoggingIn(true);
+    const res = await social.loginWithEmail(u.email, loginPassText);
+    setIsLoggingIn(false);
+
+    if (res.success) {
+      setIsLoggedIn(true);
     } else {
-      alert('Usuário não encontrado. Verifique se digitou o e-mail ou ID do membro cadastrado corretamente, ou crie uma nova conta grátis!');
+      alert(res.message);
     }
   };
 
