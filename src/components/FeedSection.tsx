@@ -27,13 +27,43 @@ function ReelsVideoPlayer({ mediaUrl }: { mediaUrl: string }) {
 
   const getYouTubeDetails = (url: string) => {
     if (!url) return null;
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
-    const match = url.match(regExp);
-    if (match && match[2].length === 11) {
-      const videoId = match[2];
+    const cleanUrl = url.trim();
+    let videoId: string | null = null;
+
+    try {
+      if (cleanUrl.includes('/shorts/')) {
+        const parts = cleanUrl.split('/shorts/');
+        if (parts[1]) videoId = parts[1].split(/[?&#/]/)[0];
+      }
+      if (!videoId && cleanUrl.includes('v=')) {
+        const match = cleanUrl.match(/[?&]v=([^&#]+)/);
+        if (match && match[1]) videoId = match[1];
+      }
+      if (!videoId && cleanUrl.includes('youtu.be/')) {
+        const parts = cleanUrl.split('youtu.be/');
+        if (parts[1]) videoId = parts[1].split(/[?&#/]/)[0];
+      }
+      if (!videoId && cleanUrl.includes('/embed/')) {
+        const parts = cleanUrl.split('/embed/');
+        if (parts[1]) videoId = parts[1].split(/[?&#/]/)[0];
+      }
+      if (!videoId && cleanUrl.includes('/live/')) {
+        const parts = cleanUrl.split('/live/');
+        if (parts[1]) videoId = parts[1].split(/[?&#/]/)[0];
+      }
+      if (!videoId) {
+        const regExp = /(?:youtube(?:-nocookie)?\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?|shorts|live)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i;
+        const match = cleanUrl.match(regExp);
+        if (match && match[1]) videoId = match[1];
+      }
+    } catch (e) {
+      console.error('Error parsing video URL:', e);
+    }
+
+    if (videoId && videoId.length >= 10) {
       return {
         videoId,
-        embedUrl: `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0`,
+        embedUrl: `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&rel=0`,
         thumbnailUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
       };
     }
