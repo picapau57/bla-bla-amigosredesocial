@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { 
   User, Post, Chat, Message, Ad, Community, Event, Story, BusinessPage, 
   SystemLog, Comment, CatalogProduct, EmailConfig, Job, FriendRequest,
-  PayoutConfig, PayoutRequest, Idea, LiveStream, LiveChatMessage
+  PayoutConfig, PayoutRequest, Idea, LiveStream, LiveChatMessage, Reel, ReelComment
 } from '../types';
 import {
   INITIAL_USERS,
@@ -16,10 +16,12 @@ import {
   INITIAL_MESSAGES,
   INITIAL_LOGS,
   INITIAL_JOBS,
-  INITIAL_LIVES
+  INITIAL_LIVES,
+  INITIAL_REELS
 } from '../data/mockData';
 import { db } from '../lib/firebase';
 import { seedDatabaseIfEmpty } from '../lib/firebaseSeeder';
+import { saveLocalVideoBlob, getLocalVideoBlob, removeLocalVideoBlob } from '../lib/videoStorage';
 import { 
   collection, doc, setDoc, deleteDoc, onSnapshot 
 } from 'firebase/firestore';
@@ -49,6 +51,13 @@ export function useSocialState() {
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [lives, setLives] = useState<LiveStream[]>(INITIAL_LIVES);
   const [liveMessages, setLiveMessages] = useState<LiveChatMessage[]>([]);
+  const [reels, setReels] = useState<Reel[]>(() => {
+    try {
+      const cached = localStorage.getItem('bb_reels_cache_v2');
+      if (cached) return JSON.parse(cached);
+    } catch (e) {}
+    return INITIAL_REELS;
+  });
 
   const [currentUserId, setCurrentUserId] = useState<string>(() => {
     const saved = localStorage.getItem('bb_current_uid');
@@ -107,9 +116,19 @@ export function useSocialState() {
       });
       activeUnsubs.push(unsubUsers);
 
-      const unsubPosts = onSnapshot(collection(db, 'posts'), (snapshot) => {
+      const unsubPosts = onSnapshot(collection(db, 'posts'), async (snapshot) => {
         const list: Post[] = [];
-        snapshot.forEach(doc => list.push(doc.data() as Post));
+        for (const docSnap of snapshot.docs) {
+          const data = docSnap.data() as Post;
+          if (data.mediaUrl && data.mediaUrl.startsWith('local_blob:')) {
+            const blobKey = data.mediaUrl.replace('local_blob:', '');
+            const localBlob = await getLocalVideoBlob(blobKey);
+            if (localBlob) {
+              data.mediaUrl = localBlob;
+            }
+          }
+          list.push(data);
+        }
         list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         if (isMounted) setPosts(list);
       }, (err) => {
@@ -269,6 +288,32 @@ export function useSocialState() {
         if (isMounted) handleFirestoreError(err, OperationType.GET, 'live_messages');
       });
       activeUnsubs.push(unsubLiveMessages);
+
+      const unsubReels = onSnapshot(collection(db, 'reels'), async (snapshot) => {
+        const list: Reel[] = [];
+        for (const docSnap of snapshot.docs) {
+          const data = { id: docSnap.id, ...docSnap.data() } as Reel;
+          if (data.videoUrl && data.videoUrl.startsWith('local_blob:')) {
+            const blobKey = data.videoUrl.replace('local_blob:', '');
+            const localBlob = await getLocalVideoBlob(blobKey);
+            if (localBlob) {
+              data.videoUrl = localBlob;
+            }
+          }
+          list.push(data);
+        }
+        list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        if (isMounted) {
+          setReels(list);
+          try {
+            const safeCache = list.map(r => r.videoUrl && r.videoUrl.startsWith('data:') ? { ...r, videoUrl: '' } : r);
+            localStorage.setItem('bb_reels_cache_v2', JSON.stringify(safeCache));
+          } catch (e) {}
+        }
+      }, (err) => {
+        if (isMounted) handleFirestoreError(err, OperationType.GET, 'reels');
+      });
+      activeUnsubs.push(unsubReels);
     };
 
     init();
@@ -432,8 +477,16 @@ export function useSocialState() {
       console.error('Real-time moderation failed, allowing post as fallback:', err);
     }
 
+    const newPostId = `post-${Date.now()}`;
+    let firestoreMediaUrl = mediaUrl;
+
+    if (mediaType === 'video' && mediaUrl && mediaUrl.startsWith('data:video/')) {
+      await saveLocalVideoBlob(newPostId, mediaUrl);
+      firestoreMediaUrl = `local_blob:${newPostId}`;
+    }
+
     const newPost: Post = {
-      id: `post-${Date.now()}`,
+      id: newPostId,
       userId: currentUser.id,
       content,
       mediaUrl,
@@ -451,23 +504,28 @@ export function useSocialState() {
     setPosts(prev => [newPost, ...prev]);
     
     try {
-      await setDoc(doc(db, 'posts', newPost.id), newPost);
+      await setDoc(doc(db, 'posts', newPost.id), {
+        ...newPost,
+        mediaUrl: firestoreMediaUrl
+      });
       
       // If post is a video, also sync to reels collection
       if (mediaType === 'video' && mediaUrl) {
         const reelId = `reel-${newPost.id}`;
-        await setDoc(doc(db, 'reels', reelId), {
+        const newReelDoc: Reel = {
           id: reelId,
           userId: currentUser.id,
           username: currentUser.username,
           userAvatar: currentUser.avatar,
           userFullName: currentUser.fullName,
-          videoUrl: mediaUrl,
+          videoUrl: firestoreMediaUrl,
           caption: content || `Vídeo compartilhado por ${currentUser.fullName}`,
           likes: [currentUser.id],
           comments: [],
           createdAt: newPost.createdAt
-        }).catch(err => console.warn('Could not sync to reels collection:', err));
+        };
+        await setDoc(doc(db, 'reels', reelId), newReelDoc).catch(err => console.warn('Could not sync to reels collection:', err));
+        setReels(prev => [{ ...newReelDoc, videoUrl: mediaUrl }, ...prev]);
       }
 
       logAction('success', `Anfitrião @${currentUser.username} publicou uma nova postagem.`);
@@ -1606,10 +1664,124 @@ export function useSocialState() {
     return true;
   };
 
+  const addReel = async (videoUrl: string, caption: string) => {
+    const newReelId = `reel-${Date.now()}`;
+    const finalCaption = caption.trim() || `Vídeo compartilhado por ${currentUser.fullName}! 🎬✨ #blablaamigos #reels`;
+
+    let firestoreVideoUrl = videoUrl;
+    if (videoUrl.startsWith('data:video/')) {
+      await saveLocalVideoBlob(newReelId, videoUrl);
+      firestoreVideoUrl = `local_blob:${newReelId}`;
+    }
+
+    const newReel: Reel = {
+      id: newReelId,
+      userId: currentUser.id,
+      username: currentUser.username,
+      userAvatar: currentUser.avatar,
+      userFullName: currentUser.fullName,
+      videoUrl: videoUrl,
+      caption: finalCaption,
+      likes: [currentUser.id],
+      comments: [],
+      createdAt: new Date().toISOString()
+    };
+
+    setReels(prev => [newReel, ...prev]);
+
+    try {
+      await setDoc(doc(db, 'reels', newReelId), {
+        ...newReel,
+        videoUrl: firestoreVideoUrl
+      });
+
+      // Also persist to Posts collection
+      const newPostId = `post-${newReelId}`;
+      const newPost: Post = {
+        id: newPostId,
+        userId: currentUser.id,
+        content: finalCaption,
+        mediaUrl: firestoreVideoUrl,
+        mediaType: 'video',
+        createdAt: newReel.createdAt,
+        reactions: { likes: [currentUser.id], loves: [], applauds: [] },
+        comments: [],
+        sharesCount: 0
+      };
+      await setDoc(doc(db, 'posts', newPostId), newPost).catch(e => console.warn(e));
+      setPosts(prev => [{ ...newPost, mediaUrl: videoUrl }, ...prev]);
+
+      logAction('success', `@${currentUser.username} publicou um novo Reel.`);
+      return { success: true };
+    } catch (err) {
+      console.error('Error saving reel to Firestore:', err);
+      return { success: true };
+    }
+  };
+
+  const deleteReel = async (reelId: string) => {
+    setReels(prev => prev.filter(r => r.id !== reelId));
+    try {
+      await deleteDoc(doc(db, 'reels', reelId));
+      await removeLocalVideoBlob(reelId);
+      logAction('info', `Reel ${reelId} excluído com sucesso.`);
+    } catch (err) {
+      console.error('Error deleting reel:', err);
+    }
+  };
+
+  const toggleLikeReel = async (reelId: string) => {
+    const reel = reels.find(r => r.id === reelId);
+    if (!reel) return;
+
+    const hasLiked = reel.likes.includes(currentUser.id);
+    const updatedLikes = hasLiked
+      ? reel.likes.filter(id => id !== currentUser.id)
+      : [...reel.likes, currentUser.id];
+
+    setReels(prev => prev.map(r => r.id === reelId ? { ...r, likes: updatedLikes } : r));
+
+    try {
+      await setDoc(doc(db, 'reels', reelId), { likes: updatedLikes }, { merge: true });
+    } catch (err) {
+      console.error('Error toggling reel like:', err);
+    }
+  };
+
+  const addReelComment = async (reelId: string, text: string) => {
+    if (!text.trim()) return;
+    const reel = reels.find(r => r.id === reelId);
+    if (!reel) return;
+
+    const newComment: ReelComment = {
+      id: `rc-${Date.now()}`,
+      userId: currentUser.id,
+      username: currentUser.username,
+      userFullName: currentUser.fullName,
+      userAvatar: currentUser.avatar,
+      text: text.trim(),
+      createdAt: new Date().toISOString()
+    };
+
+    const updatedComments = [...(reel.comments || []), newComment];
+    setReels(prev => prev.map(r => r.id === reelId ? { ...r, comments: updatedComments } : r));
+
+    try {
+      await setDoc(doc(db, 'reels', reelId), { comments: updatedComments }, { merge: true });
+    } catch (err) {
+      console.error('Error adding comment to reel:', err);
+    }
+  };
+
   return {
     currentUser,
     users,
     posts,
+    reels,
+    addReel,
+    deleteReel,
+    toggleLikeReel,
+    addReelComment,
     communities,
     events,
     stories,

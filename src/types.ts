@@ -279,5 +279,29 @@ export interface LiveChatMessage {
   giftValue?: number;
 }
 
+export interface ReelComment {
+  id: string;
+  userId: string;
+  username: string;
+  userFullName: string;
+  userAvatar: string;
+  text: string;
+  createdAt: string;
+}
+
+export interface Reel {
+  id: string;
+  userId: string;
+  username: string;
+  userAvatar: string;
+  userFullName: string;
+  videoUrl: string;
+  caption: string;
+  likes: string[];
+  comments: ReelComment[];
+  createdAt: string;
+}
+
+
 
 

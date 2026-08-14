@@ -830,6 +830,11 @@ export default function App() {
                     <ReelsSection
                       currentUser={social.currentUser}
                       onViewProfile={setViewingUser}
+                      reels={social.reels}
+                      onAddReel={social.addReel}
+                      onDeleteReel={social.deleteReel}
+                      onLikeReel={social.toggleLikeReel}
+                      onAddComment={social.addReelComment}
                     />
                   )}
 

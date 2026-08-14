@@ -12,7 +12,8 @@ import {
   INITIAL_MESSAGES,
   INITIAL_LOGS,
   INITIAL_JOBS,
-  INITIAL_LIVES
+  INITIAL_LIVES,
+  INITIAL_REELS
 } from '../data/mockData';
 
 export async function seedDatabaseIfEmpty() {
@@ -124,6 +125,18 @@ export async function seedDatabaseIfEmpty() {
       for (const l of INITIAL_LIVES) {
         await setDoc(doc(db, 'lives', l.id), l);
       }
+    }
+
+    const hasSeededReels = localStorage.getItem('bb_reels_seeded_v2');
+    if (!hasSeededReels) {
+      const reelsSnapshot = await getDocs(collection(db, 'reels'));
+      if (reelsSnapshot.empty) {
+        console.log('Seeding initial reels to Firestore...');
+        for (const r of INITIAL_REELS) {
+          await setDoc(doc(db, 'reels', r.id), r);
+        }
+      }
+      localStorage.setItem('bb_reels_seeded_v2', 'true');
     }
   } catch (error) {
     console.error('Error seeding Firestore database:', error);

@@ -1,4 +1,4 @@
-import { User, Post, Chat, Message, Ad, Community, Event, Story, BusinessPage, SystemLog, Job, LiveStream } from '../types';
+import { User, Post, Chat, Message, Ad, Community, Event, Story, BusinessPage, SystemLog, Job, LiveStream, Reel } from '../types';
 
 export const INITIAL_USERS: User[] = [
   {
@@ -687,5 +687,67 @@ export const INITIAL_LIVES: LiveStream[] = [
     createdAt: new Date().toISOString()
   }
 ];
+
+export const INITIAL_REELS: Reel[] = [
+  {
+    id: 'preset-reel-1',
+    userId: 'user-1',
+    username: 'pedro_dev',
+    userFullName: 'Pedro Dev Cerrado',
+    userAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200',
+    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-light-looking-at-phone-39878-large.mp4',
+    caption: 'Testando a nova rede social BLA BLA, AMIGOS! O futuro da interatividade chegou! 🚀✨ #tecnologia #neon #blablaamigos',
+    likes: ['user-1', 'admin'],
+    comments: [
+      {
+        id: 'c-preset-0',
+        userId: 'admin',
+        username: 'admin',
+        userFullName: 'Equipe BLA BLA, AMIGOS',
+        userAvatar: 'https://images.unsplash.com/photo-1628157582853-a796fa650a6a?auto=format&fit=crop&q=80&w=200',
+        text: 'Vídeo espetacular! Bem-vindo à nossa aba de Reels & Vídeos! 🎬👏',
+        createdAt: new Date().toISOString()
+      }
+    ],
+    createdAt: new Date(Date.now() - 3600000).toISOString()
+  },
+  {
+    id: 'preset-reel-2',
+    userId: 'user-2',
+    username: 'marina_viaja',
+    userFullName: 'Marina Viajante',
+    userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200',
+    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-mysterious-forest-with-bright-sunbeams-42289-large.mp4',
+    caption: 'Pensa num paraíso! Chapada dos Veadeiros em Goiás é simplesmente surreal 🌲☀️🔋 #goias #turismo #natureza #veadeiros',
+    likes: ['user-1', 'user-2'],
+    comments: [],
+    createdAt: new Date(Date.now() - 7200000).toISOString()
+  },
+  {
+    id: 'preset-reel-3',
+    userId: 'user-3',
+    username: 'lucas_pro',
+    userFullName: 'Lucas Gamer Pro',
+    userAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
+    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-keyboard-and-setup-in-colorful-neon-lights-40081-large.mp4',
+    caption: 'Setup gamer goiano atualizado! Quem aí encara uma partida de Trivia no novo BLA BLA, AMIGOS? 👾🎮💥 #setup #gamer #jogos',
+    likes: ['user-1'],
+    comments: [],
+    createdAt: new Date(Date.now() - 10800000).toISOString()
+  },
+  {
+    id: 'preset-reel-4',
+    userId: 'user-4',
+    username: 'bia_influx',
+    userFullName: 'Beatriz Influencer',
+    userAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
+    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-hand-holding-smartphone-with-social-media-app-open-42410-large.mp4',
+    caption: 'Só o BLA BLA AMIGOS tem essa agilidade e interatividade instantânea. Compartilhe esse vídeo com seus amigos! 📱🚀🍀 #reels #social',
+    likes: ['user-1', 'user-3'],
+    comments: [],
+    createdAt: new Date(Date.now() - 14400000).toISOString()
+  }
+];
+
 
 

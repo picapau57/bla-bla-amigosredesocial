@@ -1,16 +1,11 @@
 import React, { useState, useEffect, useRef, FormEvent, ChangeEvent } from 'react';
-import { User } from '../types';
+import { User, Reel, ReelComment } from '../types';
 import { 
-  Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Pause, 
+  Heart, MessageCircle, Share2, Volume2, VolumeX, Play, 
   Send, Plus, X, Sparkles, Film, ArrowUp, ArrowDown, ExternalLink,
   BadgeCheck, Trash2, Upload, Video as VideoIcon, CheckCircle2, AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  collection, onSnapshot, addDoc, updateDoc, doc, arrayUnion,
-  query, deleteDoc, setDoc
-} from 'firebase/firestore';
-import { db } from '../lib/firebase';
 
 // Helper to clean and format any input video URL
 export function sanitizeVideoUrl(url: string): string {
@@ -121,36 +116,8 @@ export function isDirectVideoUrl(url: string): boolean {
   );
 }
 
-export interface ReelComment {
-  id: string;
-  userId: string;
-  username: string;
-  userFullName: string;
-  userAvatar: string;
-  text: string;
-  createdAt: string;
-}
-
-export interface Reel {
-  id: string;
-  userId: string;
-  username: string;
-  userAvatar: string;
-  userFullName: string;
-  videoUrl: string;
-  caption: string;
-  likes: string[];
-  comments: ReelComment[];
-  createdAt: string;
-}
-
-interface ReelsSectionProps {
-  currentUser: User;
-  onViewProfile?: (user: User) => void;
-}
-
 // Preset vertical high-quality loop videos
-const PRESET_REELS: Omit<Reel, 'id' | 'userId' | 'likes' | 'comments' | 'createdAt'>[] = [
+const PRESET_REELS = [
   {
     videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-light-looking-at-phone-39878-large.mp4',
     caption: 'Testando a nova rede social BLA BLA, AMIGOS! O futuro da interatividade chegou! 🚀✨ #tecnologia #neon #blablaamigos',
@@ -181,31 +148,25 @@ const PRESET_REELS: Omit<Reel, 'id' | 'userId' | 'likes' | 'comments' | 'created
   }
 ];
 
-const INITIAL_FALLBACK_REELS: Reel[] = PRESET_REELS.map((p, i) => ({
-  id: `preset-reel-${i + 1}`,
-  userId: `user-preset-${i + 1}`,
-  username: p.username,
-  userAvatar: p.userAvatar,
-  userFullName: p.userFullName,
-  videoUrl: p.videoUrl,
-  caption: p.caption,
-  likes: ['user-1', 'admin'],
-  comments: [
-    {
-      id: `c-preset-${i}`,
-      userId: 'admin',
-      username: 'admin',
-      userFullName: 'Equipe BLA BLA, AMIGOS',
-      userAvatar: 'https://images.unsplash.com/photo-1628157582853-a796fa650a6a?auto=format&fit=crop&q=80&w=200',
-      text: 'Vídeo espetacular! Bem-vindo à nossa aba de Reels & Vídeos! 🎬👏',
-      createdAt: new Date().toISOString()
-    }
-  ],
-  createdAt: new Date(Date.now() - (i + 1) * 3600000).toISOString()
-}));
+interface ReelsSectionProps {
+  currentUser: User;
+  onViewProfile?: (user: User) => void;
+  reels?: Reel[];
+  onAddReel?: (videoUrl: string, caption: string) => Promise<{ success: boolean }>;
+  onDeleteReel?: (reelId: string) => Promise<void>;
+  onLikeReel?: (reelId: string) => Promise<void>;
+  onAddComment?: (reelId: string, text: string) => Promise<void>;
+}
 
-export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectionProps) {
-  const [reels, setReels] = useState<Reel[]>(INITIAL_FALLBACK_REELS);
+export default function ReelsSection({
+  currentUser,
+  onViewProfile,
+  reels = [],
+  onAddReel,
+  onDeleteReel,
+  onLikeReel,
+  onAddComment
+}: ReelsSectionProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [muted, setMuted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -227,36 +188,12 @@ export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectio
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Subscribe to reels from Firestore
+  // Clamp current index when reels list length changes
   useEffect(() => {
-    let unsubscribe = () => {};
-    try {
-      const q = query(collection(db, 'reels'));
-      unsubscribe = onSnapshot(q, (snapshot) => {
-        if (!snapshot.empty) {
-          const fetchedReels: Reel[] = [];
-          snapshot.forEach((docSnap) => {
-            fetchedReels.push({ id: docSnap.id, ...docSnap.data() } as Reel);
-          });
-          
-          // Sort newest first
-          fetchedReels.sort((a, b) => {
-            const dateA = new Date(a.createdAt || 0).getTime();
-            const dateB = new Date(b.createdAt || 0).getTime();
-            return dateB - dateA;
-          });
-
-          setReels(fetchedReels);
-        }
-      }, (err) => {
-        console.warn('Firestore reels subscription error, using local fallback:', err);
-      });
-    } catch (e) {
-      console.warn('Could not initialize firestore reels listener:', e);
+    if (currentIndex >= reels.length && reels.length > 0) {
+      setCurrentIndex(reels.length - 1);
     }
-
-    return () => unsubscribe();
-  }, []);
+  }, [reels.length, currentIndex]);
 
   // Update HTML5 video playback when index or isPlaying / muted changes
   useEffect(() => {
@@ -285,46 +222,32 @@ export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectio
     }
   };
 
+  const currentReel = reels[currentIndex] || reels[0];
+
   const handleDeleteReel = async (reelId: string) => {
     try {
-      // Optimistic removal
-      setReels(prev => prev.filter(r => r.id !== reelId));
       setDeletingId(null);
-      if (currentIndex >= reels.length - 1) {
-        setCurrentIndex(Math.max(0, reels.length - 2));
+      if (onDeleteReel) {
+        await onDeleteReel(reelId);
       }
-      // Firestore removal
-      await deleteDoc(doc(db, 'reels', reelId));
+      setSuccessToast('🗑️ Vídeo excluído com sucesso.');
+      setTimeout(() => setSuccessToast(null), 3000);
     } catch (err) {
       console.error('Error deleting reel:', err);
     }
   };
 
-  const currentReel = reels[currentIndex] || reels[0];
-
   const handleToggleLike = async () => {
     if (!currentReel) return;
 
     const isLiked = currentReel.likes?.includes(currentUser.id);
-    const updatedLikes = isLiked 
-      ? currentReel.likes.filter(id => id !== currentUser.id)
-      : [...(currentReel.likes || []), currentUser.id];
-
-    // Trigger double click like popup animation
     if (!isLiked) {
       setShowHeartAnimation(true);
       setTimeout(() => setShowHeartAnimation(false), 800);
     }
 
-    // Optimistic update
-    setReels(prev => prev.map(r => r.id === currentReel.id ? { ...r, likes: updatedLikes } : r));
-
-    try {
-      await updateDoc(doc(db, 'reels', currentReel.id), {
-        likes: updatedLikes
-      });
-    } catch (err) {
-      console.warn('Firestore update like failed:', err);
+    if (onLikeReel) {
+      await onLikeReel(currentReel.id);
     }
   };
 
@@ -332,28 +255,11 @@ export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectio
     e.preventDefault();
     if (!currentReel || !commentText.trim()) return;
 
-    const newComment: ReelComment = {
-      id: `comm-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-      userId: currentUser.id,
-      username: currentUser.username,
-      userFullName: currentUser.fullName,
-      userAvatar: currentUser.avatar,
-      text: commentText.trim(),
-      createdAt: new Date().toISOString()
-    };
-
-    const updatedComments = [...(currentReel.comments || []), newComment];
-
-    // Optimistic update
-    setReels(prev => prev.map(r => r.id === currentReel.id ? { ...r, comments: updatedComments } : r));
+    const text = commentText.trim();
     setCommentText('');
 
-    try {
-      await updateDoc(doc(db, 'reels', currentReel.id), {
-        comments: arrayUnion(newComment)
-      });
-    } catch (err) {
-      console.warn('Firestore update comment failed:', err);
+    if (onAddComment) {
+      await onAddComment(currentReel.id, text);
     }
   };
 
@@ -367,9 +273,9 @@ export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectio
       return;
     }
 
-    // Cap at 25MB for base64 / blob
-    if (file.size > 25 * 1024 * 1024) {
-      setVideoFileError('O vídeo é muito pesado. Escolha um vídeo de até 25MB ou use um link do YouTube.');
+    // Cap at 40MB for local video playback
+    if (file.size > 40 * 1024 * 1024) {
+      setVideoFileError('O vídeo é muito pesado. Escolha um vídeo de até 40MB ou use um link do YouTube.');
       return;
     }
 
@@ -407,59 +313,30 @@ export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectio
     setIsSubmitting(true);
     const finalCaption = newCaption.trim() || `Vídeo incrível compartilhado por ${currentUser.fullName}! 🎬✨ #blablaamigos #reels`;
 
-    const newReelId = `reel-${Date.now()}`;
-    const newReel: Reel = {
-      id: newReelId,
-      userId: currentUser.id,
-      username: currentUser.username,
-      userAvatar: currentUser.avatar,
-      userFullName: currentUser.fullName,
-      videoUrl: videoSource,
-      caption: finalCaption,
-      likes: [currentUser.id],
-      comments: [],
-      createdAt: new Date().toISOString()
-    };
-
-    // 1. Optimistically add to local reels immediately
-    setReels(prev => [newReel, ...prev]);
-    setCurrentIndex(0);
-    setIsPlaying(true);
-
-    // 2. Persist to Firestore Reels collection
     try {
-      await setDoc(doc(db, 'reels', newReelId), newReel);
-      
-      // Also persist to Posts collection so it appears in the main feed
-      const newPostId = `post-reel-${Date.now()}`;
-      await setDoc(doc(db, 'posts', newPostId), {
-        id: newPostId,
-        userId: currentUser.id,
-        content: finalCaption,
-        mediaUrl: videoSource,
-        mediaType: 'video',
-        createdAt: new Date().toISOString(),
-        reactions: { likes: [currentUser.id], loves: [], applauds: [] },
-        comments: [],
-        sharesCount: 0
-      });
+      if (onAddReel) {
+        await onAddReel(videoSource, finalCaption);
+      }
+      setNewCaption('');
+      setNewVideoUrl('');
+      setIsPublishModalOpen(false);
+      setCurrentIndex(0);
+      setIsPlaying(true);
+      setSuccessToast('🎉 Vídeo publicado com sucesso nos Reels e no Feed!');
+      setTimeout(() => setSuccessToast(null), 4000);
     } catch (err) {
-      console.warn('Firestore sync kept in local state:', err);
+      console.error('Error publishing reel:', err);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // 3. Reset form and notify user
-    setNewCaption('');
-    setNewVideoUrl('');
-    setIsPublishModalOpen(false);
-    setIsSubmitting(false);
-    setSuccessToast('🎉 Vídeo publicado com sucesso nos Reels e no Feed!');
-    setTimeout(() => setSuccessToast(null), 4000);
   };
 
   const handleShare = () => {
     if (!currentReel) return;
     const shareUrl = `https://blablabladosamigos.online/?reel=${currentReel.id}`;
-    navigator.clipboard.writeText(shareUrl);
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(shareUrl);
+    }
     setSuccessToast('📋 Link do Reel copiado para a área de transferência!');
     setTimeout(() => setSuccessToast(null), 3000);
   };
@@ -1004,7 +881,7 @@ export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectio
                           <>
                             <Upload className="w-8 h-8 text-rose-500" />
                             <span className="text-xs font-bold text-white">Clique para escolher o arquivo de vídeo</span>
-                            <span className="text-[10px] text-gray-400">MP4, WEBM ou MOV até 25MB</span>
+                            <span className="text-[10px] text-gray-400">MP4, WEBM ou MOV até 40MB</span>
                           </>
                         )}
                       </div>
