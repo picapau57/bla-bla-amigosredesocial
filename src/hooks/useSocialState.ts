@@ -452,6 +452,24 @@ export function useSocialState() {
     
     try {
       await setDoc(doc(db, 'posts', newPost.id), newPost);
+      
+      // If post is a video, also sync to reels collection
+      if (mediaType === 'video' && mediaUrl) {
+        const reelId = `reel-${newPost.id}`;
+        await setDoc(doc(db, 'reels', reelId), {
+          id: reelId,
+          userId: currentUser.id,
+          username: currentUser.username,
+          userAvatar: currentUser.avatar,
+          userFullName: currentUser.fullName,
+          videoUrl: mediaUrl,
+          caption: content || `Vídeo compartilhado por ${currentUser.fullName}`,
+          likes: [currentUser.id],
+          comments: [],
+          createdAt: newPost.createdAt
+        }).catch(err => console.warn('Could not sync to reels collection:', err));
+      }
+
       logAction('success', `Anfitrião @${currentUser.username} publicou uma nova postagem.`);
       return { success: true, isRestricted: false };
     } catch (err) {

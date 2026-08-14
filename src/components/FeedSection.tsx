@@ -163,10 +163,48 @@ export default function FeedSection({
     'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800'
   ];
 
-  // Local image upload states & logic
+  // Local image & video upload states & logic
   const [activeMediaSource, setActiveMediaSource] = useState<'upload' | 'url'>('upload');
   const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // Quick video suggestions
+  const sampleVideoPresets = [
+    { title: 'YouTube Shorts #1', url: 'https://youtube.com/shorts/qC3qC0Uq7qg' },
+    { title: 'Vídeo Goiás & Natureza', url: 'https://assets.mixkit.co/videos/preview/mixkit-tree-branches-in-the-breeze-1188-large.mp4' },
+    { title: 'Clipe de Humor', url: 'https://assets.mixkit.co/videos/preview/mixkit-vertical-video-of-a-dog-wearing-glasses-42352-large.mp4' }
+  ];
+
+  const handleVideoFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('video/')) {
+      setUploadError('Por favor, selecione um arquivo de vídeo válido (.mp4, .webm, .mov).');
+      return;
+    }
+
+    if (file.size > 25 * 1024 * 1024) {
+      setUploadError('Vídeo acima de 25MB. Escolha um arquivo menor ou cole o link do YouTube.');
+      return;
+    }
+
+    setIsUploadingFile(true);
+    setUploadError(null);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setNewPostMedia(dataUrl);
+      setMediaType('video');
+      setIsUploadingFile(false);
+    };
+    reader.onerror = () => {
+      setUploadError('Erro ao carregar o vídeo. Tente usar um link web ou YouTube.');
+      setIsUploadingFile(false);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const compressImage = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -243,13 +281,42 @@ export default function FeedSection({
 
   const handleCreatePost = async (e: FormEvent) => {
     e.preventDefault();
-    if (!newPostContent.trim() && !newPostMedia) return;
+    let content = newPostContent.trim();
+    let media = newPostMedia.trim();
+    let detectedType = mediaType;
+
+    // Check if post text contains a YouTube/Video link if no media is explicitly attached
+    if (!media && content) {
+      const urlRegex = /(https?:\/\/[^\s]+)/g;
+      const urls = content.match(urlRegex);
+      if (urls && urls.length > 0) {
+        const potentialUrl = urls[0];
+        if (
+          potentialUrl.includes('youtube.com') ||
+          potentialUrl.includes('youtu.be') ||
+          potentialUrl.includes('/shorts/') ||
+          potentialUrl.includes('vimeo.com') ||
+          potentialUrl.endsWith('.mp4') ||
+          potentialUrl.endsWith('.webm')
+        ) {
+          media = potentialUrl;
+          detectedType = 'video';
+        }
+      }
+    }
+
+    if (!content && !media) return;
+
+    // Auto-fix url if it's video
+    if (media && detectedType === 'video' && !media.startsWith('data:') && !media.startsWith('http://') && !media.startsWith('https://')) {
+      media = 'https://' + media;
+    }
 
     setIsModeratingPost(true);
     try {
-      const result = await onAddPost(newPostContent, newPostMedia || undefined, newPostMedia ? mediaType : undefined);
+      const result = await onAddPost(content, media || undefined, media ? detectedType : undefined);
       if (result && !result.success && result.isRestricted) {
-        alert(`🚫 POST EXCLUÍDO AUTOMATICAMENTE NA HORA!\n\nNosso moderador de inteligência artificial em tempo real barrou esta postagem para evitar restrições e proteger direitos autorais de terceiros.\n\nMotivo da exclusão imediata:\n👉 ${result.reason || 'Restrição de direitos autorais detectada.'}`);
+        alert(`🚫 POST EXCLUÍDO AUTOMATICAMENTE NA HORA!\n\n${result.reason || 'Restrição detectada.'}`);
       } else {
         setNewPostContent('');
         setNewPostMedia('');
@@ -372,6 +439,25 @@ export default function FeedSection({
                         </button>
                       </div>
                     )}
+
+                    {mediaType === 'video' && (
+                      <div className="flex gap-1 bg-[#121225] p-0.5 rounded border border-white/5">
+                        <button
+                          type="button"
+                          onClick={() => setActiveMediaSource('url')}
+                          className={`px-2 py-0.5 rounded text-[10px] cursor-pointer transition-all ${activeMediaSource === 'url' ? 'bg-white/10 text-white font-bold' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                          Link YouTube
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveMediaSource('upload')}
+                          className={`px-2 py-0.5 rounded text-[10px] cursor-pointer transition-all ${activeMediaSource === 'upload' ? 'bg-white/10 text-white font-bold' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                          Arquivo Vídeo
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* DISPLAY FILE UPLOADER FOR IMAGE DISPOSITIVO */}
@@ -437,13 +523,72 @@ export default function FeedSection({
                     </div>
                   )}
 
+                  {/* DISPLAY FILE UPLOADER FOR VIDEO DISPOSITIVO */}
+                  {mediaType === 'video' && activeMediaSource === 'upload' && (
+                    <div className="space-y-3">
+                      {newPostMedia && newPostMedia.startsWith('data:video/') ? (
+                        <div className="relative rounded-lg overflow-hidden border border-[#FF5722]/30 bg-[#121225]/50 p-3 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2.5 bg-[#FF5722]/20 text-[#FF5722] rounded-lg">
+                              <Video className="w-6 h-6" />
+                            </div>
+                            <div className="text-left">
+                              <span className="text-xs font-mono font-bold text-white block">✓ Vídeo carregado com sucesso</span>
+                              <span className="text-[10px] font-mono text-gray-400 block mt-0.5">Pronto para publicação no Feed e Reels</span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setNewPostMedia('')}
+                            className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-all cursor-pointer border border-red-500/15"
+                            title="Remover Vídeo"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <label className="flex flex-col items-center justify-center border-2 border-dashed border-white/10 hover:border-[#FF5722]/40 rounded-xl p-6 bg-[#121225]/40 hover:bg-[#121225]/70 transition-all cursor-pointer group">
+                            <input
+                              type="file"
+                              accept="video/mp4,video/webm,video/ogg,video/quicktime,video/x-m4v"
+                              onChange={handleVideoFileChange}
+                              disabled={isUploadingFile}
+                              className="hidden"
+                            />
+                            
+                            {isUploadingFile ? (
+                              <div className="flex flex-col items-center gap-2">
+                                <Upload className="w-8 h-8 text-[#FF5722] animate-bounce" />
+                                <span className="text-xs font-mono font-bold text-[#FF5722] animate-pulse">Carregando vídeo...</span>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center gap-2 text-center">
+                                <Upload className="w-8 h-8 text-[#FF5722] group-hover:scale-105 transition-all duration-300" />
+                                <span className="text-xs font-medium text-gray-300">Escolha um vídeo do seu Celular ou Computador</span>
+                                <span className="text-[9px] text-gray-500 font-mono">MP4, WEBM ou MOV até 25MB</span>
+                              </div>
+                            )}
+                          </label>
+
+                          {uploadError && (
+                            <p className="text-[10px] text-red-400 font-mono mt-1.5 text-left flex items-center gap-1">
+                              <AlertCircle className="w-3.5 h-3.5" />
+                              {uploadError}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* DISPLAY LINK INPUT FOR URL FOR BOTH IMAGES AND VIDEOS */}
-                  {(mediaType === 'video' || (mediaType === 'image' && activeMediaSource === 'url')) && (
+                  {((mediaType === 'video' && activeMediaSource === 'url') || (mediaType === 'image' && activeMediaSource === 'url')) && (
                     <div className="space-y-3 text-left">
                       <div className="relative">
                         <input
                           type="text"
-                          placeholder={mediaType === 'image' ? "URL da imagem (ex: https://unsplash.com/...)" : "URL do vídeo do YouTube ou Reels"}
+                          placeholder={mediaType === 'image' ? "URL da imagem (ex: https://unsplash.com/...)" : "Cole aqui o link do YouTube, Shorts ou vídeo .mp4"}
                           value={newPostMedia}
                           onChange={(e) => setNewPostMedia(e.target.value)}
                           className="w-full bg-[#121225] border border-white/10 text-gray-200 rounded-lg p-2.5 text-xs focus:outline-none focus:border-[#00E5FF] font-mono pr-8"
@@ -459,10 +604,40 @@ export default function FeedSection({
                         )}
                       </div>
 
-                      {/* Display live preview of URL image if provided and valid */}
-                      {mediaType === 'image' && newPostMedia && newPostMedia.startsWith('http') && (
-                        <div className="rounded-lg overflow-hidden max-h-32 border border-white/5 bg-black/20 flex justify-center items-center">
-                          <img src={newPostMedia} alt="Preview URL" className="max-h-32 object-contain" />
+                      {/* Display live preview of video URL if provided */}
+                      {mediaType === 'video' && newPostMedia && (
+                        <div className="p-2 bg-[#121225] border border-[#FF5722]/30 rounded-lg flex items-center gap-2">
+                          <Video className="w-4 h-4 text-[#FF5722] shrink-0" />
+                          <span className="text-[11px] text-gray-300 font-mono truncate">
+                            Link do vídeo: {newPostMedia}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Video Quick Suggestions */}
+                      {mediaType === 'video' && (
+                        <div className="space-y-1.5">
+                          <span className="text-[10px] text-gray-500 font-mono block">Sugestões de vídeos de demonstração:</span>
+                          <div className="flex flex-wrap gap-2">
+                            {sampleVideoPresets.map((preset, vidx) => (
+                              <button
+                                key={vidx}
+                                type="button"
+                                onClick={() => {
+                                  setNewPostMedia(preset.url);
+                                  setMediaType('video');
+                                  setActiveMediaSource('url');
+                                }}
+                                className={`text-[10px] px-2.5 py-1 rounded-lg border font-mono transition-all cursor-pointer ${
+                                  newPostMedia === preset.url
+                                    ? 'bg-[#FF5722]/20 border-[#FF5722] text-[#FF5722]'
+                                    : 'bg-[#121225] border-white/5 text-gray-400 hover:text-white'
+                                }`}
+                              >
+                                🎬 {preset.title}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       )}
 

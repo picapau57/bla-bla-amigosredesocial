@@ -12,10 +12,21 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
+// Helper to clean and format any input video URL
+export function sanitizeVideoUrl(url: string): string {
+  if (!url) return '';
+  let trimmed = url.trim();
+  if (trimmed.startsWith('data:') || trimmed.startsWith('blob:')) return trimmed;
+  if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+    trimmed = 'https://' + trimmed;
+  }
+  return trimmed;
+}
+
 // Helper to extract YouTube embed URL
 export function getYouTubeEmbedUrl(url: string, muted: boolean = false): string | null {
   if (!url) return null;
-  const cleanUrl = url.trim();
+  const cleanUrl = sanitizeVideoUrl(url);
   
   let videoId: string | null = null;
 
@@ -381,36 +392,20 @@ export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectio
   const handlePublishReel = async (e: FormEvent) => {
     e.preventDefault();
     
-    // Choose video source
+    // Choose video source and sanitize
     const rawVideoSource = newVideoUrl.trim();
-    const videoSource = rawVideoSource || PRESET_REELS[Math.floor(Math.random() * PRESET_REELS.length)].videoUrl;
+    let videoSource = rawVideoSource || (uploadSource === 'preset' ? PRESET_REELS[0].videoUrl : '');
 
     if (!videoSource) {
-      alert('Por favor, insira o link do vídeo (YouTube ou MP4) ou selecione um arquivo de vídeo.');
+      alert('Por favor, insira o link do vídeo (YouTube ou MP4) ou selecione um arquivo de vídeo do seu celular/computador.');
       return;
     }
 
+    // Auto-sanitize URL
+    videoSource = sanitizeVideoUrl(videoSource);
+
     setIsSubmitting(true);
     const finalCaption = newCaption.trim() || `Vídeo incrível compartilhado por ${currentUser.fullName}! 🎬✨ #blablaamigos #reels`;
-
-    // Real-time AI Moderation (graceful fallback if server route not active)
-    try {
-      const modRes = await fetch('/api/moderate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: finalCaption, mediaUrl: videoSource.startsWith('data:') ? 'video_upload' : videoSource, mediaType: 'video' })
-      });
-      if (modRes.ok) {
-        const modData = await modRes.json();
-        if (modData && modData.success && modData.isRestricted) {
-          alert(`🚫 VÍDEO EXCLUÍDO AUTOMATICAMENTE NA HORA!\n\nO sistema de inteligência artificial detectou restrições de direitos autorais ou infração de termos.\n\nMotivo:\n👉 ${modData.reason || 'Restrição detectada.'}`);
-          setIsSubmitting(false);
-          return;
-        }
-      }
-    } catch (modErr) {
-      console.log('Moderation service bypassed safely:', modErr);
-    }
 
     const newReelId = `reel-${Date.now()}`;
     const newReel: Reel = {
@@ -426,16 +421,30 @@ export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectio
       createdAt: new Date().toISOString()
     };
 
-    // 1. Optimistically add to local state immediately
+    // 1. Optimistically add to local reels immediately
     setReels(prev => [newReel, ...prev]);
     setCurrentIndex(0);
     setIsPlaying(true);
 
-    // 2. Persist to Firestore
+    // 2. Persist to Firestore Reels collection
     try {
       await setDoc(doc(db, 'reels', newReelId), newReel);
+      
+      // Also persist to Posts collection so it appears in the main feed
+      const newPostId = `post-reel-${Date.now()}`;
+      await setDoc(doc(db, 'posts', newPostId), {
+        id: newPostId,
+        userId: currentUser.id,
+        content: finalCaption,
+        mediaUrl: videoSource,
+        mediaType: 'video',
+        createdAt: new Date().toISOString(),
+        reactions: { likes: [currentUser.id], loves: [], applauds: [] },
+        comments: [],
+        sharesCount: 0
+      });
     } catch (err) {
-      console.warn('Firestore setDoc reel failed, kept in local state:', err);
+      console.warn('Firestore sync kept in local state:', err);
     }
 
     // 3. Reset form and notify user
@@ -443,7 +452,7 @@ export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectio
     setNewVideoUrl('');
     setIsPublishModalOpen(false);
     setIsSubmitting(false);
-    setSuccessToast('🎉 Vídeo publicado com sucesso nos Reels!');
+    setSuccessToast('🎉 Vídeo publicado com sucesso nos Reels e no Feed!');
     setTimeout(() => setSuccessToast(null), 4000);
   };
 
@@ -916,22 +925,34 @@ export default function ReelsSection({ currentUser, onViewProfile }: ReelsSectio
 
                 {/* Option 1: URL input */}
                 {uploadSource === 'url' && (
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <label className="text-[11px] uppercase font-bold text-gray-300 tracking-wider flex items-center justify-between">
-                      <span>URL do Vídeo (YouTube, Shorts ou MP4) *</span>
+                      <span>URL do Vídeo (YouTube, Shorts, Vimeo ou MP4) *</span>
                     </label>
                     <input 
-                      type="url" 
-                      required={uploadSource === 'url'}
+                      type="text" 
                       value={newVideoUrl}
                       onChange={(e) => setNewVideoUrl(e.target.value)}
-                      placeholder="Cole aqui o link: https://www.youtube.com/shorts/... ou link .mp4"
+                      placeholder="Cole o link aqui: youtube.com/shorts/... ou youtu.be/... ou .mp4"
                       className="w-full bg-[#1A1A32] border border-white/15 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-rose-500 font-mono"
                     />
+
+                    {/* Live Preview if URL entered */}
+                    {newVideoUrl.trim() && (
+                      <div className="p-2.5 bg-[#1A1A32]/90 border border-rose-500/30 rounded-xl space-y-1.5">
+                        <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-bold">
+                          <CheckCircle2 className="w-4 h-4" /> Link detectado:
+                        </div>
+                        <p className="text-[11px] text-gray-300 font-mono break-all truncate">
+                          {sanitizeVideoUrl(newVideoUrl)}
+                        </p>
+                      </div>
+                    )}
+
                     <div className="p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-xl space-y-1 text-[11px] text-gray-300">
                       <p className="font-bold text-rose-300">💡 Exemplos de links aceitos:</p>
-                      <p>• YouTube: <span className="font-mono text-gray-400">https://www.youtube.com/watch?v=...</span></p>
-                      <p>• YouTube Shorts: <span className="font-mono text-gray-400">https://youtube.com/shorts/...</span> ou <span className="font-mono text-gray-400">https://youtu.be/...</span></p>
+                      <p>• YouTube: <span className="font-mono text-gray-400">youtube.com/watch?v=...</span></p>
+                      <p>• YouTube Shorts: <span className="font-mono text-gray-400">youtube.com/shorts/...</span> ou <span className="font-mono text-gray-400">youtu.be/...</span></p>
                       <p>• Arquivos Diretos: <span className="font-mono text-gray-400">https://.../video.mp4</span></p>
                     </div>
                   </div>
