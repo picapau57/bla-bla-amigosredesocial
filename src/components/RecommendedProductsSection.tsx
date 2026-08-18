@@ -49,7 +49,30 @@ const RECOMMENDED_PRODUCTS: RecommendedProduct[] = [
     store: 'Hostgator'
   }
 ];
-
+    {
+    id: 'shopee-gadgets',
+    title: 'Gadgets e Acessórios para Celular',
+    description: 'Capinhas, fones, carregadores e outros acessórios para deixar seu celular completo, com ofertas variadas todos os dias.',
+    imageUrl: 'https://images.unsplash.com/photo-1750055129957-6e757ce881dc?auto=format&fit=crop&q=80&w=400',
+    affiliateLink: 'https://s.shopee.com.br/LmXd2XGBM',
+    store: 'Shopee'
+  },
+  {
+    id: 'shopee-saude',
+    title: 'Saúde e Bem-estar',
+    description: 'Vitaminas, suplementos e produtos para cuidar da saúde no dia a dia, com preços que cabem no bolso.',
+    imageUrl: 'https://images.unsplash.com/photo-1592323818181-f9b967ff537c?auto=format&fit=crop&q=80&w=400',
+    affiliateLink: 'https://s.shopee.com.br/qioE1h4le',
+    store: 'Shopee'
+  },
+  {
+    id: 'shopee-calcados-masculinos',
+    title: 'Calçados Masculinos',
+    description: 'Tênis, sapatos e sandálias para todos os estilos, com opções para o dia a dia e ocasiões especiais.',
+    imageUrl: 'https://images.unsplash.com/photo-1608231387042-66d1773070a5?auto=format&fit=crop&q=80&w=400',
+    affiliateLink: 'https://s.shopee.com.br/7psYYxEXLm',
+    store: 'Shopee'
+  }
 export default function RecommendedProductsSection() {
   return (
     <div className="space-y-6" id="recommended-products-panel">
