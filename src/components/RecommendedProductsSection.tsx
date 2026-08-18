@@ -47,9 +47,8 @@ const RECOMMENDED_PRODUCTS: RecommendedProduct[] = [
     price: 'A partir de R$ 9,99/mês',
     affiliateLink: 'https://www.hostgator.com.br/?afiliado=SEU-ID-AQUI',
     store: 'Hostgator'
-  }
-];
-    {
+  },
+  {
     id: 'shopee-gadgets',
     title: 'Gadgets e Acessórios para Celular',
     description: 'Capinhas, fones, carregadores e outros acessórios para deixar seu celular completo, com ofertas variadas todos os dias.',
