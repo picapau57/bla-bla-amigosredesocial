@@ -3,7 +3,7 @@ import { User } from '../types';
 import { 
   Rss, MessageSquare, Megaphone, Users, Calendar, Building2, ShieldCheck, 
   MapPin, Globe, Sparkles, Award, Star, Gem, CheckCircle, ShieldAlert,
-  Pencil, X, Camera, Save, Settings, Briefcase, Gamepad2, Clapperboard, UserPlus, Lightbulb, Gift, Radio
+  Pencil, X, Camera, Save, Settings, Briefcase, Gamepad2, Clapperboard, UserPlus, Lightbulb, Gift, Radio, ShoppingBag
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -168,6 +168,7 @@ export default function Sidebar({
     { id: 'chats', name: 'Bate-Papo em Tempo Real', icon: MessageSquare, color: 'text-indigo-400 font-bold' },
     { id: 'friends', name: 'AMIGOS', icon: UserPlus, color: 'text-pink-400 font-black' },
     { id: 'ads', name: 'Marketplace & Propagandas', icon: Megaphone, color: 'text-orange-400 font-bold' },
+    { id: 'recommended', name: 'Produtos Recomendados', icon: ShoppingBag, color: 'text-emerald-400 font-bold' },
     { id: 'referrals', name: 'Indique & Ganhe (Créditos)', icon: Gift, color: 'text-rose-400 font-black animate-pulse' },
     { id: 'lives', name: 'Bla Bla Live 🔴', icon: Radio, color: 'text-red-400 font-black animate-pulse' },
     { id: 'groups', name: 'Grupos e Comunidades', icon: Users, color: 'text-emerald-400 font-bold' },
