@@ -21,6 +21,7 @@ import UserProfileModal from './components/UserProfileModal';
 import FriendsSection from './components/FriendsSection';
 import PrivacyPolicyPage from './components/PrivacyPolicyPage';
 import TermsOfUsePage from './components/TermsOfUsePage';
+import RecommendedProductsSection from './components/RecommendedProductsSection';
 
 import { 
   Network, Sparkles, ShieldCheck, ChevronRight, CheckCircle, 
@@ -757,6 +758,11 @@ export default function App() {
                       payoutConfig={social.payoutConfig}
                       onPayWithCredits={social.payAdWithCredits}
                     />
+                  )}
+
+                  {/* RECOMMENDED PRODUCTS / AFFILIATE LINKS */}
+                  {activeTab === 'recommended' && (
+                    <RecommendedProductsSection />
                   )}
 
                   {/* REFERRALS / INVITE & EARN HUB */}
