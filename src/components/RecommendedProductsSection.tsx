@@ -73,6 +73,7 @@ const RECOMMENDED_PRODUCTS: RecommendedProduct[] = [
     affiliateLink: 'https://s.shopee.com.br/7psYYxEXLm',
     store: 'Shopee'
   }
+];
 export default function RecommendedProductsSection() {
   return (
     <div className="space-y-6" id="recommended-products-panel">
