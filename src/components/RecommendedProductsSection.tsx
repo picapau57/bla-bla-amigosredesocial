@@ -71,6 +71,14 @@ const RECOMMENDED_PRODUCTS: RecommendedProduct[] = [
     imageUrl: 'https://images.unsplash.com/photo-1608231387042-66d1773070a5?auto=format&fit=crop&q=80&w=400',
     affiliateLink: 'https://s.shopee.com.br/7psYYxEXLm',
     store: 'Shopee'
+  }, 
+    {
+    id: 'magalu-loja',
+    title: 'Loja Oficial Blablaamigos no Magalu',
+    description: 'Confira a nossa loja parceira no Magalu, com ofertas em móveis, eletrodomésticos, celulares e muito mais para a sua casa.',
+    imageUrl: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&q=80&w=400',
+    affiliateLink: 'https://www.magazinevoce.com.br/magazineblablaamigos/',
+    store: 'Magalu'
   }
 ];
 export default function RecommendedProductsSection() {
