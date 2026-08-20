@@ -16,6 +16,7 @@ import GamesSection from './components/GamesSection';
 import ReelsSection from './components/ReelsSection';
 import IdeasSection from './components/IdeasSection';
 import ReferralsSection from './components/ReferralsSection';
+import WalletSection from './components/WalletSection';
 import LivesSection from './components/LivesSection';
 import UserProfileModal from './components/UserProfileModal';
 import FriendsSection from './components/FriendsSection';
@@ -775,6 +776,14 @@ export default function App() {
                     />
                   )}
 
+                  {/* MY WALLET / WITHDRAW EARNINGS */}
+                  {activeTab === 'wallet' && (
+                    <WalletSection
+                      currentUser={social.currentUser}
+                      payoutRequests={social.payoutRequests}
+                      onCreatePayoutRequest={social.createPayoutRequest}
+                      setActiveTab={setActiveTab}
+                    />
                   {/* LIVE STREAMING SPACE */}
                   {activeTab === 'lives' && (
                     <LivesSection
