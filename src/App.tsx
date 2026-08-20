@@ -784,6 +784,7 @@ export default function App() {
                       onCreatePayoutRequest={social.createPayoutRequest}
                       setActiveTab={setActiveTab}
                     />
+                  )}
                   {/* LIVE STREAMING SPACE */}
                   {activeTab === 'lives' && (
                     <LivesSection
@@ -905,8 +906,10 @@ export default function App() {
                       payoutRequests={social.payoutRequests}
                       onCreatePayoutRequest={social.createPayoutRequest}
                       onUpdatePayoutRequestStatus={social.updatePayoutRequestStatus}
-                    />
-                  )}
+                      onRejectPayoutRequestAndRefund={social.rejectPayoutRequestAndRefund}
+                      />
+                     )}
+                
 
                 </motion.div>
               </AnimatePresence>
