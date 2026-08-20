@@ -17,6 +17,7 @@ import ReelsSection from './components/ReelsSection';
 import IdeasSection from './components/IdeasSection';
 import ReferralsSection from './components/ReferralsSection';
 import WalletSection from './components/WalletSection';
+import BuyCreditsSection from './components/BuyCreditsSection';
 import LivesSection from './components/LivesSection';
 import UserProfileModal from './components/UserProfileModal';
 import FriendsSection from './components/FriendsSection';
@@ -786,6 +787,13 @@ export default function App() {
                     />
                   )}
                   {/* LIVE STREAMING SPACE */}
+                  {/* BUY CREDITS VIA MERCADO PAGO */}
+                  {activeTab === 'buy_credits' && (
+                    <BuyCreditsSection
+                      currentUser={social.currentUser}
+                      setActiveTab={setActiveTab}
+                    />
+                  )}
                   {activeTab === 'lives' && (
                     <LivesSection
                       currentUser={social.currentUser}
