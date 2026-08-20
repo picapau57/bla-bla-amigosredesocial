@@ -37,6 +37,7 @@ interface AdminSectionProps {
   payoutRequests: PayoutRequest[];
   onCreatePayoutRequest: (amount: number, details: string) => void;
   onUpdatePayoutRequestStatus: (id: string, status: 'pending' | 'processing' | 'paid' | 'rejected', notes?: string) => void;
+  onRejectPayoutRequestAndRefund: (id: string) => void;
 }
 
 export default function AdminSection({
@@ -60,7 +61,8 @@ export default function AdminSection({
   onUpdatePayoutConfig,
   payoutRequests,
   onCreatePayoutRequest,
-  onUpdatePayoutRequestStatus
+  onUpdatePayoutRequestStatus, 
+  onRejectPayoutRequestAndRefund
 }: AdminSectionProps) {
   const [adminActiveSubTab, setAdminActiveSubTab] = useState<'dashboard' | 'users' | 'posts' | 'ads_moderation' | 'logs' | 'email_settings' | 'finance_settings'>('dashboard');
 
@@ -964,6 +966,7 @@ export default function AdminSection({
                         <div className="min-w-0 space-y-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-xs font-mono font-black text-[#00E676]">R$ {req.amount.toFixed(2)}</span>
+                             {req.userName && ( <span className="text-[9px] text-[#00E5FF] font-mono font-bold">@{req.userName}</span> )}
                             <span className="text-[9px] text-gray-500 font-mono">{new Date(req.requestedAt).toLocaleString()}</span>
                             <span className={`text-[8px] font-mono px-2 py-0.5 rounded font-extrabold uppercase ${
                               req.status === 'paid' ? 'bg-[#00E676]/20 text-[#00E676]' :
@@ -1009,11 +1012,13 @@ export default function AdminSection({
                                 className="bg-[#00E676]/10 hover:bg-[#00E676] hover:text-[#0A0A14] text-[#00E676] font-mono text-[9px] font-bold px-2.5 py-1.5 rounded transition-all cursor-pointer border border-[#00E676]/20 hover:border-transparent uppercase"
                               >
                                 Pagar
-                              </button>
                               <button
                                 onClick={() => {
                                   const reason = window.prompt('Digite a justificativa de recusa:', 'Chave Pix inválida ou dados bancários incorretos.');
-                                  if (reason !== null) {
+                                  if (reason === null) return;
+                                  if (req.userId) {
+                                    onRejectPayoutRequestAndRefund(req.id);
+                                  } else {
                                     onUpdatePayoutRequestStatus(req.id, 'rejected', reason || 'Cancelado pelo usuário.');
                                   }
                                 }}
