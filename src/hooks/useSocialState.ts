@@ -1929,6 +1929,7 @@ export function useSocialState() {
     payoutRequests,
     createPayoutRequest,
     updatePayoutRequestStatus,
+    rejectPayoutRequestAndRefund,
     friendRequests,
     sendFriendRequest,
     acceptFriendRequest,
