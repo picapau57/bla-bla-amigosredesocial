@@ -233,6 +233,8 @@ export interface PayoutRequest {
   processedAt?: string;
   notes?: string;
   destinationDetails: string;
+  userId?: string;
+  userName?: string;
 }
 
 export interface Idea {
