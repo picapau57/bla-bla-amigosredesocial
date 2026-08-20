@@ -1012,6 +1012,7 @@ export default function AdminSection({
                                 className="bg-[#00E676]/10 hover:bg-[#00E676] hover:text-[#0A0A14] text-[#00E676] font-mono text-[9px] font-bold px-2.5 py-1.5 rounded transition-all cursor-pointer border border-[#00E676]/20 hover:border-transparent uppercase"
                               >
                                 Pagar
+                              </button>
                               <button
                                 onClick={() => {
                                   const reason = window.prompt('Digite a justificativa de recusa:', 'Chave Pix inválida ou dados bancários incorretos.');
