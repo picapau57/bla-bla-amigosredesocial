@@ -1356,17 +1356,46 @@ export function useSocialState() {
     logAction('success', `Financeiro: Configuração do gateway de recebimento atualizada para ${config.gateway.toUpperCase()}.`);
   };
 
-  const createPayoutRequest = (amount: number, destinationDetails: string) => {
+   const createPayoutRequest = (amount: number, destinationDetails: string, userId?: string, userName?: string) => {
+    if (userId) {
+      const requestingUser = users.find(u => u.id === userId);
+      const currentBalance = requestingUser?.adCredits !== undefined ? requestingUser.adCredits : 100;
+      if (currentBalance < amount) {
+        alert(`Saldo insuficiente para solicitar este saque. Saldo atual: R$ ${currentBalance.toFixed(2)}.`);
+        return;
+      }
+      const updatedUser = { ...requestingUser!, adCredits: currentBalance - amount };
+      setUsers(prev => prev.map(u => u.id === userId ? updatedUser : u));
+      setDoc(doc(db, 'users', userId), updatedUser).catch(err => console.error(err));
+    }
+
     const newRequest: PayoutRequest = {
       id: `req-${Date.now()}`,
       amount,
       status: 'pending',
       requestedAt: new Date().toISOString(),
-      destinationDetails
+      destinationDetails,
+      userId,
+      userName
     };
     setPayoutRequests(prev => [newRequest, ...prev]);
     setDoc(doc(db, 'payout_requests', newRequest.id), newRequest).catch(e => console.error(e));
-    logAction('info', `Financeiro: Nova solicitação de saque criada no valor de R$ ${amount.toFixed(2)}.`);
+    logAction('info', `Financeiro: Nova solicitação de saque criada${userName ? ` por @${userName}` : ''} no valor de R$ ${amount.toFixed(2)}.`);
+  };
+
+  const rejectPayoutRequestAndRefund = (requestId: string) => {
+    const found = payoutRequests.find(r => r.id === requestId);
+    if (!found) return;
+    if (found.userId) {
+      const requestingUser = users.find(u => u.id === found.userId);
+      if (requestingUser) {
+        const currentBalance = requestingUser.adCredits !== undefined ? requestingUser.adCredits : 100;
+        const updatedUser = { ...requestingUser, adCredits: currentBalance + found.amount };
+        setUsers(prev => prev.map(u => u.id === found.userId ? updatedUser : u));
+        setDoc(doc(db, 'users', found.userId), updatedUser).catch(err => console.error(err));
+      }
+    }
+    updatePayoutRequestStatus(requestId, 'rejected', 'Cancelado, valor estornado para a carteira do usuário.');
   };
 
   const updatePayoutRequestStatus = (requestId: string, status: 'pending' | 'processing' | 'paid' | 'rejected', notes?: string) => {
