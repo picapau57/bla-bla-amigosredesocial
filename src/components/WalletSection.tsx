@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { User, PayoutRequest } from '../types';
 import {
   Wallet, DollarSign, ArrowRight, Gift, AlertCircle, CheckCircle2,
-  Clock, XCircle, Loader, Radio, Sparkles
+  Clock, XCircle, Loader, Radio, Sparkles, CreditCard
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -84,9 +84,15 @@ export default function WalletSection({
             >
               <Radio className="w-3 h-3" /> Fazer uma live agora
             </button>
+            <span className="text-[9px] text-gray-600">•</span>
+            <button
+              onClick={() => setActiveTab('buy_credits')}
+                className="text-[9px] text-[#B39DFF] hover:underline font-sans flex items-center justify-center gap-1"
+              >
+                <CreditCard className="w-3 h-3" /> Comprar créditos
+              </button>
+            </div>
           </div>
-        </div>
-      </div>
 
       {/* IMPORTANT NOTICE — honest framing for the person, not hidden in fine print */}
       <div className="p-4 bg-amber-500/5 rounded-2xl border border-amber-500/10 text-xs text-gray-300 flex items-start gap-2.5">
