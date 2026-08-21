@@ -98,11 +98,10 @@ export default function WalletSection({
       {/* IMPORTANT NOTICE — honest framing for the person, not hidden in fine print */}
       <div className="p-4 bg-amber-500/5 rounded-2xl border border-amber-500/10 text-xs text-gray-300 flex items-start gap-2.5">
         <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-        <p className="leading-relaxed">
-          Este saldo usa a mesma carteira de créditos do programa <strong>Indique &amp; Ganhe</strong>. Enquanto não houver
-          um meio de <strong>compra de créditos com dinheiro real</strong> (via Pix/cartão) conectado à plataforma,
-          o saldo disponível vem de bônus de indicação e presentes simulados entre usuários da rede — ainda não de
-          espectadores externos pagando de verdade.
+                <p className="leading-relaxed">
+          Este saldo é composto por <strong>créditos comprados com dinheiro real</strong> (via Pix ou cartão),
+          bônus do programa <strong>Indique &amp; Ganhe</strong> e presentes recebidos em lives de outros usuários
+          da rede.
         </p>
       </div>
 
