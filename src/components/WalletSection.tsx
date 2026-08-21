@@ -93,6 +93,7 @@ export default function WalletSection({
               </button>
             </div>
           </div>
+        </div>
 
       {/* IMPORTANT NOTICE — honest framing for the person, not hidden in fine print */}
       <div className="p-4 bg-amber-500/5 rounded-2xl border border-amber-500/10 text-xs text-gray-300 flex items-start gap-2.5">
