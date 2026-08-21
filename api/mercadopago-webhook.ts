@@ -17,9 +17,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ received: true });
     }
 
-    const client = getMercadoPagoClient();
+        const client = getMercadoPagoClient();
     const paymentClient = new Payment(client);
-    const payment = await paymentClient.get({ id: paymentId as string });
+
+    // Tenta buscar o pagamento algumas vezes: o Mercado Pago às vezes avisa
+    // o webhook um pouco antes do pagamento ficar disponível para consulta.
+    let payment: Awaited<ReturnType<typeof paymentClient.get>> | null = null;
+    let lastError: any = null;
+    for (let attempt = 1; attempt <= 4; attempt++) {
+      try {
+        payment = await paymentClient.get({ id: paymentId as string });
+        break;
+      } catch (err) {
+        lastError = err;
+        if (attempt < 4) {
+          await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+        }
+      }
+    }
+    if (!payment) {
+      throw lastError || new Error('Payment not found after retries');
+    }
 
     if (payment.status !== 'approved') {
       return res.status(200).json({ received: true, status: payment.status });
