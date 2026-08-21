@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Payment } from 'mercadopago';
-import { getMercadoPagoClient } from './_lib/mercadopago';
-import { getFirebaseAdminFirestore } from './_lib/firebaseAdmin';
+import { getMercadoPagoClient } from './_lib/mercadopago.js';
+import { getFirebaseAdminFirestore } from './_lib/firebaseAdmin.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Sempre responde 200 rápido para o Mercado Pago não ficar reenviando.
