@@ -24,8 +24,8 @@ export default function WalletSection({
   const [pixKey, setPixKey] = useState<string>('');
   const [holderName, setHolderName] = useState<string>('');
   const [showSuccess, setShowSuccess] = useState<boolean>(false);
-
-  const balance = currentUser.adCredits !== undefined ? currentUser.adCredits : 100;
+  
+  const balance = currentUser.adCredits ?? 0;
   const MIN_WITHDRAW = 20;
 
   const myRequests = payoutRequests
