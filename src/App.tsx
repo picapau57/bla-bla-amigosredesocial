@@ -802,6 +802,7 @@ export default function App() {
                       liveMessages={social.liveMessages}
                       createLive={social.createLive}
                       endLive={social.endLive}
+                      deleteLive={social.deleteLive}
                       sendLiveMessage={social.sendLiveMessage}
                       sendLiveGift={social.sendLiveGift}
                     />
