@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { RtcTokenBuilder, RtcRole } from 'agora-token';
+import pkg from 'agora-token';
+const { RtcTokenBuilder, RtcRole } = pkg;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
