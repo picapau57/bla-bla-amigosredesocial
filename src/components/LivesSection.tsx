@@ -494,27 +494,28 @@ export default function LivesSection({
                 )
               ) : (
                 // Watcher simulated player
-                isPlaying ? (
+                  isPlaying ? (
                   <div className="absolute inset-0 w-full h-full">
-                    {/* Live stream graphic loop / simulated webcam stream from unsplash */}
-                    <img 
-                      src={selectedLive.coverImage || 'https://images.unsplash.com/photo-1516280440614-37939bbacd6a?auto=format&fit=crop&q=80&w=800'} 
-                      alt="Stream Video" 
-                      className="w-full h-full object-cover blur-[2px] scale-105 brightness-95" 
-                    />
-                    
-                    {/* Pulsing overlay pattern */}
-                    <div className="absolute inset-0 bg-gradient-to-tr from-indigo-950/60 via-transparent to-purple-950/60 mix-blend-color-dodge animate-pulse" />
-                    
-                    {/* Stream status animated widget */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-                      <div className="w-14 h-14 rounded-full bg-[#00E5FF]/10 border border-[#00E5FF]/20 flex items-center justify-center text-[#00E5FF] animate-bounce shadow-2xl shadow-[#00E5FF]/10">
-                        <Radio className="w-7 h-7" />
-                      </div>
-                      <span className="text-xs font-mono tracking-widest text-white/80 bg-black/60 px-3 py-1 rounded-full border border-white/5 uppercase">
-                        Sinal Estável • 1080p 60fps
-                      </span>
-                    </div>
+                    {remoteVideoTrack ? (
+                      <div ref={viewerVideoRef} className="w-full h-full [&>div]:!w-full [&>div]:!h-full" />
+                    ) : (
+                      <>
+                        <img 
+                          src={selectedLive.coverImage || 'https://images.unsplash.com/photo-1516280440614-37939bbacd6a?auto=format&fit=crop&q=80&w=800'} 
+                          alt="Stream Video" 
+                          className="w-full h-full object-cover blur-[2px] scale-105 brightness-95" 
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-tr from-indigo-950/60 via-transparent to-purple-950/60 mix-blend-color-dodge animate-pulse" />
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                          <div className="w-14 h-14 rounded-full bg-[#00E5FF]/10 border border-[#00E5FF]/20 flex items-center justify-center text-[#00E5FF] animate-bounce shadow-2xl shadow-[#00E5FF]/10">
+                            <Radio className="w-7 h-7" />
+                          </div>
+                          <span className="text-xs font-mono tracking-widest text-white/80 bg-black/60 px-3 py-1 rounded-full border border-white/5 uppercase">
+                            Aguardando o streamer conectar...
+                          </span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ) : (
                   <div className="text-center space-y-2">
