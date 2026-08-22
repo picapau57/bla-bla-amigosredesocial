@@ -163,6 +163,13 @@ export default function LivesSection({
     };
   }, [selectedLive, studioActive, cameraEnabled]);
   // Stream uptime counter
+  
+  // Garante que o vídeo remoto seja "plugado" na div assim que ela existir na tela
+  useEffect(() => {
+    if (remoteVideoTrack && viewerVideoRef.current) {
+      remoteVideoTrack.play(viewerVideoRef.current);
+    }
+  }, [remoteVideoTrack]);
   useEffect(() => {
     if (studioActive) {
       timerRef.current = setInterval(() => {
