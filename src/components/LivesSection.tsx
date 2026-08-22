@@ -311,10 +311,6 @@ export default function LivesSection({
       await endLive(selectedLive.id);
       setStudioActive(false);
       setSelectedLive(null);
-      if (localStream) {
-        localStream.getTracks().forEach(track => track.stop());
-        setLocalStream(null);
-      }
     }
   };
 
