@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import AgoraRTC, { IAgoraRTCClient, ICameraVideoTrack, IMicrophoneAudioTrack, IRemoteVideoTrack } from 'agora-rtc-sdk-ng';
 import { 
   Video, VideoOff, Mic, MicOff, Send, Gift, Heart, Sparkles, Users, 
   Award, DollarSign, X, Play, Pause, Volume2, VolumeX, Flame, 
@@ -63,8 +64,13 @@ export default function LivesSection({
   const [micEnabled, setMicEnabled] = useState<boolean>(true);
   const [studioActive, setStudioActive] = useState<boolean>(false);
   const [streamUptime, setStreamUptime] = useState<number>(0);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const videoRef = useRef<HTMLDivElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const agoraClientRef = useRef<IAgoraRTCClient | null>(null);
+  const localVideoTrackRef = useRef<ICameraVideoTrack | null>(null);
+  const localAudioTrackRef = useRef<IMicrophoneAudioTrack | null>(null);
+  const [remoteVideoTrack, setRemoteVideoTrack] = useState<IRemoteVideoTrack | null>(null);
+  const viewerVideoRef = useRef<HTMLDivElement | null>(null);
 
   // Auto scroll chat
   useEffect(() => {
