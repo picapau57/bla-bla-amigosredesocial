@@ -79,34 +79,89 @@ export default function LivesSection({
     }
   }, [liveMessages, selectedLive]);
 
-  // Handle webcam stream for studio
+    // Handle Agora RTC connection for studio (broadcaster) and viewer
   useEffect(() => {
-    if (studioActive && cameraEnabled) {
-      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-        .then(stream => {
-          setLocalStream(stream);
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-          }
-        })
-        .catch(err => {
-          console.warn('Câmera ou Microfone não disponíveis ou permissão negada:', err);
-          setCameraEnabled(false);
-        });
-    } else if (!studioActive || !cameraEnabled) {
-      if (localStream) {
-        localStream.getTracks().forEach(track => track.stop());
-        setLocalStream(null);
-      }
-    }
+    if (!selectedLive) return;
 
-    return () => {
-      if (localStream) {
-        localStream.getTracks().forEach(track => track.stop());
+    const isBroadcaster = studioActive;
+    let cancelled = false;
+
+    const setup = async () => {
+      const client = AgoraRTC.createClient({ mode: 'live', codec: 'vp8' });
+      agoraClientRef.current = client;
+      client.setClientRole(isBroadcaster ? 'host' : 'audience');
+
+      const uid = Math.floor(Math.random() * 1000000);
+      const channelName = `live-${selectedLive.id}`;
+
+      const tokenRes = await fetch('/api/agora-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channelName, uid, role: isBroadcaster ? 'broadcaster' : 'audience' }),
+      });
+      const tokenData = await tokenRes.json();
+      if (!tokenData.success) {
+        console.error('Erro ao obter token do Agora:', tokenData.error);
+        return;
+      }
+      if (cancelled) return;
+
+      await client.join(tokenData.appId, channelName, tokenData.token, uid);
+      if (cancelled) return;
+
+      if (isBroadcaster) {
+        if (cameraEnabled) {
+          const [audioTrack, videoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
+          localAudioTrackRef.current = audioTrack;
+          localVideoTrackRef.current = videoTrack;
+          if (videoRef.current) {
+            videoTrack.play(videoRef.current);
+          }
+          await client.publish([audioTrack, videoTrack]);
+        }
+      } else {
+        client.on('user-published', async (user, mediaType) => {
+          await client.subscribe(user, mediaType);
+          if (mediaType === 'video') {
+            setRemoteVideoTrack(user.videoTrack || null);
+            if (viewerVideoRef.current && user.videoTrack) {
+              user.videoTrack.play(viewerVideoRef.current);
+            }
+          }
+          if (mediaType === 'audio') {
+            user.audioTrack?.play();
+          }
+        });
+        client.on('user-unpublished', () => {
+          setRemoteVideoTrack(null);
+        });
       }
     };
-  }, [studioActive, cameraEnabled]);
 
+    setup().catch(err => {
+      console.error('Erro ao conectar na live via Agora:', err);
+      if (isBroadcaster) setCameraEnabled(false);
+    });
+
+    return () => {
+      cancelled = true;
+      const client = agoraClientRef.current;
+      if (localAudioTrackRef.current) {
+        localAudioTrackRef.current.close();
+        localAudioTrackRef.current = null;
+      }
+      if (localVideoTrackRef.current) {
+        localVideoTrackRef.current.close();
+        localVideoTrackRef.current = null;
+      }
+      if (client) {
+        client.removeAllListeners();
+        client.leave().catch(() => {});
+        agoraClientRef.current = null;
+      }
+      setRemoteVideoTrack(null);
+    };
+  }, [selectedLive, studioActive, cameraEnabled]);
   // Stream uptime counter
   useEffect(() => {
     if (studioActive) {
@@ -422,12 +477,9 @@ export default function LivesSection({
               {studioActive ? (
                 // Broadcaster video interface
                 cameraEnabled ? (
-                  <video
+                  <div
                     ref={videoRef}
-                    autoPlay
-                    muted
-                    playsInline
-                    className="w-full h-full object-cover transform -scale-x-100"
+                    className="w-full h-full [&>div]:!w-full [&>div]:!h-full"
                   />
                 ) : (
                   <div className="text-center space-y-4">
