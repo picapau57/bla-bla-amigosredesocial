@@ -453,7 +453,18 @@ export function useSocialState() {
     try {
       const credential = await signInWithEmailAndPassword(auth, email, password);
       const uid = credential.user.uid;
-      const u = users.find(x => x.id === uid);
+
+      // SPECIAL CASE: the admin account uses a fixed profile id ('admin') across
+      // the whole app (permission checks like `currentUserId === 'admin'`), but
+      // Firebase Authentication always generates its own random UID for every
+      // account — it will never literally be the string "admin". So instead of
+      // looking the profile up by the Firebase-generated uid (which can never
+      // match), we detect the admin by e-mail and resolve straight to the
+      // 'admin' profile that already exists in `users`.
+      const isAdminEmail = email.trim().toLowerCase() === 'admin@blablaamigos.com.br';
+      const u = isAdminEmail
+        ? users.find(x => x.id === 'admin')
+        : users.find(x => x.id === uid);
 
       if (!u) {
         return { success: false, message: 'Conta autenticada, mas o perfil não foi encontrado. Tente novamente em instantes.' };
@@ -463,7 +474,9 @@ export function useSocialState() {
         return { success: false, message: 'Esta conta está temporariamente bloqueada pela moderação.' };
       }
 
-      setCurrentUserId(uid);
+      // Use u.id (not the raw Firebase uid) so the admin case above resolves
+      // correctly to the fixed 'admin' profile id used by permission checks.
+      setCurrentUserId(u.id);
       logAction('info', `Usuário '${u.fullName}' (@${u.username}) conectou-se à rede.`);
       return { success: true };
     } catch (err: any) {
@@ -1659,6 +1672,33 @@ export function useSocialState() {
       .catch(err => handleFirestoreError(err, OperationType.WRITE, 'lives'));
   };
 
+  // Deletes a live permanently (the record itself, plus its chat messages).
+  // Allowed for the live's own owner, or for the admin (moderation).
+  const deleteLive = async (liveId: string) => {
+    const targetLive = lives.find(l => l.id === liveId);
+    if (!targetLive) return;
+
+    const isOwner = targetLive.userId === currentUser.id;
+    const isAdmin = currentUserId === 'admin';
+    if (!isOwner && !isAdmin) {
+      logAction('error', `SEGURANÇA: Tentativa não autorizada de excluir a live "${targetLive.title}" foi bloqueada.`);
+      alert('Segurança: Você não tem permissão para excluir esta live!');
+      return;
+    }
+
+    setLives(prev => prev.filter(l => l.id !== liveId));
+    setLiveMessages(prev => prev.filter(m => m.liveId !== liveId));
+
+    await deleteDoc(doc(db, 'lives', liveId)).catch(err => handleFirestoreError(err, OperationType.DELETE, 'lives'));
+
+    const relatedMessages = liveMessages.filter(m => m.liveId === liveId);
+    for (const m of relatedMessages) {
+      deleteDoc(doc(db, 'live_messages', m.id)).catch(e => console.error(e));
+    }
+
+    logAction(isAdmin && !isOwner ? 'warning' : 'info', `${isAdmin && !isOwner ? 'MODERAÇÃO: A' : 'A'}Live "${targetLive.title}" foi excluída${isAdmin && !isOwner ? ' pelo administrador' : ''}.`);
+  };
+
   const sendLiveMessage = async (
     liveId: string, 
     text: string, 
@@ -1876,6 +1916,7 @@ export function useSocialState() {
     liveMessages,
     createLive,
     endLive,
+    deleteLive,
     sendLiveMessage,
     sendLiveGift,
     simulateReferral,
