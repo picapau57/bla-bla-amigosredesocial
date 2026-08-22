@@ -3,7 +3,8 @@ import AgoraRTC, { IAgoraRTCClient, ICameraVideoTrack, IMicrophoneAudioTrack, IR
 import { 
   Video, VideoOff, Mic, MicOff, Send, Gift, Heart, Sparkles, Users, 
   Award, DollarSign, X, Play, Pause, Volume2, VolumeX, Flame, 
-  Clock, Calendar, Search, Radio, Tv, AlertCircle, CheckCircle2, Monitor, Trophy
+  Clock, Calendar, Search, Radio, Tv, AlertCircle, CheckCircle2, Monitor, Trophy,
+  Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { User, LiveStream, LiveChatMessage } from '../types';
@@ -15,6 +16,7 @@ interface LivesSectionProps {
   liveMessages: LiveChatMessage[];
   createLive: (title: string, description: string, category: string, coverImage?: string, scheduledFor?: string) => Promise<string>;
   endLive: (liveId: string) => Promise<void>;
+  deleteLive: (liveId: string) => Promise<void>;
   sendLiveMessage: (liveId: string, text: string, isGift?: boolean, giftType?: string, giftValue?: number) => Promise<void>;
   sendLiveGift: (liveId: string, giftType: 'like' | 'rose' | 'coffee' | 'heart' | 'trophy' | 'diamond', giftValue: number) => Promise<boolean>;
 }
@@ -32,6 +34,7 @@ export default function LivesSection({
   liveMessages,
   createLive,
   endLive,
+  deleteLive,
   sendLiveMessage,
   sendLiveGift
 }: LivesSectionProps) {
@@ -57,6 +60,7 @@ export default function LivesSection({
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [flyingReactions, setFlyingReactions] = useState<FlyingReaction[]>([]);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
+  const chatScrollRef = useRef<HTMLDivElement | null>(null);
 
   // Streaming studio variables (for broadcaster)
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -73,9 +77,17 @@ export default function LivesSection({
   const viewerVideoRef = useRef<HTMLDivElement | null>(null);
 
   // Auto scroll chat
+  // IMPORTANT: we scroll the chat container itself (chatScrollRef.scrollTop),
+  // NOT chatEndRef.scrollIntoView(). scrollIntoView() looks for the nearest
+  // scrollable ancestor, and right when a live opens the chat container can
+  // still have height 0 (not laid out yet) — in that case the browser falls
+  // back to scrolling the *whole page*, which is exactly the "a página sobe
+  // sozinha" bug. Setting scrollTop directly only ever affects this one
+  // container and can never move the page.
   useEffect(() => {
-    if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    const container = chatScrollRef.current;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
     }
   }, [liveMessages, selectedLive]);
 
@@ -665,7 +677,7 @@ export default function LivesSection({
             </div>
 
             {/* Chat message listing (scrollable) */}
-            <div className="flex-1 p-4 overflow-y-auto space-y-3 no-scrollbar">
+            <div ref={chatScrollRef} className="flex-1 p-4 overflow-y-auto space-y-3 no-scrollbar">
               
               {/* Default Welcome message */}
               <div className="p-3 bg-white/5 rounded-xl border border-white/5 space-y-1">
@@ -904,6 +916,21 @@ export default function LivesSection({
                             <Users className="w-3 h-3 text-[#00E5FF]" />
                             <span>{live.viewerCount} assistindo</span>
                           </div>
+
+                          {(live.userId === currentUser.id || currentUser.id === 'admin') && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (window.confirm(`Excluir a live "${live.title}" permanentemente?`)) {
+                                  deleteLive(live.id);
+                                }
+                              }}
+                              title="Excluir live"
+                              className="absolute bottom-3 right-3 p-1.5 rounded-md bg-black/70 hover:bg-red-500/80 text-gray-300 hover:text-white transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
 
                         {/* Stream card details */}
@@ -983,11 +1010,27 @@ export default function LivesSection({
                           </div>
                         </div>
 
-                        <div className="bg-[#0A0A14] border border-white/5 rounded-xl p-3 text-right shrink-0 min-w-[150px] space-y-1">
-                          <span className="text-[10px] text-gray-500 uppercase font-mono block">Data & Horário:</span>
-                          <span className="text-xs font-mono font-bold text-purple-400 block">
-                            {live.scheduledFor ? new Date(live.scheduledFor).toLocaleString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'Em breve'}
-                          </span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <div className="bg-[#0A0A14] border border-white/5 rounded-xl p-3 text-right min-w-[150px] space-y-1">
+                            <span className="text-[10px] text-gray-500 uppercase font-mono block">Data & Horário:</span>
+                            <span className="text-xs font-mono font-bold text-purple-400 block">
+                              {live.scheduledFor ? new Date(live.scheduledFor).toLocaleString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'Em breve'}
+                            </span>
+                          </div>
+
+                          {(live.userId === currentUser.id || currentUser.id === 'admin') && (
+                            <button
+                              onClick={() => {
+                                if (window.confirm(`Excluir a live agendada "${live.title}" permanentemente?`)) {
+                                  deleteLive(live.id);
+                                }
+                              }}
+                              title="Excluir live agendada"
+                              className="p-2.5 rounded-xl bg-black/40 hover:bg-red-500/80 text-gray-400 hover:text-white border border-white/5 transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -1118,3 +1161,4 @@ export default function LivesSection({
     </div>
   );
 }
+
