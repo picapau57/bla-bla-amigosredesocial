@@ -75,6 +75,14 @@ export default function LivesSection({
   const localAudioTrackRef = useRef<IMicrophoneAudioTrack | null>(null);
   const [remoteVideoTrack, setRemoteVideoTrack] = useState<IRemoteVideoTrack | null>(null);
   const viewerVideoRef = useRef<HTMLDivElement | null>(null);
+  const remoteAudioTrackRef = useRef<{ play: () => void } | null>(null);
+  // Mobile browsers (mainly iOS Safari and in-app WebViews) block autoplay of
+  // audio/video that isn't triggered by a direct user tap. When that happens,
+  // Agora fires 'autoplay-failed' and the .play() call above silently does
+  // nothing — video stays black with no error. This flag drives a "toque
+  // para assistir" overlay so the user's own tap satisfies the browser's
+  // gesture requirement and playback can start.
+  const [autoplayBlocked, setAutoplayBlocked] = useState<boolean>(false);
 
   // Auto scroll chat
   // IMPORTANT: we scroll the chat container itself (chatScrollRef.scrollTop),
@@ -97,6 +105,12 @@ export default function LivesSection({
 
     const isBroadcaster = studioActive;
     let cancelled = false;
+
+    // Global Agora event: fires whenever a track's play() was silently
+    // blocked by the browser's autoplay policy (mostly mobile). We surface a
+    // tap-to-play overlay instead of leaving a black screen with no feedback.
+    const handleAutoplayFailed = () => setAutoplayBlocked(true);
+    AgoraRTC.onAutoplayFailed = handleAutoplayFailed;
 
     const setup = async () => {
       const client = AgoraRTC.createClient({ mode: 'live', codec: 'vp8' });
@@ -137,11 +151,22 @@ export default function LivesSection({
           if (mediaType === 'video') {
             setRemoteVideoTrack(user.videoTrack || null);
             if (viewerVideoRef.current && user.videoTrack) {
-              user.videoTrack.play(viewerVideoRef.current);
+              try {
+                await user.videoTrack.play(viewerVideoRef.current);
+              } catch {
+                // Autoplay blocked by the browser (very common on mobile).
+                // AgoraRTC.onAutoplayFailed below will catch this and show
+                // the "toque para assistir" overlay.
+              }
             }
           }
-          if (mediaType === 'audio') {
-            user.audioTrack?.play();
+          if (mediaType === 'audio' && user.audioTrack) {
+            remoteAudioTrackRef.current = user.audioTrack;
+            try {
+              await user.audioTrack.play();
+            } catch {
+              // Same as above — handled by the autoplay-failed overlay.
+            }
           }
         });
         client.on('user-unpublished', () => {
@@ -171,9 +196,24 @@ export default function LivesSection({
         client.leave().catch(() => {});
         agoraClientRef.current = null;
       }
+      if (AgoraRTC.onAutoplayFailed === handleAutoplayFailed) {
+        AgoraRTC.onAutoplayFailed = undefined;
+      }
+      remoteAudioTrackRef.current = null;
+      setAutoplayBlocked(false);
       setRemoteVideoTrack(null);
     };
   }, [selectedLive, studioActive, cameraEnabled]);
+
+  // Called when the viewer taps the "toque para assistir" overlay. The tap
+  // itself is the user gesture browsers require before allowing playback.
+  const handleTapToPlay = () => {
+    if (viewerVideoRef.current && remoteVideoTrack) {
+      remoteVideoTrack.play(viewerVideoRef.current);
+    }
+    remoteAudioTrackRef.current?.play();
+    setAutoplayBlocked(false);
+  };
   // Stream uptime counter
   
   // Garante que o vídeo remoto seja "plugado" na div assim que ela existir na tela
@@ -512,7 +552,21 @@ export default function LivesSection({
                   isPlaying ? (
                   <div className="absolute inset-0 w-full h-full">
                     {remoteVideoTrack ? (
-                      <div ref={viewerVideoRef} className="w-full h-full [&>div]:!w-full [&>div]:!h-full" />
+                      <>
+                        <div ref={viewerVideoRef} className="w-full h-full [&>div]:!w-full [&>div]:!h-full" />
+                        {autoplayBlocked && (
+                          <button
+                            onClick={handleTapToPlay}
+                            className="absolute inset-0 w-full h-full flex flex-col items-center justify-center gap-3 bg-black/70 cursor-pointer"
+                          >
+                            <div className="w-16 h-16 rounded-full bg-[#00E5FF]/20 border border-[#00E5FF]/30 flex items-center justify-center text-[#00E5FF]">
+                              <Play className="w-8 h-8 ml-1" />
+                            </div>
+                            <span className="text-sm font-semibold text-white">Toque para assistir</span>
+                            <span className="text-xs text-gray-400 max-w-[220px] text-center">Seu navegador bloqueia a reprodução automática. Toque para iniciar o vídeo.</span>
+                          </button>
+                        )}
+                      </>
                     ) : (
                       <>
                         <img 
