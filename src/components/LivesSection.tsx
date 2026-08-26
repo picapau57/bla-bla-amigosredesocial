@@ -83,6 +83,11 @@ export default function LivesSection({
   // para assistir" overlay so the user's own tap satisfies the browser's
   // gesture requirement and playback can start.
   const [autoplayBlocked, setAutoplayBlocked] = useState<boolean>(false);
+  // If we're still waiting for the host's video after several seconds (and
+  // it's not simply an autoplay block), show a status message instead of a
+  // silent black screen — makes real connection problems visible/reportable
+  // instead of looking identical to "still loading".
+  const [connectionSlow, setConnectionSlow] = useState<boolean>(false);
 
   // Auto scroll chat
   // IMPORTANT: we scroll the chat container itself (chatScrollRef.scrollTop),
@@ -105,6 +110,8 @@ export default function LivesSection({
 
     const isBroadcaster = studioActive;
     let cancelled = false;
+    setConnectionSlow(false);
+    const slowTimer = !isBroadcaster ? setTimeout(() => setConnectionSlow(true), 9000) : null;
 
     // Global Agora event: fires whenever a track's play() was silently
     // blocked by the browser's autoplay policy (mostly mobile). We surface a
@@ -116,6 +123,51 @@ export default function LivesSection({
       const client = AgoraRTC.createClient({ mode: 'live', codec: 'vp8' });
       agoraClientRef.current = client;
       client.setClientRole(isBroadcaster ? 'host' : 'audience');
+
+      // Handles a remote user's video/audio once it's available, whether we
+      // learn about it from the 'user-published' event or by checking
+      // client.remoteUsers ourselves right after joining (see below).
+      const handleRemoteUser = async (user: any, mediaType: 'video' | 'audio') => {
+        await client.subscribe(user, mediaType);
+        if (mediaType === 'video') {
+          setRemoteVideoTrack(user.videoTrack || null);
+          setConnectionSlow(false);
+          if (viewerVideoRef.current && user.videoTrack) {
+            try {
+              await user.videoTrack.play(viewerVideoRef.current);
+            } catch {
+              // Autoplay blocked by the browser (very common on mobile).
+              // AgoraRTC.onAutoplayFailed below will catch this and show
+              // the "toque para assistir" overlay.
+            }
+          }
+        }
+        if (mediaType === 'audio' && user.audioTrack) {
+          remoteAudioTrackRef.current = user.audioTrack;
+          try {
+            await user.audioTrack.play();
+          } catch {
+            // Same as above — handled by the autoplay-failed overlay.
+          }
+        }
+      };
+
+      // IMPORTANT: register listeners BEFORE join(). If the host is already
+      // publishing when we join, the SDK can fire 'user-published' the
+      // instant join() resolves. Attaching the listener after join() (as
+      // this code used to do) leaves a race window where that event is
+      // missed entirely — no error, just a permanently black screen. This
+      // window is small on fast desktop connections but much more likely to
+      // bite on slower mobile devices/networks, which matches what we saw.
+      if (!isBroadcaster) {
+        client.on('user-published', (user, mediaType) => {
+          if (mediaType === 'datachannel') return;
+          handleRemoteUser(user, mediaType).catch(err => console.error('Erro ao inscrever no stream remoto:', err));
+        });
+        client.on('user-unpublished', () => {
+          setRemoteVideoTrack(null);
+        });
+      }
 
       const uid = Math.floor(Math.random() * 1000000);
       const channelName = `live-${selectedLive.id}`;
@@ -146,32 +198,15 @@ export default function LivesSection({
           await client.publish([audioTrack, videoTrack]);
         }
       } else {
-        client.on('user-published', async (user, mediaType) => {
-          await client.subscribe(user, mediaType);
-          if (mediaType === 'video') {
-            setRemoteVideoTrack(user.videoTrack || null);
-            if (viewerVideoRef.current && user.videoTrack) {
-              try {
-                await user.videoTrack.play(viewerVideoRef.current);
-              } catch {
-                // Autoplay blocked by the browser (very common on mobile).
-                // AgoraRTC.onAutoplayFailed below will catch this and show
-                // the "toque para assistir" overlay.
-              }
-            }
-          }
-          if (mediaType === 'audio' && user.audioTrack) {
-            remoteAudioTrackRef.current = user.audioTrack;
-            try {
-              await user.audioTrack.play();
-            } catch {
-              // Same as above — handled by the autoplay-failed overlay.
-            }
-          }
-        });
-        client.on('user-unpublished', () => {
-          setRemoteVideoTrack(null);
-        });
+        // Safety net: in case the host was already publishing before we
+        // joined and, despite listening ahead of time, we still missed the
+        // event (e.g. it fired between join() resolving internally and our
+        // listener being wired up at the transport level), actively check
+        // for already-published remote users instead of waiting forever.
+        for (const user of client.remoteUsers) {
+          if (user.hasVideo) await handleRemoteUser(user, 'video').catch(err => console.error(err));
+          if (user.hasAudio) await handleRemoteUser(user, 'audio').catch(err => console.error(err));
+        }
       }
     };
 
@@ -182,6 +217,7 @@ export default function LivesSection({
 
     return () => {
       cancelled = true;
+      if (slowTimer) clearTimeout(slowTimer);
       const client = agoraClientRef.current;
       if (localAudioTrackRef.current) {
         localAudioTrackRef.current.close();
@@ -567,6 +603,12 @@ export default function LivesSection({
                           </button>
                         )}
                       </>
+                    ) : connectionSlow ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-center px-6">
+                        <AlertCircle className="w-8 h-8 text-yellow-500" />
+                        <span className="text-sm font-semibold text-white">Não foi possível carregar o vídeo</span>
+                        <span className="text-xs text-gray-400 max-w-[240px]">Verifique sua conexão com a internet. Se o streamer ainda estiver ao vivo, tente sair e entrar na live novamente.</span>
+                      </div>
                     ) : (
                       <>
                         <img 
