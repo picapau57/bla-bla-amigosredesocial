@@ -1,7 +1,7 @@
-const CACHE_NAME = 'bba-cache-v1';
+// Bump this on every deploy that changes app behavior so the activate
+// handler below clears the old cache and forces a clean slate.
+const CACHE_NAME = 'bba-cache-v2';
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
   '/manifest.json',
   '/icon-512.jpg'
 ];
@@ -42,6 +42,33 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // NETWORK-FIRST for the HTML shell (navigations and index.html itself).
+  // This is the fix: the HTML shell references the app's hashed JS/CSS
+  // bundle filenames, which change on every deploy. If we serve a stale
+  // cached HTML shell, the browser keeps loading an old, possibly
+  // non-existent JS bundle forever — which is exactly what was happening.
+  // Always try the network first here; only fall back to cache if offline.
+  const url = new URL(event.request.url);
+  const isHtmlShell = event.request.mode === 'navigate' || url.pathname === '/index.html' || url.pathname === '/';
+  if (isHtmlShell) {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match(event.request).then((cached) => cached || caches.match('/')))
+    );
+    return;
+  }
+
+  // CACHE-FIRST (stale-while-revalidate) for everything else: hashed JS/CSS
+  // bundles are immutable per build, so aggressive caching here is safe and
+  // fast — a new deploy simply uses new filenames, it never reuses an old
+  // hashed filename with different content.
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
