@@ -517,7 +517,15 @@ export default function LivesSection({
         <div className="bg-[#121225] border border-white/10 rounded-2xl overflow-hidden shadow-2xl grid grid-cols-1 lg:grid-cols-12 min-h-[600px]" id="live-theatre">
           
           {/* THEATRE PLAYER COLUMN (9/12 WIDTH) */}
-          <div className="lg:col-span-8 flex flex-col justify-between bg-black relative overflow-hidden group">
+          {/* min-h is required here: on mobile the grid collapses to a single
+              column (grid-cols-1) and this column stacks above the chat
+              instead of sitting beside it. Without an explicit height, this
+              flex column has nothing to stretch against (it only gets its
+              height "for free" on desktop by matching the taller chat
+              sidebar next to it) and collapses to near-zero height — the
+              remote video was actually playing the whole time, just inside
+              an invisible sliver of a box. */}
+          <div className="lg:col-span-8 flex flex-col justify-between bg-black relative overflow-hidden group min-h-[420px] sm:min-h-[480px]">
             
             {/* FLOATING flying reactions animation panel */}
             <div className="absolute inset-0 pointer-events-none z-30 overflow-hidden">
@@ -603,12 +611,6 @@ export default function LivesSection({
                 // Watcher simulated player
                   isPlaying ? (
                   <div className="absolute inset-0 w-full h-full">
-                    {/* TEMPORARY DEBUG OVERLAY — remove once mobile video issue is confirmed fixed */}
-                    {videoDebugInfo && (
-                      <div className="absolute top-0 left-0 right-0 z-50 bg-black/90 text-[9px] leading-tight text-lime-400 font-mono p-1.5 break-all pointer-events-none max-h-24 overflow-y-auto">
-                        {videoDebugInfo}
-                      </div>
-                    )}
 
                     {/* The video container is ALWAYS mounted (never conditionally
                         rendered), so viewerVideoRef.current is guaranteed to exist
