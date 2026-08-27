@@ -88,6 +88,9 @@ export default function LivesSection({
   // silent black screen — makes real connection problems visible/reportable
   // instead of looking identical to "still loading".
   const [connectionSlow, setConnectionSlow] = useState<boolean>(false);
+  // Surfaces the actual error from a failed video subscribe/play on-screen,
+  // since we don't have easy access to the mobile browser's console.
+  const [videoDebugInfo, setVideoDebugInfo] = useState<string | null>(null);
 
   // Auto scroll chat
   // IMPORTANT: we scroll the chat container itself (chatScrollRef.scrollTop),
@@ -128,18 +131,24 @@ export default function LivesSection({
       // learn about it from the 'user-published' event or by checking
       // client.remoteUsers ourselves right after joining (see below).
       const handleRemoteUser = async (user: any, mediaType: 'video' | 'audio') => {
+        setVideoDebugInfo(prev => `${prev ? prev + ' | ' : ''}subscribe(${mediaType})...`);
         await client.subscribe(user, mediaType);
         if (mediaType === 'video') {
+          setVideoDebugInfo(prev => `${prev} ok, hasVideoTrack=${!!user.videoTrack}`);
           setRemoteVideoTrack(user.videoTrack || null);
           setConnectionSlow(false);
           if (viewerVideoRef.current && user.videoTrack) {
             try {
               await user.videoTrack.play(viewerVideoRef.current);
-            } catch {
+              setVideoDebugInfo(prev => `${prev} | play() ok`);
+            } catch (playErr: any) {
+              setVideoDebugInfo(prev => `${prev} | play() falhou: ${playErr?.message || playErr}`);
               // Autoplay blocked by the browser (very common on mobile).
               // AgoraRTC.onAutoplayFailed below will catch this and show
               // the "toque para assistir" overlay.
             }
+          } else if (!viewerVideoRef.current) {
+            setVideoDebugInfo(prev => `${prev} | viewerVideoRef ainda não montada!`);
           }
         }
         if (mediaType === 'audio' && user.audioTrack) {
@@ -162,7 +171,10 @@ export default function LivesSection({
       if (!isBroadcaster) {
         client.on('user-published', (user, mediaType) => {
           if (mediaType === 'datachannel') return;
-          handleRemoteUser(user, mediaType).catch(err => console.error('Erro ao inscrever no stream remoto:', err));
+          handleRemoteUser(user, mediaType).catch(err => {
+            console.error('Erro ao inscrever no stream remoto:', err);
+            setVideoDebugInfo(prev => `${prev ? prev + ' | ' : ''}ERRO subscribe(${mediaType}): ${err?.message || err}`);
+          });
         });
         client.on('user-unpublished', () => {
           setRemoteVideoTrack(null);
@@ -198,13 +210,17 @@ export default function LivesSection({
           await client.publish([audioTrack, videoTrack]);
         }
       } else {
+        setVideoDebugInfo(`joined ok, remoteUsers=${client.remoteUsers.length} (hasVideo:${client.remoteUsers.map(u => u.hasVideo).join(',')})`);
         // Safety net: in case the host was already publishing before we
         // joined and, despite listening ahead of time, we still missed the
         // event (e.g. it fired between join() resolving internally and our
         // listener being wired up at the transport level), actively check
         // for already-published remote users instead of waiting forever.
         for (const user of client.remoteUsers) {
-          if (user.hasVideo) await handleRemoteUser(user, 'video').catch(err => console.error(err));
+          if (user.hasVideo) await handleRemoteUser(user, 'video').catch(err => {
+            console.error(err);
+            setVideoDebugInfo(prev => `${prev} | ERRO safety-net video: ${err?.message || err}`);
+          });
           if (user.hasAudio) await handleRemoteUser(user, 'audio').catch(err => console.error(err));
         }
       }
@@ -587,6 +603,12 @@ export default function LivesSection({
                 // Watcher simulated player
                   isPlaying ? (
                   <div className="absolute inset-0 w-full h-full">
+                    {/* TEMPORARY DEBUG OVERLAY — remove once mobile video issue is confirmed fixed */}
+                    {videoDebugInfo && (
+                      <div className="absolute top-0 left-0 right-0 z-50 bg-black/90 text-[9px] leading-tight text-lime-400 font-mono p-1.5 break-all pointer-events-none max-h-24 overflow-y-auto">
+                        {videoDebugInfo}
+                      </div>
+                    )}
                     {remoteVideoTrack ? (
                       <>
                         <div ref={viewerVideoRef} className="w-full h-full [&>div]:!w-full [&>div]:!h-full" />
