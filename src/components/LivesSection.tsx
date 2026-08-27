@@ -609,45 +609,55 @@ export default function LivesSection({
                         {videoDebugInfo}
                       </div>
                     )}
-                    {remoteVideoTrack ? (
-                      <>
-                        <div ref={viewerVideoRef} className="w-full h-full [&>div]:!w-full [&>div]:!h-full" />
-                        {autoplayBlocked && (
-                          <button
-                            onClick={handleTapToPlay}
-                            className="absolute inset-0 w-full h-full flex flex-col items-center justify-center gap-3 bg-black/70 cursor-pointer"
-                          >
-                            <div className="w-16 h-16 rounded-full bg-[#00E5FF]/20 border border-[#00E5FF]/30 flex items-center justify-center text-[#00E5FF]">
-                              <Play className="w-8 h-8 ml-1" />
-                            </div>
-                            <span className="text-sm font-semibold text-white">Toque para assistir</span>
-                            <span className="text-xs text-gray-400 max-w-[220px] text-center">Seu navegador bloqueia a reprodução automática. Toque para iniciar o vídeo.</span>
-                          </button>
-                        )}
-                      </>
-                    ) : connectionSlow ? (
-                      <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-center px-6">
-                        <AlertCircle className="w-8 h-8 text-yellow-500" />
-                        <span className="text-sm font-semibold text-white">Não foi possível carregar o vídeo</span>
-                        <span className="text-xs text-gray-400 max-w-[240px]">Verifique sua conexão com a internet. Se o streamer ainda estiver ao vivo, tente sair e entrar na live novamente.</span>
-                      </div>
-                    ) : (
-                      <>
-                        <img 
-                          src={selectedLive.coverImage || 'https://images.unsplash.com/photo-1516280440614-37939bbacd6a?auto=format&fit=crop&q=80&w=800'} 
-                          alt="Stream Video" 
-                          className="w-full h-full object-cover blur-[2px] scale-105 brightness-95" 
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-tr from-indigo-950/60 via-transparent to-purple-950/60 mix-blend-color-dodge animate-pulse" />
-                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-                          <div className="w-14 h-14 rounded-full bg-[#00E5FF]/10 border border-[#00E5FF]/20 flex items-center justify-center text-[#00E5FF] animate-bounce shadow-2xl shadow-[#00E5FF]/10">
-                            <Radio className="w-7 h-7" />
-                          </div>
-                          <span className="text-xs font-mono tracking-widest text-white/80 bg-black/60 px-3 py-1 rounded-full border border-white/5 uppercase">
-                            Aguardando o streamer conectar...
-                          </span>
+
+                    {/* The video container is ALWAYS mounted (never conditionally
+                        rendered), so viewerVideoRef.current is guaranteed to exist
+                        the moment the remote video track arrives — no matter how
+                        fast that happens. Previously this div only rendered once
+                        remoteVideoTrack was already set, which created a race: on
+                        slower (mobile) devices, the track could arrive before React
+                        finished mounting the div, so track.play() had nowhere to
+                        attach and the video was lost with no error. */}
+                    <div ref={viewerVideoRef} className="absolute inset-0 w-full h-full [&>div]:!w-full [&>div]:!h-full" />
+
+                    {!remoteVideoTrack && (
+                      connectionSlow ? (
+                        <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center gap-2 text-center px-6 bg-[#0A0A14]">
+                          <AlertCircle className="w-8 h-8 text-yellow-500" />
+                          <span className="text-sm font-semibold text-white">Não foi possível carregar o vídeo</span>
+                          <span className="text-xs text-gray-400 max-w-[240px]">Verifique sua conexão com a internet. Se o streamer ainda estiver ao vivo, tente sair e entrar na live novamente.</span>
                         </div>
-                      </>
+                      ) : (
+                        <div className="absolute inset-0 w-full h-full">
+                          <img 
+                            src={selectedLive.coverImage || 'https://images.unsplash.com/photo-1516280440614-37939bbacd6a?auto=format&fit=crop&q=80&w=800'} 
+                            alt="Stream Video" 
+                            className="w-full h-full object-cover blur-[2px] scale-105 brightness-95" 
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-tr from-indigo-950/60 via-transparent to-purple-950/60 mix-blend-color-dodge animate-pulse" />
+                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                            <div className="w-14 h-14 rounded-full bg-[#00E5FF]/10 border border-[#00E5FF]/20 flex items-center justify-center text-[#00E5FF] animate-bounce shadow-2xl shadow-[#00E5FF]/10">
+                              <Radio className="w-7 h-7" />
+                            </div>
+                            <span className="text-xs font-mono tracking-widest text-white/80 bg-black/60 px-3 py-1 rounded-full border border-white/5 uppercase">
+                              Aguardando o streamer conectar...
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    )}
+
+                    {autoplayBlocked && (
+                      <button
+                        onClick={handleTapToPlay}
+                        className="absolute inset-0 w-full h-full flex flex-col items-center justify-center gap-3 bg-black/70 cursor-pointer"
+                      >
+                        <div className="w-16 h-16 rounded-full bg-[#00E5FF]/20 border border-[#00E5FF]/30 flex items-center justify-center text-[#00E5FF]">
+                          <Play className="w-8 h-8 ml-1" />
+                        </div>
+                        <span className="text-sm font-semibold text-white">Toque para assistir</span>
+                        <span className="text-xs text-gray-400 max-w-[220px] text-center">Seu navegador bloqueia a reprodução automática. Toque para iniciar o vídeo.</span>
+                      </button>
                     )}
                   </div>
                 ) : (
