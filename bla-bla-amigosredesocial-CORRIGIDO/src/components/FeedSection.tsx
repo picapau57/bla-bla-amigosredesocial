@@ -1,0 +1,1058 @@
+import { useState, FormEvent, ChangeEvent } from 'react';
+import { User, Post, Ad } from '../types';
+import { 
+  Image as ImageIcon, Video, Send, Share2, MessageSquare, AlertCircle, 
+  MapPin, CheckCircle, Flame, Star, Sparkles, ExternalLink, Bookmark,
+  Upload, X
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import ImageLightbox from './ImageLightbox';
+
+interface FeedSectionProps {
+  currentUser: User;
+  users: User[];
+  posts: Post[];
+  ads: Ad[];
+  onAddPost: (content: string, mediaUrl?: string, mediaType?: 'image' | 'video') => Promise<{ success: boolean; isRestricted?: boolean; reason?: string }>;
+  onToggleReaction: (postId: string, type: 'likes' | 'loves' | 'applauds') => void;
+  onAddComment: (postId: string, content: string) => void;
+  onShare: (postId: string) => void;
+  onAdClick: (adId: string) => void;
+  onTrackAdImpression: (adId: string) => void;
+  onViewProfile?: (user: User) => void;
+}
+
+function ReelsVideoPlayer({ mediaUrl }: { mediaUrl: string }) {
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const getYouTubeDetails = (url: string) => {
+    if (!url) return null;
+    const cleanUrl = url.trim();
+    let videoId: string | null = null;
+
+    try {
+      if (cleanUrl.includes('/shorts/')) {
+        const parts = cleanUrl.split('/shorts/');
+        if (parts[1]) videoId = parts[1].split(/[?&#/]/)[0];
+      }
+      if (!videoId && cleanUrl.includes('v=')) {
+        const match = cleanUrl.match(/[?&]v=([^&#]+)/);
+        if (match && match[1]) videoId = match[1];
+      }
+      if (!videoId && cleanUrl.includes('youtu.be/')) {
+        const parts = cleanUrl.split('youtu.be/');
+        if (parts[1]) videoId = parts[1].split(/[?&#/]/)[0];
+      }
+      if (!videoId && cleanUrl.includes('/embed/')) {
+        const parts = cleanUrl.split('/embed/');
+        if (parts[1]) videoId = parts[1].split(/[?&#/]/)[0];
+      }
+      if (!videoId && cleanUrl.includes('/live/')) {
+        const parts = cleanUrl.split('/live/');
+        if (parts[1]) videoId = parts[1].split(/[?&#/]/)[0];
+      }
+      if (!videoId) {
+        const regExp = /(?:youtube(?:-nocookie)?\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?|shorts|live)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i;
+        const match = cleanUrl.match(regExp);
+        if (match && match[1]) videoId = match[1];
+      }
+    } catch (e) {
+      console.error('Error parsing video URL:', e);
+    }
+
+    if (videoId && videoId.length >= 10) {
+      return {
+        videoId,
+        embedUrl: `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&rel=0`,
+        thumbnailUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+      };
+    }
+    return null;
+  };
+
+  const ytDetails = getYouTubeDetails(mediaUrl);
+
+  if (ytDetails) {
+    if (isPlaying) {
+      return (
+        <div className="w-full aspect-video bg-black relative">
+          <iframe
+            src={ytDetails.embedUrl}
+            title="YouTube Video Player"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+            className="w-full h-full"
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div 
+        className="w-full aspect-video bg-[#0A0A14] relative flex items-center justify-center group/vid cursor-pointer overflow-hidden"
+        onClick={() => setIsPlaying(true)}
+      >
+        <img 
+          src={ytDetails.thumbnailUrl} 
+          alt="Video Preview" 
+          className="w-full h-full object-cover opacity-85 group-hover:scale-105 transition-transform duration-300" 
+        />
+        <div className="absolute inset-0 bg-[#0A0A14]/40 flex items-center justify-center">
+          <div className="bg-[#FF5722] text-white rounded-full p-4 hover:scale-110 active:scale-95 transition-all shadow-xl shadow-[#FF5722]/35 cursor-pointer">
+            <Video className="w-6 h-6 animate-pulse" />
+          </div>
+        </div>
+        <div className="absolute bottom-3 left-3 bg-[#121225]/90 p-2 rounded text-[11px] font-mono text-white flex items-center gap-1.5">
+          <span className="inline-block w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+          <span>YouTube Reels / Vídeo</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback for regular direct video files or general URL
+  return (
+    <div className="w-full bg-black relative flex items-center justify-center group/vid">
+      <video
+        src={mediaUrl}
+        controls
+        preload="metadata"
+        className="w-full aspect-video max-h-[460px] object-contain"
+        poster="https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?auto=format&fit=crop&q=80&w=800"
+      />
+    </div>
+  );
+}
+
+export default function FeedSection({
+  currentUser,
+  users,
+  posts,
+  ads,
+  onAddPost,
+  onToggleReaction,
+  onAddComment,
+  onShare,
+  onAdClick,
+  onTrackAdImpression,
+  onViewProfile
+}: FeedSectionProps) {
+  const [newPostContent, setNewPostContent] = useState('');
+  const [newPostMedia, setNewPostMedia] = useState('');
+  const [mediaType, setMediaType] = useState<'image' | 'video'>('image');
+  const [showMediaInput, setShowMediaInput] = useState(false);
+  const [isModeratingPost, setIsModeratingPost] = useState(false);
+  
+  // Track open comment trays
+  const [activeCommentsPostId, setActiveCommentsPostId] = useState<string | null>(null);
+  const [commentInputs, setCommentInputs] = useState<{ [postId: string]: string }>({});
+
+  // Saved / Bookmark posts
+  const [savedPostIds, setSavedPostIds] = useState<string[]>([]);
+
+  // Lightbox zoom state
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [lightboxAlt, setLightboxAlt] = useState<string>('');
+
+  // Post suggestions images
+  const sampleMediaUrls = [
+    'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=800',
+    'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=800',
+    'https://images.unsplash.com/photo-1547082299-de196ea013d6?auto=format&fit=crop&q=80&w=800',
+    'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800'
+  ];
+
+  // Local image & video upload states & logic
+  const [activeMediaSource, setActiveMediaSource] = useState<'upload' | 'url'>('upload');
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // Quick video suggestions
+  const sampleVideoPresets = [
+    { title: 'YouTube Shorts #1', url: 'https://youtube.com/shorts/qC3qC0Uq7qg' },
+    { title: 'Vídeo Goiás & Natureza', url: 'https://assets.mixkit.co/videos/preview/mixkit-tree-branches-in-the-breeze-1188-large.mp4' },
+    { title: 'Clipe de Humor', url: 'https://assets.mixkit.co/videos/preview/mixkit-vertical-video-of-a-dog-wearing-glasses-42352-large.mp4' }
+  ];
+
+  const handleVideoFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('video/')) {
+      setUploadError('Por favor, selecione um arquivo de vídeo válido (.mp4, .webm, .mov).');
+      return;
+    }
+
+    if (file.size > 25 * 1024 * 1024) {
+      setUploadError('Vídeo acima de 25MB. Escolha um arquivo menor ou cole o link do YouTube.');
+      return;
+    }
+
+    setIsUploadingFile(true);
+    setUploadError(null);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setNewPostMedia(dataUrl);
+      setMediaType('video');
+      setIsUploadingFile(false);
+    };
+    reader.onerror = () => {
+      setUploadError('Erro ao carregar o vídeo. Tente usar um link web ou YouTube.');
+      setIsUploadingFile(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1000;
+          const MAX_HEIGHT = 1000;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(event.target?.result as string);
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          resolve(compressedDataUrl);
+        };
+        img.onerror = () => {
+          resolve(event.target?.result as string);
+        };
+      };
+      reader.onerror = (err) => reject(err);
+    });
+  };
+
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setUploadError('Por favor, selecione apenas arquivos de imagem.');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError('A imagem é muito grande. Escolha uma imagem de até 10MB.');
+      return;
+    }
+
+    setIsUploadingFile(true);
+    setUploadError(null);
+    try {
+      const base64 = await compressImage(file);
+      setNewPostMedia(base64);
+      setMediaType('image');
+    } catch (err) {
+      console.error('Error reading/compressing file:', err);
+      setUploadError('Erro ao processar imagem. Tente novamente.');
+    } finally {
+      setIsUploadingFile(false);
+    }
+  };
+
+  const handleCreatePost = async (e: FormEvent) => {
+    e.preventDefault();
+    let content = newPostContent.trim();
+    let media = newPostMedia.trim();
+    let detectedType = mediaType;
+
+    // Check if post text contains a YouTube/Video link if no media is explicitly attached
+    if (!media && content) {
+      const urlRegex = /(https?:\/\/[^\s]+)/g;
+      const urls = content.match(urlRegex);
+      if (urls && urls.length > 0) {
+        const potentialUrl = urls[0];
+        if (
+          potentialUrl.includes('youtube.com') ||
+          potentialUrl.includes('youtu.be') ||
+          potentialUrl.includes('/shorts/') ||
+          potentialUrl.includes('vimeo.com') ||
+          potentialUrl.endsWith('.mp4') ||
+          potentialUrl.endsWith('.webm')
+        ) {
+          media = potentialUrl;
+          detectedType = 'video';
+        }
+      }
+    }
+
+    if (!content && !media) return;
+
+    // Auto-fix url if it's video
+    if (media && detectedType === 'video' && !media.startsWith('data:') && !media.startsWith('http://') && !media.startsWith('https://')) {
+      media = 'https://' + media;
+    }
+
+    setIsModeratingPost(true);
+    try {
+      const result = await onAddPost(content, media || undefined, media ? detectedType : undefined);
+      if (result && !result.success && result.isRestricted) {
+        alert(`🚫 POST EXCLUÍDO AUTOMATICAMENTE NA HORA!\n\n${result.reason || 'Restrição detectada.'}`);
+      } else {
+        setNewPostContent('');
+        setNewPostMedia('');
+        setShowMediaInput(false);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsModeratingPost(false);
+    }
+  };
+
+  const handleCommentChange = (postId: string, value: string) => {
+    setCommentInputs(prev => ({ ...prev, [postId]: value }));
+  };
+
+  const handlePostComment = (postId: string) => {
+    const text = commentInputs[postId];
+    if (!text || !text.trim()) return;
+
+    onAddComment(postId, text);
+    setCommentInputs(prev => ({ ...prev, [postId]: '' }));
+  };
+
+  const toggleSavePost = (postId: string) => {
+    setSavedPostIds(prev => 
+      prev.includes(postId) ? prev.filter(id => id !== postId) : [...prev, postId]
+    );
+  };
+
+  const getAuthor = (userId: string) => {
+    return users.find(u => u.id === userId) || users[0];
+  };
+
+  // Find sponsored feed ads and track them
+  const feedAds = ads.filter(a => a.position === 'feed' && a.status === 'active');
+  
+  // Merge posts and feed ads together periodically
+  const mergedFeedItems: (Post | { isAd: true; ad: Ad })[] = [];
+  posts.forEach((post, idx) => {
+    mergedFeedItems.push(post);
+    // Insert an ad after every 2 posts
+    if ((idx + 1) % 2 === 0 && feedAds.length > 0) {
+      const adIndex = Math.floor((idx + 1) / 2 - 1) % feedAds.length;
+      const targetAd = feedAds[adIndex];
+      mergedFeedItems.push({ isAd: true, ad: targetAd });
+      onTrackAdImpression(targetAd.id);
+    }
+  });
+
+  return (
+    <div className="flex-1 space-y-6" id="feed-central-panel">
+      
+      {/* POST CREATOR BOX */}
+      <div className="bg-[#121225] border border-white/10 rounded-2xl p-4 md:p-5 shadow-xl" id="feed-creator-box">
+        <div className="flex items-start gap-3">
+          <img
+            src={currentUser.avatar}
+            alt={currentUser.fullName}
+            referrerPolicy="no-referrer"
+            className="w-10 h-10 rounded-full object-cover ring-2 ring-[#7C4DFF]"
+          />
+          <form onSubmit={handleCreatePost} className="w-full">
+            <textarea
+              value={newPostContent}
+              onChange={(e) => setNewPostContent(e.target.value)}
+              placeholder={`Olá, ${currentUser.fullName.split(' ')[0]}! O que está compartilhando com os amigos hoje?`}
+              className="w-full bg-[#0A0A14]/70 text-gray-100 placeholder-gray-500 rounded-xl p-3 text-xs md:text-sm border border-white/5 focus:outline-none focus:border-[#00E5FF] focus:ring-1 focus:ring-[#00E5FF]/20 resize-none min-h-[85px] transition-all"
+            />
+
+            {/* EXPANDABLE MEDIA ATTACHMENTS */}
+            <AnimatePresence>
+              {showMediaInput && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mt-3 space-y-3 bg-[#0A0A14] p-3 rounded-xl border border-white/5"
+                >
+                  <div className="flex items-center justify-between text-[11px] font-mono">
+                    <div className="flex gap-2">
+                      <span className="text-gray-400 font-bold">Tipo:</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMediaType('image');
+                          setActiveMediaSource('upload');
+                        }}
+                        className={`px-2 py-0.5 rounded cursor-pointer transition-all ${mediaType === 'image' ? 'bg-[#7C4DFF]/20 text-[#00E5FF] font-black' : 'text-gray-400 hover:text-white'}`}
+                      >
+                        Foto
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMediaType('video');
+                          setActiveMediaSource('url');
+                        }}
+                        className={`px-2 py-0.5 rounded cursor-pointer transition-all ${mediaType === 'video' ? 'bg-[#FF5722]/20 text-[#FF5722] font-black' : 'text-gray-400 hover:text-white'}`}
+                      >
+                        Vídeo Curto/Reels
+                      </button>
+                    </div>
+
+                    {mediaType === 'image' && (
+                      <div className="flex gap-1 bg-[#121225] p-0.5 rounded border border-white/5">
+                        <button
+                          type="button"
+                          onClick={() => setActiveMediaSource('upload')}
+                          className={`px-2 py-0.5 rounded text-[10px] cursor-pointer transition-all ${activeMediaSource === 'upload' ? 'bg-white/10 text-white font-bold' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                          Dispositivo
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveMediaSource('url')}
+                          className={`px-2 py-0.5 rounded text-[10px] cursor-pointer transition-all ${activeMediaSource === 'url' ? 'bg-white/10 text-white font-bold' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                          Link Web
+                        </button>
+                      </div>
+                    )}
+
+                    {mediaType === 'video' && (
+                      <div className="flex gap-1 bg-[#121225] p-0.5 rounded border border-white/5">
+                        <button
+                          type="button"
+                          onClick={() => setActiveMediaSource('url')}
+                          className={`px-2 py-0.5 rounded text-[10px] cursor-pointer transition-all ${activeMediaSource === 'url' ? 'bg-white/10 text-white font-bold' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                          Link YouTube
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveMediaSource('upload')}
+                          className={`px-2 py-0.5 rounded text-[10px] cursor-pointer transition-all ${activeMediaSource === 'upload' ? 'bg-white/10 text-white font-bold' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                          Arquivo Vídeo
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* DISPLAY FILE UPLOADER FOR IMAGE DISPOSITIVO */}
+                  {mediaType === 'image' && activeMediaSource === 'upload' && (
+                    <div className="space-y-3">
+                      {newPostMedia && newPostMedia.startsWith('data:image/') ? (
+                        /* Previews already-uploaded local image */
+                        <div className="relative rounded-lg overflow-hidden border border-[#00E5FF]/20 bg-[#121225]/50 p-2 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <img 
+                              src={newPostMedia} 
+                              alt="Upload Preview" 
+                              className="w-16 h-16 object-cover rounded-lg border border-white/10"
+                            />
+                            <div className="text-left">
+                              <span className="text-[10px] uppercase font-mono tracking-wider font-bold text-[#00E5FF] block">✓ Imagem Carregada</span>
+                              <span className="text-[9px] font-mono text-gray-400 block mt-0.5">Otimizada para publicação instantânea</span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setNewPostMedia('')}
+                            className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-all cursor-pointer border border-red-500/15"
+                            title="Remover Imagem"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        /* File Upload Zone */
+                        <div className="relative">
+                          <label className="flex flex-col items-center justify-center border-2 border-dashed border-white/10 hover:border-[#00E5FF]/40 rounded-xl p-6 bg-[#121225]/40 hover:bg-[#121225]/70 transition-all cursor-pointer group">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleFileChange}
+                              disabled={isUploadingFile}
+                              className="hidden"
+                            />
+                            
+                            {isUploadingFile ? (
+                              <div className="flex flex-col items-center gap-2">
+                                <Upload className="w-8 h-8 text-[#00E5FF] animate-bounce" />
+                                <span className="text-xs font-mono font-bold text-[#00E5FF] animate-pulse">Otimizando imagem...</span>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center gap-2 text-center">
+                                <Upload className="w-8 h-8 text-[#7C4DFF] group-hover:text-[#00E5FF] group-hover:scale-105 transition-all duration-300" />
+                                <span className="text-xs font-medium text-gray-300">Escolha uma foto do seu Celular ou Computador</span>
+                                <span className="text-[9px] text-gray-500 font-mono">Arraste ou clique para buscar fotos</span>
+                              </div>
+                            )}
+                          </label>
+
+                          {uploadError && (
+                            <p className="text-[10px] text-red-400 font-mono mt-1.5 text-left flex items-center gap-1">
+                              <AlertCircle className="w-3.5 h-3.5" />
+                              {uploadError}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* DISPLAY FILE UPLOADER FOR VIDEO DISPOSITIVO */}
+                  {mediaType === 'video' && activeMediaSource === 'upload' && (
+                    <div className="space-y-3">
+                      {newPostMedia && newPostMedia.startsWith('data:video/') ? (
+                        <div className="relative rounded-lg overflow-hidden border border-[#FF5722]/30 bg-[#121225]/50 p-3 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2.5 bg-[#FF5722]/20 text-[#FF5722] rounded-lg">
+                              <Video className="w-6 h-6" />
+                            </div>
+                            <div className="text-left">
+                              <span className="text-xs font-mono font-bold text-white block">✓ Vídeo carregado com sucesso</span>
+                              <span className="text-[10px] font-mono text-gray-400 block mt-0.5">Pronto para publicação no Feed e Reels</span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setNewPostMedia('')}
+                            className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-all cursor-pointer border border-red-500/15"
+                            title="Remover Vídeo"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <label className="flex flex-col items-center justify-center border-2 border-dashed border-white/10 hover:border-[#FF5722]/40 rounded-xl p-6 bg-[#121225]/40 hover:bg-[#121225]/70 transition-all cursor-pointer group">
+                            <input
+                              type="file"
+                              accept="video/mp4,video/webm,video/ogg,video/quicktime,video/x-m4v"
+                              onChange={handleVideoFileChange}
+                              disabled={isUploadingFile}
+                              className="hidden"
+                            />
+                            
+                            {isUploadingFile ? (
+                              <div className="flex flex-col items-center gap-2">
+                                <Upload className="w-8 h-8 text-[#FF5722] animate-bounce" />
+                                <span className="text-xs font-mono font-bold text-[#FF5722] animate-pulse">Carregando vídeo...</span>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center gap-2 text-center">
+                                <Upload className="w-8 h-8 text-[#FF5722] group-hover:scale-105 transition-all duration-300" />
+                                <span className="text-xs font-medium text-gray-300">Escolha um vídeo do seu Celular ou Computador</span>
+                                <span className="text-[9px] text-gray-500 font-mono">MP4, WEBM ou MOV até 25MB</span>
+                              </div>
+                            )}
+                          </label>
+
+                          {uploadError && (
+                            <p className="text-[10px] text-red-400 font-mono mt-1.5 text-left flex items-center gap-1">
+                              <AlertCircle className="w-3.5 h-3.5" />
+                              {uploadError}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* DISPLAY LINK INPUT FOR URL FOR BOTH IMAGES AND VIDEOS */}
+                  {((mediaType === 'video' && activeMediaSource === 'url') || (mediaType === 'image' && activeMediaSource === 'url')) && (
+                    <div className="space-y-3 text-left">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder={mediaType === 'image' ? "URL da imagem (ex: https://unsplash.com/...)" : "Cole aqui o link do YouTube, Shorts ou vídeo .mp4"}
+                          value={newPostMedia}
+                          onChange={(e) => setNewPostMedia(e.target.value)}
+                          className="w-full bg-[#121225] border border-white/10 text-gray-200 rounded-lg p-2.5 text-xs focus:outline-none focus:border-[#00E5FF] font-mono pr-8"
+                        />
+                        {newPostMedia && (
+                          <button
+                            type="button"
+                            onClick={() => setNewPostMedia('')}
+                            className="absolute right-2 top-2.5 p-0.5 text-gray-500 hover:text-white"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Display live preview of video URL if provided */}
+                      {mediaType === 'video' && newPostMedia && (
+                        <div className="p-2 bg-[#121225] border border-[#FF5722]/30 rounded-lg flex items-center gap-2">
+                          <Video className="w-4 h-4 text-[#FF5722] shrink-0" />
+                          <span className="text-[11px] text-gray-300 font-mono truncate">
+                            Link do vídeo: {newPostMedia}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Video Quick Suggestions */}
+                      {mediaType === 'video' && (
+                        <div className="space-y-1.5">
+                          <span className="text-[10px] text-gray-500 font-mono block">Sugestões de vídeos de demonstração:</span>
+                          <div className="flex flex-wrap gap-2">
+                            {sampleVideoPresets.map((preset, vidx) => (
+                              <button
+                                key={vidx}
+                                type="button"
+                                onClick={() => {
+                                  setNewPostMedia(preset.url);
+                                  setMediaType('video');
+                                  setActiveMediaSource('url');
+                                }}
+                                className={`text-[10px] px-2.5 py-1 rounded-lg border font-mono transition-all cursor-pointer ${
+                                  newPostMedia === preset.url
+                                    ? 'bg-[#FF5722]/20 border-[#FF5722] text-[#FF5722]'
+                                    : 'bg-[#121225] border-white/5 text-gray-400 hover:text-white'
+                                }`}
+                              >
+                                🎬 {preset.title}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Suggest random photo options under */}
+                      {mediaType === 'image' && (
+                        <div className="flex gap-2 items-center">
+                          <span className="text-[10px] text-gray-500 font-mono">Sugestão rápida:</span>
+                          {sampleMediaUrls.map((preset, pidx) => (
+                            <button
+                              key={pidx}
+                              type="button"
+                              onClick={() => {
+                                setNewPostMedia(preset);
+                                setMediaType('image');
+                                setActiveMediaSource('url');
+                              }}
+                              className={`w-9 h-9 rounded-lg overflow-hidden border transition-all ${
+                                newPostMedia === preset ? 'border-[#00E5FF] ring-2 ring-[#00E5FF]/20' : 'border-white/5'
+                              }`}
+                            >
+                              <img src={preset} alt="preset" className="w-full h-full object-cover" />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* BUTTON BAR */}
+            <div className="flex items-center justify-between border-t border-white/10 pt-3 mt-3">
+              <div className="flex items-center gap-1.5 md:gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (showMediaInput && mediaType === 'image' && activeMediaSource === 'upload') {
+                      setShowMediaInput(false);
+                    } else {
+                      setShowMediaInput(true);
+                      setMediaType('image');
+                      setActiveMediaSource('upload');
+                    }
+                  }}
+                  className="flex items-center gap-1.5 text-gray-400 hover:text-[#00E5FF] text-[11px] md:text-xs font-semibold px-2 py-1.5 rounded-lg hover:bg-[#1E1E30]/60 transition-all cursor-pointer"
+                >
+                  <ImageIcon className="w-4 h-4 text-[#00E5FF]" />
+                  <span>Adicionar Foto</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (showMediaInput && mediaType === 'video') {
+                      setShowMediaInput(false);
+                    } else {
+                      setShowMediaInput(true);
+                      setMediaType('video');
+                      setActiveMediaSource('url');
+                    }
+                  }}
+                  className="flex items-center gap-1.5 text-gray-400 hover:text-[#FF5722] text-[11px] md:text-xs font-semibold px-2 py-1.5 rounded-lg hover:bg-[#1E1E30]/60 transition-all cursor-pointer"
+                >
+                  <Video className="w-4 h-4 text-[#FF5722] animate-pulse" />
+                  <span>Vídeo/Reels</span>
+                </button>
+              </div>
+
+              <button
+                type="submit"
+                disabled={(!newPostContent.trim() && !newPostMedia) || isModeratingPost}
+                className="bg-gradient-to-r from-[#7C4DFF] via-[#00E5FF] to-[#00E676] hover:brightness-110 disabled:opacity-30 disabled:pointer-events-none text-white font-extrabold text-xs py-2 px-5 rounded-xl shadow-lg flex items-center gap-1.5 cursor-pointer uppercase tracking-wider h-9 transition-all"
+              >
+                {isModeratingPost ? (
+                  <>
+                    <span className="animate-pulse">Moderando...</span>
+                    <Sparkles className="w-3.5 h-3.5 animate-spin text-[#00E5FF]" />
+                  </>
+                ) : (
+                  <>
+                    <span>Publicar</span>
+                    <Send className="w-3.5 h-3.5" />
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {/* FEED ITEMS LIST */}
+      <div className="space-y-6" id="news-feed-posts">
+        {mergedFeedItems.length === 0 ? (
+          <div className="text-center bg-[#121225] border border-white/10 rounded-2xl py-12 px-4 shadow-lg text-gray-400">
+            <p className="text-sm font-mono uppercase tracking-widest text-[#00E5FF]">Nenhum post disponível</p>
+            <p className="text-xs text-gray-500 mt-2">Seja o pioneiro e publique uma novidade agora mesmo!</p>
+          </div>
+        ) : (
+          mergedFeedItems.map((item, index) => {
+            // IF it is inline advertisement
+            if ('isAd' in item) {
+              const ad = item.ad;
+              return (
+                <div 
+                  key={`ad-${ad.id}-${index}`} 
+                  className="bg-[#121225] border border-[#FF5722]/30 rounded-2xl p-5 shadow-2xl relative overflow-hidden"
+                  id={`inline-ad-card-${index}`}
+                >
+                  <div className="absolute top-0 left-0 bg-[#FF5722] text-white px-3 py-1 font-mono uppercase text-[9px] font-extrabold rounded-br-xl flex items-center gap-1">
+                    <Sparkles className="w-2.5 h-2.5 text-white" /> Conexão Patrocinada
+                  </div>
+
+                  <div className="mt-4 flex flex-col md:flex-row gap-4 items-center">
+                    <div className="w-full md:w-1/3 aspect-[4/3] rounded-xl overflow-hidden bg-[#0A0A14] border border-white/5 shrink-0">
+                      <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-extrabold text-sm text-white uppercase tracking-tight text-[#00E5FF]">{ad.title}</h4>
+                      <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">{ad.description}</p>
+                      
+                      <div className="mt-4 flex items-center gap-3">
+                        <a
+                          href={ad.link}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={() => onAdClick(ad.id)}
+                          className="bg-white hover:bg-white/90 text-[#0E0E1E] font-black text-xs py-2 px-4 rounded-lg inline-flex items-center gap-1.5 transition-all shadow-md active:scale-95"
+                        >
+                          <span>Visitar Página</span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                        <span className="text-[10px] text-gray-500 font-mono">Promoção Patrocinada por Parceiro</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            // Normal user post
+            const post = item;
+            const author = getAuthor(post.userId);
+            
+            const hasLiked = post.reactions?.likes.includes(currentUser.id);
+            const hasLoved = post.reactions?.loves.includes(currentUser.id);
+            const hasApplauded = post.reactions?.applauds.includes(currentUser.id);
+            const isSaved = savedPostIds.includes(post.id);
+
+            const displayComments = post.comments || [];
+            const isCommentTrayOpen = activeCommentsPostId === post.id;
+
+            return (
+              <div 
+                key={post.id} 
+                className="bg-[#121225] border border-white/10 rounded-2xl shadow-xl overflow-hidden"
+                id={`feed-post-card-${post.id}`}
+              >
+                
+                {/* AUTHOR BANNER */}
+                <div className="px-4.5 pt-4.5 pb-2.5 flex items-center justify-between animate-fade-in-up">
+                  <div 
+                    onClick={() => onViewProfile?.(author)}
+                    className="flex items-center gap-3 cursor-pointer hover:opacity-85 transition-opacity"
+                  >
+                    <img
+                      src={author.avatar}
+                      alt={author.fullName}
+                      referrerPolicy="no-referrer"
+                      className="w-10 h-10 rounded-full object-cover ring-1 ring-white/10"
+                    />
+                    <div>
+                      <div className="text-xs md:text-sm font-extrabold text-white flex items-center gap-1">
+                        {author.fullName}
+                        {author.isVerified && (
+                          <CheckCircle className="w-3.5 h-3.5 text-[#00E5FF] fill-[#00E5FF]/10 shrink-0" title="Verificado" />
+                        )}
+                        {post.isPatrocinado && (
+                          <span className="bg-[#FF5722]/10 text-[#FF5722] text-[8px] font-extrabold font-mono tracking-wider px-1.5 py-0.5 rounded uppercase ml-1 border border-[#FF5722]/20">
+                            Patrocinado
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[10px] text-gray-450 text-gray-400 font-mono flex items-center gap-1 mt-0.5">
+                        <span>ID: {author.username}</span>
+                        <span>•</span>
+                        <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bookmark Button */}
+                  <button
+                    onClick={() => toggleSavePost(post.id)}
+                    className="text-gray-400 hover:text-[#00E5FF] p-1.5 rounded-lg transition-colors cursor-pointer"
+                    title={isSaved ? 'Remover dos salvos' : 'Salvar postagem'}
+                  >
+                    <Bookmark className={`w-4 h-4 ${isSaved ? 'text-[#00E5FF] fill-[#00E5FF]/20' : ''}`} />
+                  </button>
+                </div>
+
+                {/* TEXT CONTENT */}
+                <div className="px-5 pb-3">
+                  <p className="text-gray-200 text-xs md:text-sm whitespace-pre-wrap leading-relaxed">
+                    {post.content}
+                  </p>
+                </div>
+
+                {/* ATTACHED MEDIA */}
+                {post.mediaUrl && (
+                  <div className="border-t border-b border-[#0A0A14] bg-[#0A0A14] overflow-hidden max-h-[460px] flex items-center justify-center">
+                    {post.mediaType === 'video' ? (
+                      <ReelsVideoPlayer mediaUrl={post.mediaUrl} />
+                    ) : (
+                      <img
+                        src={post.mediaUrl}
+                        alt="Post attachment"
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-contain max-h-[380px] hover:scale-[1.01] transition-transform duration-300 cursor-zoom-in"
+                        onClick={() => {
+                          setLightboxImage(post.mediaUrl || '');
+                          setLightboxAlt(post.content || 'Post attachment');
+                        }}
+                        title="Clique para ampliar a imagem"
+                      />
+                    )}
+                  </div>
+                )}
+
+                {/* METRICS ROW */}
+                <div className="px-5 py-2.5 flex items-center justify-between text-[11px] font-mono text-gray-400 border-b border-white/5">
+                  <div className="flex gap-2">
+                    {post.reactions?.likes.length > 0 && (
+                      <span className="flex items-center gap-0.5 text-[#00E5FF] font-bold">
+                        👍 {post.reactions.likes.length}
+                      </span>
+                    )}
+                    {post.reactions?.loves.length > 0 && (
+                      <span className="flex items-center gap-0.5 text-[#FF5722] font-bold">
+                        💖 {post.reactions.loves.length}
+                      </span>
+                    )}
+                    {post.reactions?.applauds.length > 0 && (
+                      <span className="flex items-center gap-0.5 text-[#00E676] font-bold">
+                        👏 {post.reactions.applauds.length}
+                      </span>
+                    )}
+                    {(!post.reactions?.likes.length && !post.reactions?.loves.length && !post.reactions?.applauds.length) && (
+                      <span>Nenhuma reação ainda</span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={() => setActiveCommentsPostId(isCommentTrayOpen ? null : post.id)}
+                      className="hover:underline hover:text-white cursor-pointer"
+                    >
+                      {displayComments.length} {displayComments.length === 1 ? 'Comentário' : 'Comentários'}
+                    </button>
+                    <span>•</span>
+                    <button 
+                      onClick={() => onShare(post.id)}
+                      className="hover:underline hover:text-white flex items-center gap-0.5 cursor-pointer"
+                    >
+                      <span>{post.sharesCount} compartilhamentos</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* MULTI REACTION BAR & INTERACTIONS */}
+                <div className="px-3.5 py-1.5 bg-[#0A0A14]/30 flex items-center justify-around gap-1.5 md:gap-3">
+                  
+                  {/* Curtir 👍 */}
+                  <button
+                    onClick={() => onToggleReaction(post.id, 'likes')}
+                    className={`flex-1 flex items-center justify-center gap-1.5 text-xs py-2 rounded-xl transition-all font-bold cursor-pointer ${
+                      hasLiked 
+                        ? 'bg-[#00E5FF]/10 border border-[#00E5FF]/30 text-[#00E5FF] drop-shadow-[0_0_8px_rgba(0,229,255,0.2)]' 
+                        : 'text-gray-450 text-gray-400 hover:bg-[#1E1E30]/60 hover:text-[#00E5FF]'
+                    }`}
+                  >
+                    <span className="text-sm">👍</span>
+                    <span className="hidden sm:inline">Curtir</span>
+                  </button>
+
+                  {/* Amar 💖 */}
+                  <button
+                    onClick={() => onToggleReaction(post.id, 'loves')}
+                    className={`flex-1 flex items-center justify-center gap-1.5 text-xs py-2 rounded-xl transition-all font-bold cursor-pointer ${
+                      hasLoved 
+                        ? 'bg-[#FF5722]/10 border border-[#FF5722]/30 text-[#FF5722] drop-shadow-[0_0_8px_rgba(255,87,34,0.2)]' 
+                        : 'text-gray-450 text-gray-400 hover:bg-[#1E1E30]/60 hover:text-[#FF5722]'
+                    }`}
+                  >
+                    <span className="text-sm">💖</span>
+                    <span className="hidden sm:inline">Amar</span>
+                  </button>
+
+                  {/* Aplaudir 👏 */}
+                  <button
+                    onClick={() => onToggleReaction(post.id, 'applauds')}
+                    className={`flex-1 flex items-center justify-center gap-1.5 text-xs py-2 rounded-xl transition-all font-bold cursor-pointer ${
+                      hasApplauded 
+                        ? 'bg-[#00E676]/10 border border-[#00E676]/30 text-[#00E676] drop-shadow-[0_0_8px_rgba(0,230,118,0.2)]' 
+                        : 'text-gray-450 text-gray-400 hover:bg-[#1E1E30]/60 hover:text-[#00E676]'
+                    }`}
+                  >
+                    <span className="text-sm">👏</span>
+                    <span className="hidden sm:inline">Aplaudir</span>
+                  </button>
+
+                  {/* Comment Toggle */}
+                  <button
+                    onClick={() => setActiveCommentsPostId(isCommentTrayOpen ? null : post.id)}
+                    className={`flex-1 flex items-center justify-center gap-1.5 text-xs py-2 rounded-xl transition-all font-bold cursor-pointer ${
+                      isCommentTrayOpen 
+                        ? 'bg-[#7C4DFF]/15 text-[#00E5FF]' 
+                        : 'text-gray-450 text-gray-400 hover:bg-[#1E1E30]/60 hover:text-white'
+                    }`}
+                  >
+                    <MessageSquare className="w-4 h-4 text-[#7C4DFF]" />
+                    <span className="hidden sm:inline">Comentar</span>
+                  </button>
+
+                </div>
+
+                {/* COMMENTS EXPANDER */}
+                <AnimatePresence>
+                  {isCommentTrayOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="bg-[#0A0A14]/70 border-t border-white/5 px-4.5 py-4 space-y-4"
+                    >
+                      {/* Comments Feed list */}
+                      {displayComments.length > 0 && (
+                        <div className="space-y-3.5 max-h-56 overflow-y-auto pr-1">
+                          {displayComments.map(c => {
+                            const commenter = getAuthor(c.userId);
+                            return (
+                              <div key={c.id} className="flex gap-2.5 items-start text-xs bg-[#121225] p-2.5 rounded-xl border border-white/5">
+                                <img
+                                  src={commenter.avatar}
+                                  alt={commenter.fullName}
+                                  referrerPolicy="no-referrer"
+                                  className="w-7 h-7 rounded-full object-cover shrink-0 ring-1 ring-white/10 cursor-pointer hover:scale-105 transition-transform"
+                                  onClick={() => onViewProfile?.(commenter)}
+                                />
+                                <div className="min-w-0 flex-1 font-sans">
+                                  <div className="flex items-center justify-between">
+                                    <span 
+                                      className="font-extrabold text-[11px] text-white cursor-pointer hover:text-[#00E5FF] transition-colors"
+                                      onClick={() => onViewProfile?.(commenter)}
+                                    >
+                                      {commenter.fullName}
+                                    </span>
+                                    <span className="text-[9px] text-gray-500 font-mono">
+                                      {new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                  </div>
+                                  <p className="text-gray-300 mt-1 leading-relaxed whitespace-pre-wrap">{c.content}</p>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Comment input form */}
+                      <div className="flex gap-2 items-center">
+                        <img
+                          src={currentUser.avatar}
+                          alt="you"
+                          referrerPolicy="no-referrer"
+                          className="w-7.5 h-7.5 rounded-full object-cover ring-1 ring-[#7C4DFF]"
+                        />
+                        <div className="relative flex-1">
+                          <input
+                            type="text"
+                            placeholder="Adote a amizade: Deixe um comentário de incentivo..."
+                            value={commentInputs[post.id] || ''}
+                            onChange={(e) => handleCommentChange(post.id, e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handlePostComment(post.id);
+                            }}
+                            className="w-full bg-[#121225] border border-white/10 text-gray-100 text-xs pl-3.5 pr-10 py-2 rounded-xl focus:outline-none focus:border-[#00E5FF] placeholder-gray-500 font-sans"
+                          />
+                          <button
+                            onClick={() => handlePostComment(post.id)}
+                            className="absolute right-2 top-1.5 text-[#00E5FF] hover:text-cyan-300 p-0.5 cursor-pointer"
+                          >
+                            <Send className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Reusable Image Lightbox Magnifier */}
+      <ImageLightbox
+        isOpen={!!lightboxImage}
+        imageUrl={lightboxImage || ''}
+        altText={lightboxAlt}
+        onClose={() => {
+          setLightboxImage(null);
+          setLightboxAlt('');
+        }}
+      />
+    </div>
+  );
+}
