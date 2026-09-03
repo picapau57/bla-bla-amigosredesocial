@@ -1296,7 +1296,7 @@ export function useSocialState() {
     logAction('info', `MODERAÇÃO: Status de verificado do usuário '${userId}' foi alterado.`);
   };
 
-  const adminUpdateUserPassword = (userId: string, newPassword: string) => {
+  const adminUpdateUserPassword = async (userId: string, newPassword: string) => {
     if (currentUserId !== 'admin') {
       logAction('error', `SEGURANÇA: Tentativa de alterar senha de usuário (Alvo: ${userId}) negada por falta de permissões de administrador.`);
       alert('Segurança: Apenas o administrador pode realizar esta ação!');
@@ -1304,14 +1304,36 @@ export function useSocialState() {
     }
     const u = users.find(user => user.id === userId);
     if (!u) return;
-    const updated = { ...u, password: newPassword.trim() };
-    setUsers(prev => prev.map(user => user.id === userId ? updated : user));
-    setDoc(doc(db, 'users', userId), updated)
-      .then(() => {
-        logAction('success', `MODERAÇÃO: A senha do usuário '${u.fullName}' (@${u.username}) foi alterada pelo administrador.`);
-        alert('Senha alterada com sucesso!');
-      })
-      .catch(e => console.error(e));
+
+    // A troca de senha não passa mais pelo Firestore em texto puro: é feita
+    // no servidor (Firebase Admin SDK), autenticado com o token de sessão
+    // real do admin. As regras de segurança do Firestore, aliás, já
+    // impediriam o admin de escrever diretamente no documento de outro
+    // usuário — por isso essa ação precisa ir pelo backend.
+    const authUser = auth.currentUser;
+    if (!authUser) {
+      alert('Sua sessão de administrador expirou. Faça login novamente.');
+      return;
+    }
+
+    try {
+      const idToken = await authUser.getIdToken();
+      const res = await fetch('/api/admin/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ targetUserId: userId, newPassword: newPassword.trim() })
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        alert(json.message || 'Não foi possível alterar a senha.');
+        return;
+      }
+      logAction('success', `MODERAÇÃO: A senha do usuário '${u.fullName}' (@${u.username}) foi redefinida pelo administrador.`);
+      alert('Senha alterada com sucesso!');
+    } catch (e) {
+      console.error(e);
+      alert('Erro de rede ao tentar alterar a senha. Tente novamente.');
+    }
   };
 
   const adminDeletePost = (postId: string) => {

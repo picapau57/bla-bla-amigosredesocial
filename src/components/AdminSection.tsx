@@ -269,7 +269,7 @@ export default function AdminSection({
                           <span className="text-[8px] bg-[#121225] text-gray-500 font-mono p-0.5 rounded px-1 shrink-0 font-bold uppercase tracking-wide">Não verificado</span>
                         )}
                       </div>
-                      <p className="text-[10px] text-gray-400 font-mono mt-0.5">ID: {u.username} • {u.email} • Plano {u.premiumPlan} • <span className="text-amber-400 font-bold bg-amber-400/5 px-1.5 py-0.5 rounded border border-amber-400/10">Senha: {u.password || '123456'}</span></p>
+                      <p className="text-[10px] text-gray-400 font-mono mt-0.5">ID: {u.username} • {u.email} • Plano {u.premiumPlan} • <span className="text-amber-400 font-bold bg-amber-400/5 px-1.5 py-0.5 rounded border border-amber-400/10">Senha protegida (Firebase Auth)</span></p>
                     </div>
                   </div>
 
@@ -278,7 +278,7 @@ export default function AdminSection({
                     {onUpdateUserPassword && (
                       <button
                         onClick={() => {
-                          const newPass = window.prompt(`Digite a nova senha para o usuário @${u.username}:`, u.password || '123456');
+                          const newPass = window.prompt(`Digite a nova senha para o usuário @${u.username} (mín. 6 caracteres):`, '');
                           if (newPass !== null) {
                             if (!newPass.trim()) {
                               alert('A senha não pode ficar em branco!');

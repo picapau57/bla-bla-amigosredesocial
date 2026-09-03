@@ -1,4 +1,6 @@
 import React, { useState, FormEvent } from 'react';
+import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
+import { auth } from '../lib/firebase';
 import { User } from '../types';
 import { 
   Rss, MessageSquare, Megaphone, Users, Calendar, Building2, ShieldCheck, 
@@ -56,7 +58,40 @@ export default function Sidebar({
   const [editCity, setEditCity] = useState(currentUser.city || '');
   const [editState, setEditState] = useState(currentUser.state || '');
   const [editWebsite, setEditWebsite] = useState(currentUser.website || '');
-  const [editPassword, setEditPassword] = useState(currentUser.password || '123456');
+
+  const [currentPasswordInput, setCurrentPasswordInput] = useState('');
+  const [newPasswordInput, setNewPasswordInput] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordChangeMessage, setPasswordChangeMessage] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const handleChangePassword = async () => {
+    if (newPasswordInput.length < 6) {
+      setPasswordChangeMessage({ ok: false, text: 'A nova senha precisa ter pelo menos 6 caracteres.' });
+      return;
+    }
+    const authUser = auth.currentUser;
+    if (!authUser || !authUser.email) {
+      setPasswordChangeMessage({ ok: false, text: 'Sua sessão expirou. Saia e entre novamente para trocar a senha.' });
+      return;
+    }
+    setIsChangingPassword(true);
+    setPasswordChangeMessage(null);
+    try {
+      const credential = EmailAuthProvider.credential(authUser.email, currentPasswordInput);
+      await reauthenticateWithCredential(authUser, credential);
+      await updatePassword(authUser, newPasswordInput);
+      setPasswordChangeMessage({ ok: true, text: 'Senha alterada com sucesso!' });
+      setCurrentPasswordInput('');
+      setNewPasswordInput('');
+    } catch (err: any) {
+      const text = err?.code === 'auth/wrong-password' || err?.code === 'auth/invalid-credential'
+        ? 'Senha atual incorreta.'
+        : 'Não foi possível alterar a senha agora. Tente novamente.';
+      setPasswordChangeMessage({ ok: false, text });
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
 
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
@@ -138,7 +173,9 @@ export default function Sidebar({
     setEditCity(currentUser.city || '');
     setEditState(currentUser.state || '');
     setEditWebsite(currentUser.website || '');
-    setEditPassword(currentUser.password || '123456');
+    setCurrentPasswordInput('');
+    setNewPasswordInput('');
+    setPasswordChangeMessage(null);
     setIsEditModalOpen(true);
   };
 
@@ -156,8 +193,7 @@ export default function Sidebar({
         cover: editCover.trim() || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=600',
         city: editCity.trim(),
         state: editState.trim(),
-        website: editWebsite.trim(),
-        password: editPassword.trim() || '123456'
+        website: editWebsite.trim()
       });
     }
     setIsEditModalOpen(false);
@@ -642,18 +678,8 @@ export default function Sidebar({
                 </div>
               </div>
 
-              {/* Website & Senha Secreta */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1">Senha Secreta de Acesso</label>
-                  <input
-                    type="text"
-                    placeholder="Altere sua senha de acesso..."
-                    value={editPassword}
-                    onChange={(e) => setEditPassword(e.target.value)}
-                    className="w-full bg-[#1A1A32] text-white p-2.5 rounded-xl border border-white/10 text-xs focus:outline-none focus:border-[#00E5FF] font-mono"
-                  />
-                </div>
+              {/* Website */}
+              <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono mb-1">Website Pessoal / Link de Redes Sociais</label>
                   <input
@@ -664,6 +690,40 @@ export default function Sidebar({
                     className="w-full bg-[#1A1A32] text-white p-2.5 rounded-xl border border-white/10 text-xs focus:outline-none focus:border-[#00E5FF] font-mono"
                   />
                 </div>
+              </div>
+
+              {/* Troca de senha segura: separada do resto do perfil, feita direto no
+                  Firebase Authentication. Exige a senha atual (reautenticação) e nunca
+                  passa pelo Firestore em texto puro. */}
+              <div className="border border-white/10 rounded-xl p-3 space-y-2">
+                <label className="block text-[10px] font-bold text-gray-400 uppercase font-mono">Trocar Senha de Acesso (opcional)</label>
+                <input
+                  type="password"
+                  placeholder="Senha atual"
+                  value={currentPasswordInput}
+                  onChange={(e) => setCurrentPasswordInput(e.target.value)}
+                  autoComplete="current-password"
+                  className="w-full bg-[#1A1A32] text-white p-2.5 rounded-xl border border-white/10 text-xs focus:outline-none focus:border-[#00E5FF] font-mono"
+                />
+                <input
+                  type="password"
+                  placeholder="Nova senha (mín. 6 caracteres)"
+                  value={newPasswordInput}
+                  onChange={(e) => setNewPasswordInput(e.target.value)}
+                  autoComplete="new-password"
+                  className="w-full bg-[#1A1A32] text-white p-2.5 rounded-xl border border-white/10 text-xs focus:outline-none focus:border-[#00E5FF] font-mono"
+                />
+                {passwordChangeMessage && (
+                  <p className={`text-[10px] font-mono ${passwordChangeMessage.ok ? 'text-[#00E676]' : 'text-red-400'}`}>{passwordChangeMessage.text}</p>
+                )}
+                <button
+                  type="button"
+                  onClick={handleChangePassword}
+                  disabled={isChangingPassword || !currentPasswordInput || !newPasswordInput}
+                  className="text-[10px] font-bold uppercase tracking-wider bg-white/5 hover:bg-white/10 disabled:opacity-40 text-white px-3 py-2 rounded-lg border border-white/10"
+                >
+                  {isChangingPassword ? 'Alterando...' : 'Confirmar nova senha'}
+                </button>
               </div>
 
               {/* Actions Footer */}

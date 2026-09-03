@@ -1,7 +1,6 @@
-import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import {
-  INITIAL_USERS,
   INITIAL_POSTS,
   INITIAL_COMMUNITIES,
   INITIAL_EVENTS,
@@ -18,26 +17,15 @@ import {
 
 export async function seedDatabaseIfEmpty() {
   try {
-    // Force set the correct admin user to avoid "Usuário não encontrado"
-    const adminUser = INITIAL_USERS.find(u => u.id === 'admin');
-    if (adminUser) {
-      await setDoc(doc(db, 'users', 'admin'), adminUser);
-    }
-
-    // Clean up old user-admin doc
-    try {
-      await deleteDoc(doc(db, 'users', 'user-admin'));
-    } catch (e) {
-      // ignore
-    }
-
-    const usersSnapshot = await getDocs(collection(db, 'users'));
-    if (usersSnapshot.empty) {
-      console.log('Seeding initial users to Firestore...');
-      for (const u of INITIAL_USERS) {
-        await setDoc(doc(db, 'users', u.id), u);
-      }
-    }
+    // NOTA DE SEGURANÇA: a semeadura de usuários de demonstração foi removida
+    // daqui de propósito. Contas reais agora só são criadas via Firebase
+    // Authentication (veja registerUser em useSocialState.ts), nunca com um
+    // campo de senha em texto puro gravado direto no Firestore. Além disso,
+    // as regras de segurança do Firestore já não permitem mais que um
+    // visitante não autenticado escreva em /users/{id} de qualquer forma, então
+    // este bloco (que rodava incondicionalmente a cada carregamento da página
+    // e sobrescrevia o documento do admin) foi removido por ser arriscado e,
+    // hoje, inofensivo apenas por acidente das regras já bloquearem a escrita.
 
     const postsSnapshot = await getDocs(collection(db, 'posts'));
     if (postsSnapshot.empty) {
