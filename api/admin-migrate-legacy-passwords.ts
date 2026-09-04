@@ -71,8 +71,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           // Já existe conta com esse UID (provavelmente já migrada antes) — só limpa o campo.
           alreadyOk.push(userId);
         } else if (err.code === 'auth/email-already-exists') {
-          conflicts.push({ id: userId, reason: `O e-mail ${data.email} já está associado a outra conta no Firebase Authentication. Requer revisão manual.` });
-          continue; // não apaga o campo neste caso, para não perder o dado antes de resolver
+          // Já existe uma conta real no Firebase Authentication para este
+          // e-mail, só que com um UID diferente do id deste documento
+          // (geralmente porque a pessoa já tentou logar/cadastrar pelo fluxo
+          // novo antes desta migração rodar). A prioridade de segurança é
+          // remover a senha em texto puro AGORA — então apagamos o campo
+          // mesmo sem criar/vincular uma nova conta — e sinalizamos o caso
+          // para revisão manual, já que essa pessoa pode estar com
+          // dificuldade para logar até isso ser resolvido à parte.
+          conflicts.push({ id: userId, reason: `O e-mail ${data.email} já está associado a outra conta no Firebase Authentication (UID diferente deste documento). Senha em texto puro removida por segurança, mas o vínculo de login desta conta requer revisão manual separada.` });
         } else if (err.code === 'auth/invalid-password') {
           conflicts.push({ id: userId, reason: 'Senha salva não atende ao mínimo de 6 caracteres exigido pelo Firebase Authentication. Requer redefinição manual.' });
           continue;
