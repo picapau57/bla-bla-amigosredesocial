@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { FieldValue } from 'firebase-admin/firestore';
-import { getFirebaseAdminFirestore, getFirebaseAdminAuth } from './_lib/firebaseAdmin';
+import { getFirebaseAdminFirestore, getFirebaseAdminAuth } from './_lib/firebaseAdmin.js';
 
 // ---------------------------------------------------------------------------
 // POST /api/admin-migrate-legacy-passwords
