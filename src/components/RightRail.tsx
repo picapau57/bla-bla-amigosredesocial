@@ -207,25 +207,21 @@ export default function RightRail({
   ];
 
   return (
-    <div className="w-full lg:w-80 shrink-0 space-y-6" id="right-rail-container">
+    <div className="w-full lg:w-80 shrink-0 space-y-4" id="right-rail-container">
       
-      {/* SPONSORED AD TOP */}
+      {/* SPONSORED AD TOP (FACEBOOK STYLE) */}
       <div 
-        className={`bg-[#121225] border rounded-2xl p-4.5 shadow-xl relative overflow-hidden transition-all duration-500 ${
-          targetAudience === 'PRO' 
-            ? 'border-orange-500/40 ring-1 ring-orange-500/25 shadow-[0_0_20px_rgba(249,115,22,0.15)] bg-gradient-to-b from-[#1b1225] to-[#121225]' 
-            : 'border-white/10'
-        }`}
+        className="bg-white dark:bg-[#242526] border border-[#E4E6EB] dark:border-[#3A3B3C] rounded-xl p-3.5 shadow-sm relative overflow-hidden"
         id="sponsored-ad-top"
       >
-        <div className="flex items-center justify-between mb-3">
-          <span className={`text-[10px] font-mono uppercase tracking-widest font-bold flex items-center gap-1 transition-all ${
-            targetAudience === 'PRO' ? 'text-orange-400' : 'text-[#00E5FF]'
-          }`}>
-            <Sparkles className={`w-3 h-3 ${targetAudience === 'PRO' ? 'text-orange-400 animate-spin' : 'text-[#00E5FF] animate-pulse'}`} />
-            {targetAudience === 'PRO' ? 'Patrocinado PRO' : 'Patrocinado Topo'}
+        <div className="flex items-center justify-between mb-2.5">
+          <span className="text-xs font-bold text-[#65676B] dark:text-[#B0B3B8] flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-[#1877F2]" />
+            {targetAudience === 'PRO' ? 'Patrocinado PRO' : 'Patrocinado'}
           </span>
-          <span className="text-[9px] text-gray-400 font-mono">AD</span>
+          <span className="text-[10px] text-[#65676B] dark:text-[#B0B3B8] font-medium bg-[#F0F2F5] dark:bg-[#3A3B3C] px-1.5 py-0.5 rounded">
+            Publicidade
+          </span>
         </div>
 
         {calibratedAd ? (
@@ -240,76 +236,64 @@ export default function RightRail({
               }}
               className="block group"
             >
-              <div className="relative overflow-hidden rounded-xl h-36 mb-3 bg-[#0A0A14] border border-white/5">
+              <div className="relative overflow-hidden rounded-lg h-36 mb-2.5 bg-gray-100 dark:bg-[#18191A] border border-[#E4E6EB] dark:border-[#3A3B3C]">
                 <img
                   src={calibratedAd.imageUrl}
                   alt={calibratedAd.title}
                   referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-cover group-hover:opacity-95 transition-opacity"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A14]/80 via-transparent to-transparent" />
-                <div className="absolute bottom-2.5 left-2.5 right-2.5">
-                  <span className={`text-white text-[9px] font-bold px-2 py-1 rounded uppercase font-mono tracking-wider transition-all ${
-                    targetAudience === 'PRO' 
-                      ? 'bg-gradient-to-r from-orange-500 to-amber-500 shadow-lg shadow-orange-500/35' 
-                      : 'bg-gradient-to-r from-[#7C4DFF] to-[#FF5722]'
-                  }`}>
-                    {targetAudience === 'PRO' ? '🚀 Acesso PRO' : 'Ver Mais'}
-                  </span>
-                </div>
               </div>
-              <h4 className={`font-extrabold text-xs transition-colors flex items-center gap-1 ${
-                targetAudience === 'PRO' ? 'text-orange-300 group-hover:text-orange-200' : 'text-white group-hover:text-[#00E5FF]'
-              }`}>
-                {calibratedAd.title}
-                <ArrowUpRight className="w-3 h-3 text-gray-400 shrink-0" />
+              <h4 className="font-bold text-xs text-[#050505] dark:text-[#E4E6EB] group-hover:text-[#1877F2] transition-colors flex items-center justify-between gap-1">
+                <span className="truncate">{calibratedAd.title}</span>
+                <ArrowUpRight className="w-3.5 h-3.5 text-[#65676B] dark:text-[#B0B3B8] shrink-0" />
               </h4>
-              <p className="text-[11px] text-gray-450 text-gray-400 mt-1 line-clamp-2 leading-relaxed">
+              <p className="text-[11px] text-[#65676B] dark:text-[#B0B3B8] mt-1 line-clamp-2 leading-relaxed">
                 {calibratedAd.description}
               </p>
             </a>
 
             {/* Dynamic Audience & CTR Calibrator Panel */}
-            <div className="mt-4 pt-4 border-t border-white/10 space-y-3 bg-[#0A0A14]/30 rounded-xl p-3" id="ctr-calibrator-panel">
+            <div className="mt-3 pt-3 border-t border-[#E4E6EB] dark:border-[#3A3B3C] space-y-2.5 bg-[#F0F2F5] dark:bg-[#18191A] rounded-lg p-2.5" id="ctr-calibrator-panel">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] text-gray-400 font-mono font-bold flex items-center gap-1">
-                  <Target className={`w-3 h-3 ${targetAudience === 'PRO' ? 'text-orange-400' : 'text-purple-400'}`} />
-                  Filtro Público
+                <span className="text-[11px] text-[#65676B] dark:text-[#B0B3B8] font-bold flex items-center gap-1">
+                  <Target className={`w-3 h-3 ${targetAudience === 'PRO' ? 'text-orange-500' : 'text-[#1877F2]'}`} />
+                  Segmentação
                 </span>
-                <div className="flex rounded-lg overflow-hidden border border-white/10 p-0.5 bg-white/5">
+                <div className="flex rounded-md overflow-hidden border border-[#CCD0D5] dark:border-[#3A3B3C] p-0.5 bg-white dark:bg-[#242526]">
                   <button
                     onClick={() => setTargetAudience('Geral')}
-                    className={`px-2 py-0.5 text-[9px] font-bold rounded-md transition-all cursor-pointer ${
+                    className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors cursor-pointer ${
                       targetAudience === 'Geral'
-                        ? 'bg-white/15 text-white'
-                        : 'text-gray-400 hover:text-white'
+                        ? 'bg-[#1877F2] text-white'
+                        : 'text-[#65676B] dark:text-[#B0B3B8] hover:text-[#050505] dark:hover:text-white'
                     }`}
                   >
                     Geral
                   </button>
                   <button
                     onClick={() => setTargetAudience('PRO')}
-                    className={`px-2 py-0.5 text-[9px] font-black rounded-md transition-all flex items-center gap-1 cursor-pointer ${
+                    className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors flex items-center gap-1 cursor-pointer ${
                       targetAudience === 'PRO'
-                        ? 'bg-gradient-to-r from-orange-500 to-purple-600 text-white shadow-[0_0_8px_rgba(249,115,22,0.4)]'
-                         : 'text-gray-400 hover:text-white'
+                        ? 'bg-orange-500 text-white shadow-sm'
+                        : 'text-[#65676B] dark:text-[#B0B3B8] hover:text-[#050505] dark:hover:text-white'
                     }`}
                   >
-                    <Sparkles className="w-2.5 h-2.5 text-orange-400 animate-spin" />
-                    Público PRO
+                    <Sparkles className="w-2.5 h-2.5 text-white" />
+                    PRO
                   </button>
                 </div>
               </div>
 
               {/* If PRO, show demographic tuning slider */}
               {targetAudience === 'PRO' && (
-                <div className="space-y-1.5 animate-fade-in-up">
-                  <div className="flex justify-between items-center text-[9px] text-gray-400 font-mono">
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center text-[10px] text-[#65676B] dark:text-[#B0B3B8]">
                     <span className="flex items-center gap-1">
-                      <Sliders className="w-2.5 h-2.5 text-orange-400 animate-pulse" />
+                      <Sliders className="w-2.5 h-2.5 text-orange-500" />
                       Afinidade PRO:
                     </span>
-                    <span className="text-orange-400 font-bold">{calibrationValue}%</span>
+                    <span className="text-orange-600 dark:text-orange-400 font-bold">{calibrationValue}%</span>
                   </div>
                   <input
                     type="range"
@@ -317,107 +301,108 @@ export default function RightRail({
                     max="100"
                     value={calibrationValue}
                     onChange={(e) => setCalibrationValue(Number(e.target.value))}
-                    className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-orange-500 focus:outline-none"
+                    className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-orange-500 focus:outline-none"
                   />
                 </div>
               )}
 
               {/* Display CTR in Real-time */}
-              <div className="flex items-center justify-between bg-black/40 rounded-lg p-2 border border-white/5 font-mono">
-                <span className="text-[10px] text-gray-400 flex items-center gap-1">
-                  <Activity className="w-3 h-3 text-[#00E5FF] animate-pulse" />
-                  CTR do Banner:
+              <div className="flex items-center justify-between bg-white dark:bg-[#242526] rounded-md p-2 border border-[#E4E6EB] dark:border-[#3A3B3C]">
+                <span className="text-[11px] text-[#65676B] dark:text-[#B0B3B8] flex items-center gap-1">
+                  <Activity className="w-3 h-3 text-[#1877F2]" />
+                  CTR Estimado:
                 </span>
                 <div className="text-right">
-                  <span className={`text-xs font-black transition-all duration-300 ${
-                    targetAudience === 'PRO' ? 'text-green-400 text-sm shadow-green-500/20 shadow-sm' : 'text-cyan-400'
+                  <span className={`text-xs font-bold ${
+                    targetAudience === 'PRO' ? 'text-green-600 dark:text-green-400 font-black' : 'text-[#1877F2]'
                   }`}>
                     {calculateCTR()}%
                   </span>
                   {targetAudience === 'PRO' && (
-                    <span className="block text-[8px] text-green-500 font-black tracking-widest uppercase">
-                      Calibrado (ROAS max)
+                    <span className="block text-[8px] text-green-600 dark:text-green-400 font-bold uppercase">
+                      Otimizado ROAS
                     </span>
                   )}
                 </div>
               </div>
 
-              {/* Try-out Interactive click button to let them test CTR growth */}
-               <button
-                 onClick={() => {
-                   setSimulatedClicks(prev => prev + 1);
-                   setShowConversionFloat(true);
-                   setTimeout(() => setShowConversionFloat(false), 1000);
-                   onAdClick(calibratedAd.id);
-                 }}
-                 className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-[9px] font-bold py-1.5 rounded-lg transition-all active:scale-[0.97] cursor-pointer text-gray-300 flex items-center justify-center gap-1 relative"
-               >
-                 🎯 Testar Clique de Lead PRO
-                 <AnimatePresence>
-                   {showConversionFloat && (
-                     <motion.span
-                       initial={{ opacity: 0, y: 10, scale: 0.8 }}
-                       animate={{ opacity: 1, y: -25, scale: 1.1 }}
-                       exit={{ opacity: 0, scale: 0.9 }}
-                       className="absolute bg-green-500 text-white font-black px-2 py-0.5 rounded text-[8px] shadow-lg pointer-events-none"
-                     >
-                       +1 Clique PRO!
-                     </motion.span>
-                   )}
-                 </AnimatePresence>
-               </button>
+              {/* Interactive click button */}
+              <button
+                onClick={() => {
+                  setSimulatedClicks(prev => prev + 1);
+                  setShowConversionFloat(true);
+                  setTimeout(() => setShowConversionFloat(false), 1000);
+                  onAdClick(calibratedAd.id);
+                }}
+                className="w-full bg-white dark:bg-[#242526] hover:bg-gray-50 dark:hover:bg-[#3A3B3C] border border-[#CCD0D5] dark:border-[#3A3B3C] text-[10px] font-bold py-1.5 rounded-md transition-colors text-[#050505] dark:text-[#E4E6EB] flex items-center justify-center gap-1 relative cursor-pointer"
+              >
+                🎯 Testar Clique de Lead PRO
+                <AnimatePresence>
+                  {showConversionFloat && (
+                    <motion.span
+                      initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                      animate={{ opacity: 1, y: -25, scale: 1.1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      className="absolute bg-green-500 text-white font-black px-2 py-0.5 rounded text-[8px] shadow-lg pointer-events-none"
+                    >
+                      +1 Clique PRO!
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </button>
             </div>
           </div>
         ) : (
-          <div className="py-4 text-center border border-dashed border-white/10 rounded-xl bg-[#1E1E30]/40">
-            <p className="text-xs text-gray-400 font-mono">Espaço publicitário de alto impacto disponível.</p>
+          <div className="py-4 text-center border border-dashed border-[#CCD0D5] dark:border-[#3A3B3C] rounded-lg bg-[#F0F2F5] dark:bg-[#18191A]">
+            <p className="text-xs text-[#65676B] dark:text-[#B0B3B8]">Espaço publicitário disponível.</p>
             <button 
               onClick={() => setActiveTab('ads')}
-              className="text-xs text-[#00E5FF] font-bold hover:underline mt-2 flex items-center justify-center gap-1 mx-auto"
+              className="text-xs text-[#1877F2] font-bold hover:underline mt-1.5 flex items-center justify-center gap-1 mx-auto cursor-pointer"
             >
-              Anuncie Aqui!
+              Criar Anúncio
             </button>
           </div>
         )}
       </div>
 
-      {/* QUICK CONNECTIONS RECOMMENDATIONS */}
-      <div className="bg-[#121225] border border-white/10 rounded-2xl p-4.5 shadow-xl" id="recommended-connections">
-        <h4 className="text-white font-bold text-xs uppercase tracking-wider mb-3.5">
-          Conexões Recomendadas
+      {/* QUICK CONNECTIONS RECOMMENDATIONS (FACEBOOK STYLE) */}
+      <div className="bg-white dark:bg-[#242526] border border-[#E4E6EB] dark:border-[#3A3B3C] rounded-xl p-3.5 shadow-sm" id="recommended-connections">
+        <h4 className="text-xs font-bold text-[#65676B] dark:text-[#B0B3B8] uppercase tracking-wider mb-3">
+          Pessoas que talvez você conheça
         </h4>
-        <div className="space-y-3.5">
+        <div className="space-y-2.5">
           {recommendedUsers.length === 0 ? (
-            <p className="text-xs text-gray-500 italic py-2">Nenhuma recomendação no momento.</p>
+            <p className="text-xs text-[#65676B] dark:text-[#B0B3B8] italic py-2 text-center">Nenhuma recomendação no momento.</p>
           ) : (
             recommendedUsers.map(user => (
-              <div key={user.id} className="flex items-center justify-between gap-3 bg-[#1E1E30]/50 p-2 rounded-xl border border-white/5">
+              <div key={user.id} className="flex items-center justify-between gap-2 p-1.5 rounded-lg hover:bg-[#F0F2F5] dark:hover:bg-[#3A3B3C] transition-colors">
                 <div 
                   onClick={() => onViewProfile?.(user)}
-                  className="flex items-center gap-2 max-w-[150px] truncate cursor-pointer hover:opacity-80 transition-all"
+                  className="flex items-center gap-2.5 min-w-0 cursor-pointer"
                 >
                   <img
                     src={user.avatar}
                     alt={user.fullName}
                     referrerPolicy="no-referrer"
-                    className="w-8.5 h-8.5 rounded-full object-cover shrink-0 ring-1 ring-white/10"
+                    className="w-9 h-9 rounded-full object-cover shrink-0 border border-[#E4E6EB] dark:border-[#3A3B3C]"
                   />
-                  <div className="truncate font-sans">
-                    <div className="text-xs font-semibold text-white truncate flex items-center gap-1">
+                  <div className="min-w-0">
+                    <div className="text-xs font-semibold text-[#050505] dark:text-[#E4E6EB] truncate flex items-center gap-1">
                       {user.fullName}
                       {user.isVerified && (
-                        <span className="w-3 h-3 rounded-full bg-[#00E5FF] inline-flex items-center justify-center text-[7px] text-[#0A0A14] font-black shrink-0">✓</span>
+                        <span className="w-3 h-3 rounded-full bg-[#1877F2] inline-flex items-center justify-center text-[7px] text-white font-bold shrink-0">✓</span>
                       )}
                     </div>
-                    <div className="text-[10px] text-[#00E5FF] font-mono">ID: {user.username}</div>
+                    <div className="text-[11px] text-[#65676B] dark:text-[#B0B3B8] truncate">@{user.username}</div>
                   </div>
                 </div>
                 <button
                   onClick={() => onFriendToggle(user.id)}
-                  title="Conectar Amizade"
-                  className="bg-[#7C4DFF]/10 hover:bg-[#7C4DFF] text-[#00E5FF] hover:text-white p-1.5 rounded-full border border-white/5 hover:border-transparent transition-all active:scale-90"
+                  title="Adicionar aos Amigos"
+                  className="bg-[#E7F3FF] dark:bg-[#3A3B3C] hover:bg-[#DBE7F2] dark:hover:bg-[#4E4F50] text-[#1877F2] dark:text-[#2D88FF] text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors shrink-0 cursor-pointer"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
+                  <span>Adicionar</span>
                 </button>
               </div>
             ))
@@ -425,47 +410,44 @@ export default function RightRail({
         </div>
       </div>
 
-      {/* BLA BLA AMIGOS - NOTÍCIAS (PWA STYLE WITH NEWS & DAILY MINI GAMES) */}
-      <div className="bg-[#121225] border border-white/10 rounded-2xl p-4.5 shadow-xl space-y-5" id="bba-news-section">
+      {/* BLA BLA AMIGOS - NOTÍCIAS & ATUALIZAÇÕES */}
+      <div className="bg-white dark:bg-[#242526] border border-[#E4E6EB] dark:border-[#3A3B3C] rounded-xl p-3.5 shadow-sm space-y-4" id="bba-news-section">
         
         {/* Assuntos em alta (News Section) */}
         <div>
-          <div className="flex items-center justify-between mb-3.5 border-b border-white/5 pb-2.5">
-            <h4 className="text-white font-extrabold text-sm tracking-tight flex items-center gap-1.5">
-              <span className="bg-gradient-to-r from-[#00E5FF] to-blue-500 text-transparent bg-clip-text">BLA BLA AMIGOS</span>
-              <span className="text-gray-400 font-normal">| Notícias</span>
+          <div className="flex items-center justify-between mb-3 border-b border-[#E4E6EB] dark:border-[#3A3B3C] pb-2">
+            <h4 className="text-[#050505] dark:text-[#E4E6EB] font-bold text-xs flex items-center gap-1.5">
+              <Newspaper className="w-3.5 h-3.5 text-[#1877F2]" />
+              <span>Notícias & Destaques</span>
             </h4>
-            <span className="text-[9px] bg-red-500/10 text-red-400 font-mono px-2 py-0.5 rounded-full font-bold border border-red-500/20 animate-pulse">
-              LIVE
+            <span className="text-[10px] bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-bold px-1.5 py-0.5 rounded">
+              AO VIVO
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 text-[11px] text-[#00E5FF] font-bold uppercase tracking-wider mb-3">
+          <div className="flex items-center gap-1 text-[11px] text-[#1877F2] font-bold uppercase tracking-wide mb-2.5">
             <TrendingUp className="w-3.5 h-3.5" />
             Assuntos em alta
           </div>
 
-          <div className="space-y-3.5">
+          <div className="space-y-2.5">
             {newsList.slice(0, showAllNews ? newsList.length : 5).map((news) => (
               <a
                 key={news.id}
                 href={news.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={(e) => {
-                  // Permitir que o link abra, mas opcionalmente pesquisar localmente no Bla Bla Amigos
-                  onSearch?.(news.tag);
-                }}
-                className="block group hover:bg-white/5 p-1.5 -mx-1.5 rounded-xl transition-all decoration-none"
-                title={`Abrir notícia: ${news.title} (Abre em nova aba)`}
+                onClick={() => onSearch?.(news.tag)}
+                className="block p-1.5 -mx-1.5 rounded-lg hover:bg-[#F0F2F5] dark:hover:bg-[#3A3B3C] transition-colors"
+                title={`Abrir notícia: ${news.title}`}
               >
-                <h5 className="text-xs font-semibold text-white group-hover:text-[#00E5FF] transition-colors leading-snug">
+                <h5 className="text-xs font-semibold text-[#050505] dark:text-[#E4E6EB] hover:text-[#1877F2] transition-colors leading-snug">
                   {news.title}
                 </h5>
-                <div className="flex items-center gap-1.5 text-[10px] text-gray-400 mt-1 font-sans">
+                <div className="flex items-center gap-1.5 text-[10px] text-[#65676B] dark:text-[#B0B3B8] mt-1">
                   <span>{news.time}</span>
                   <span>•</span>
-                  <span className="text-[#00E5FF]/80 font-mono font-medium">#{news.tag}</span>
+                  <span className="text-[#1877F2] font-medium">#{news.tag}</span>
                   <span>•</span>
                   <span>{news.readers} leitores</span>
                 </div>
@@ -475,71 +457,73 @@ export default function RightRail({
 
           <button
             onClick={() => setShowAllNews(!showAllNews)}
-            className="w-full mt-3.5 pt-2.5 border-t border-white/5 text-[11px] font-bold text-gray-450 hover:text-white transition-colors flex items-center justify-center gap-1 cursor-pointer"
+            className="w-full mt-2.5 pt-2 border-t border-[#E4E6EB] dark:border-[#3A3B3C] text-xs font-semibold text-[#65676B] dark:text-[#B0B3B8] hover:text-[#1877F2] transition-colors flex items-center justify-center gap-1 cursor-pointer"
           >
             {showAllNews ? (
               <>
-                Exibir menos notícias <ChevronUp className="w-3.5 h-3.5 text-[#00E5FF]" />
+                Exibir menos notícias <ChevronUp className="w-3.5 h-3.5 text-[#1877F2]" />
               </>
             ) : (
               <>
-                Exibir mais notícias <ChevronDown className="w-3.5 h-3.5 text-[#00E5FF]" />
+                Exibir mais notícias <ChevronDown className="w-3.5 h-3.5 text-[#1877F2]" />
               </>
             )}
           </button>
         </div>
 
         {/* Jogos de hoje (Interactive Mini-Games Section) */}
-        <div className="border-t border-white/10 pt-4">
-          <div className="flex items-center justify-between mb-3.5">
-            <h4 className="text-white font-extrabold text-xs uppercase tracking-wider">
-              Jogos de hoje
+        <div className="border-t border-[#E4E6EB] dark:border-[#3A3B3C] pt-3">
+          <div className="flex items-center justify-between mb-2.5">
+            <h4 className="text-[#050505] dark:text-[#E4E6EB] font-bold text-xs">
+              Jogos da Comunidade
             </h4>
-            <span className="text-[9px] bg-indigo-500/10 text-indigo-300 font-mono px-2 py-0.5 rounded border border-indigo-500/20">Prêmios XP</span>
+            <span className="text-[10px] bg-blue-50 dark:bg-blue-950/40 text-[#1877F2] font-semibold px-1.5 py-0.5 rounded">
+              Grátis
+            </span>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2">
             {gamesList.slice(0, showAllGames ? gamesList.length : 3).map((game) => (
               <div
                 key={game.id}
                 onClick={() => setActiveTab('games')}
-                className="group cursor-pointer flex items-center justify-between p-2 rounded-xl bg-[#1E1E30]/40 hover:bg-[#1E1E30]/80 border border-white/5 hover:border-white/10 transition-all active:scale-[0.98]"
-                title={`Jogar ${game.title} na Central de Jogos`}
+                className="group cursor-pointer flex items-center justify-between p-2 rounded-lg bg-[#F0F2F5] dark:bg-[#3A3B3C] hover:bg-[#E4E6EB] dark:hover:bg-[#4E4F50] transition-colors"
+                title={`Jogar ${game.title}`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg border ${game.iconColor} shrink-0`}>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-base bg-white dark:bg-[#242526] shadow-sm shrink-0">
                     {game.iconEmoji}
                   </div>
-                  <div className="min-w-0 font-sans">
+                  <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-white group-hover:text-[#00E5FF] transition-all truncate">
+                      <span className="text-xs font-semibold text-[#050505] dark:text-[#E4E6EB] truncate">
                         {game.title}
                       </span>
-                      <span className="text-[9px] bg-white/10 text-gray-300 font-mono px-1 rounded font-bold shrink-0">
+                      <span className="text-[9px] bg-white dark:bg-[#242526] text-[#65676B] dark:text-[#B0B3B8] px-1 rounded font-bold shrink-0">
                         {game.score}
                       </span>
                     </div>
-                    <p className="text-[10px] text-gray-400 truncate leading-normal">
+                    <p className="text-[10px] text-[#65676B] dark:text-[#B0B3B8] truncate">
                       {game.desc}
                     </p>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0" />
+                <ChevronRight className="w-4 h-4 text-[#65676B] dark:text-[#B0B3B8] group-hover:text-[#1877F2] group-hover:translate-x-0.5 transition-all shrink-0" />
               </div>
             ))}
           </div>
 
           <button
             onClick={() => setShowAllGames(!showAllGames)}
-            className="w-full mt-3 pt-2 text-[11px] font-bold text-gray-450 hover:text-white transition-colors flex items-center justify-center gap-1 cursor-pointer"
+            className="w-full mt-2.5 pt-2 border-t border-[#E4E6EB] dark:border-[#3A3B3C] text-xs font-semibold text-[#65676B] dark:text-[#B0B3B8] hover:text-[#1877F2] transition-colors flex items-center justify-center gap-1 cursor-pointer"
           >
             {showAllGames ? (
               <>
-                Exibir menos jogos <ChevronUp className="w-3.5 h-3.5 text-[#00E5FF]" />
+                Exibir menos jogos <ChevronUp className="w-3.5 h-3.5 text-[#1877F2]" />
               </>
             ) : (
               <>
-                Exibir mais jogos <ChevronDown className="w-3.5 h-3.5 text-[#00E5FF]" />
+                Exibir mais jogos <ChevronDown className="w-3.5 h-3.5 text-[#1877F2]" />
               </>
             )}
           </button>
@@ -547,26 +531,26 @@ export default function RightRail({
 
       </div>
 
-      {/* UPCOMING EVENTS PREVIEW */}
-      <div className="bg-[#121225] border border-white/10 rounded-2xl p-4.5 shadow-xl" id="upcoming-events-preview">
-        <h4 className="text-white font-bold text-xs uppercase tracking-wider mb-3.5">
+      {/* UPCOMING EVENTS PREVIEW (FACEBOOK STYLE) */}
+      <div className="bg-white dark:bg-[#242526] border border-[#E4E6EB] dark:border-[#3A3B3C] rounded-xl p-3.5 shadow-sm" id="upcoming-events-preview">
+        <h4 className="text-xs font-bold text-[#65676B] dark:text-[#B0B3B8] uppercase tracking-wider mb-3">
           Próximos Eventos
         </h4>
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {events.slice(0, 2).map(e => (
             <div 
               key={e.id}
               onClick={() => setActiveTab('events')} 
-              className="group cursor-pointer flex gap-2.5 items-start p-2 hover:bg-[#1E1E30]/45 rounded-xl transition-all"
+              className="group cursor-pointer flex gap-2.5 items-start p-2 hover:bg-[#F0F2F5] dark:hover:bg-[#3A3B3C] rounded-lg transition-colors"
             >
-              <div className="bg-[#FF5722]/10 p-2 rounded-lg text-[#FF5722] shrink-0 border border-white/5 group-hover:scale-105 transition-transform">
+              <div className="bg-red-50 dark:bg-red-950/40 p-2 rounded-lg text-red-600 dark:text-red-400 shrink-0 border border-red-100 dark:border-red-900/30">
                 <Calendar className="w-4 h-4" />
               </div>
-              <div className="min-w-0 font-sans">
-                <h5 className="text-xs font-bold text-white truncate group-hover:text-[#FF5722] transition-colors">
+              <div className="min-w-0">
+                <h5 className="text-xs font-semibold text-[#050505] dark:text-[#E4E6EB] truncate group-hover:text-[#1877F2] transition-colors">
                   {e.title}
                 </h5>
-                <p className="text-[10px] text-gray-400 mt-0.5 font-mono">
+                <p className="text-[10px] text-[#65676B] dark:text-[#B0B3B8] mt-0.5">
                   {new Date(e.date).toLocaleDateString()} às {e.time}
                 </p>
               </div>
@@ -575,14 +559,16 @@ export default function RightRail({
         </div>
       </div>
 
-      {/* SPONSORED AD BOTTOM */}
-      <div className="bg-[#121225] border border-white/10 rounded-2xl p-4.5 shadow-xl relative overflow-hidden" id="sponsored-ad-bottom">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-[#7C4DFF] font-bold flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-[#7C4DFF] animate-pulse" />
-            Patrocinado Rodapé
+      {/* SPONSORED AD BOTTOM (FACEBOOK STYLE) */}
+      <div className="bg-white dark:bg-[#242526] border border-[#E4E6EB] dark:border-[#3A3B3C] rounded-xl p-3.5 shadow-sm relative overflow-hidden" id="sponsored-ad-bottom">
+        <div className="flex items-center justify-between mb-2.5">
+          <span className="text-xs font-bold text-[#65676B] dark:text-[#B0B3B8] flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-[#1877F2]" />
+            Patrocinado
           </span>
-          <span className="text-[9px] text-gray-400 font-mono">AD</span>
+          <span className="text-[10px] text-[#65676B] dark:text-[#B0B3B8] font-medium bg-[#F0F2F5] dark:bg-[#3A3B3C] px-1.5 py-0.5 rounded">
+            AD
+          </span>
         </div>
 
         {bottomAd ? (
@@ -593,31 +579,30 @@ export default function RightRail({
             onClick={() => onAdClick(bottomAd.id)}
             className="block group"
           >
-            <div className="relative overflow-hidden rounded-xl h-36 mb-3 bg-[#0A0A14] border border-white/5">
+            <div className="relative overflow-hidden rounded-lg h-32 mb-2.5 bg-gray-100 dark:bg-[#18191A] border border-[#E4E6EB] dark:border-[#3A3B3C]">
               <img
                 src={bottomAd.imageUrl}
                 alt={bottomAd.title}
                 referrerPolicy="no-referrer"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                className="w-full h-full object-cover group-hover:opacity-95 transition-opacity"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A14]/80 via-transparent to-transparent" />
             </div>
-            <h4 className="font-extrabold text-xs text-white group-hover:text-[#7C4DFF] transition-colors flex items-center gap-1">
-              {bottomAd.title}
-              <ArrowUpRight className="w-3 h-3 text-gray-400" />
+            <h4 className="font-bold text-xs text-[#050505] dark:text-[#E4E6EB] group-hover:text-[#1877F2] transition-colors flex items-center justify-between gap-1">
+              <span className="truncate">{bottomAd.title}</span>
+              <ArrowUpRight className="w-3.5 h-3.5 text-[#65676B] dark:text-[#B0B3B8] shrink-0" />
             </h4>
-            <p className="text-[11px] text-gray-450 mt-1 line-clamp-2 leading-relaxed">
+            <p className="text-[11px] text-[#65676B] dark:text-[#B0B3B8] mt-1 line-clamp-2 leading-relaxed">
               {bottomAd.description}
             </p>
           </a>
         ) : (
-          <div className="py-4 text-center border border-dashed border-white/5 rounded-xl bg-[#1E1E30]/40">
-            <p className="text-xs text-gray-400 font-mono">Espaço publicitário secundário ativo.</p>
+          <div className="py-4 text-center border border-dashed border-[#CCD0D5] dark:border-[#3A3B3C] rounded-lg bg-[#F0F2F5] dark:bg-[#18191A]">
+            <p className="text-xs text-[#65676B] dark:text-[#B0B3B8]">Espaço publicitário secundário.</p>
             <button 
               onClick={() => setActiveTab('ads')}
-              className="text-xs text-[#7C4DFF] font-bold hover:underline mt-2 flex items-center justify-center gap-1 mx-auto"
+              className="text-xs text-[#1877F2] font-bold hover:underline mt-1.5 flex items-center justify-center gap-1 mx-auto cursor-pointer"
             >
-              Anuncie Aqui!
+              Criar Anúncio
             </button>
           </div>
         )}

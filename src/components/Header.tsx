@@ -1,6 +1,12 @@
-import { useState, useEffect, ChangeEvent } from 'react';
+import React, { useState, useEffect, ChangeEvent, useRef } from 'react';
 import { User, SystemLog } from '../types';
-import { Network, Bell, Search, Shuffle, ShieldAlert, BadgeCheck, Compass, MessageSquare, Sun, Moon, Download, Share, X, Smartphone } from 'lucide-react';
+import { 
+  Network, Bell, Search, Shuffle, ShieldAlert, BadgeCheck, Compass, 
+  MessageSquare, MessageCircle, Sun, Moon, Download, Share, X, Smartphone,
+  LayoutGrid, Home, Film, Megaphone, Users, User as UserIcon, LayoutDashboard,
+  Gift, Radio, Calendar, Building2, Briefcase, Lightbulb, Gamepad2, LogOut,
+  ChevronDown, CheckCircle, ShieldCheck, Sparkles, FileText, Lock
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface HeaderProps {
@@ -15,6 +21,8 @@ interface HeaderProps {
   isAdminSessionActive?: boolean;
   theme?: 'light' | 'dark';
   setTheme?: (theme: 'light' | 'dark') => void;
+  onViewProfile?: (user: User) => void;
+  onLogout?: () => void;
 }
 
 export default function Header({
@@ -27,11 +35,15 @@ export default function Header({
   setActiveTab,
   logs,
   isAdminSessionActive,
-  theme = 'light',
-  setTheme
+  theme = 'dark',
+  setTheme,
+  onViewProfile,
+  onLogout
 }: HeaderProps) {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
+  const [showGridMenu, setShowGridMenu] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState(parentSearchTerm);
 
   // BBA PWA installation states and events
@@ -39,6 +51,10 @@ export default function Header({
   const [isInstallable, setIsInstallable] = useState(false);
   const [showIOSModal, setShowIOSModal] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+
+  const userDropdownRef = useRef<HTMLDivElement>(null);
+  const notifDropdownRef = useRef<HTMLDivElement>(null);
+  const gridMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Detect iOS
@@ -61,6 +77,24 @@ export default function Header({
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
+  }, []);
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target as Node)) {
+        setShowUserDropdown(false);
+      }
+      if (notifDropdownRef.current && !notifDropdownRef.current.contains(event.target as Node)) {
+        setShowNotifDropdown(false);
+      }
+      if (gridMenuRef.current && !gridMenuRef.current.contains(event.target as Node)) {
+        setShowGridMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const handleInstallClick = async () => {
@@ -97,286 +131,272 @@ export default function Header({
     !['user-1', 'user-2', 'user-3', 'user-4', 'user-5', 'admin'].includes(u.id)
   );
 
-  const notifications = logs.filter(l => l.type === 'success' || l.type === 'warning').slice(0, 5);
+  const notifications = logs.filter(l => l.type === 'success' || l.type === 'warning').slice(0, 6);
+
+  // Central Navigation Tabs matching Facebook Web (Início, Reels, Marketplace, Grupos, Jogos)
+  const mainNavTabs = [
+    { id: 'feed', label: 'Início', icon: Home },
+    { id: 'reels', label: 'Vídeos / Reels', icon: Film },
+    { id: 'ads', label: 'Marketplace', icon: Megaphone },
+    { id: 'groups', label: 'Grupos', icon: Users },
+    { id: 'games', label: 'Jogos', icon: Gamepad2 },
+  ];
+
+  // All platform shortcuts for the Apps/Grid menu
+  const gridShortcuts = [
+    { id: 'feed', label: 'Início & Feed', icon: Home, color: 'text-[#1877F2] bg-blue-50 border-blue-200 dark:bg-blue-950/40 dark:border-blue-900/40' },
+    { id: 'chats', label: 'Bate-Papo & Chat', icon: MessageCircle, color: 'text-indigo-600 bg-indigo-50 border-indigo-200 dark:bg-indigo-950/40 dark:border-indigo-900/40' },
+    { id: 'reels', label: 'Reels & Vídeos', icon: Film, color: 'text-rose-600 bg-rose-50 border-rose-200 dark:bg-rose-950/40 dark:border-rose-900/40' },
+    { id: 'ads', label: 'Marketplace / Anúncios', icon: Megaphone, color: 'text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:border-amber-900/40' },
+    { id: 'groups', label: 'Grupos & Comunidades', icon: Users, color: 'text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-900/40' },
+    { id: 'lives', label: 'Lives ao Vivo 🔴', icon: Radio, color: 'text-red-600 bg-red-50 border-red-200 dark:bg-red-950/40 dark:border-red-900/40' },
+    { id: 'referrals', label: 'Indique & Ganhe', icon: Gift, color: 'text-pink-600 bg-pink-50 border-pink-200 dark:bg-pink-950/40 dark:border-pink-900/40' },
+    { id: 'events', label: 'Eventos & Calendário', icon: Calendar, color: 'text-purple-600 bg-purple-50 border-purple-200 dark:bg-purple-950/40 dark:border-purple-900/40' },
+    { id: 'jobs', label: 'Vagas & Empregos', icon: Briefcase, color: 'text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-950/40 dark:border-blue-900/40' },
+    { id: 'ideas', label: 'Exponha suas ideias', icon: Lightbulb, color: 'text-yellow-600 bg-yellow-50 border-yellow-200 dark:bg-yellow-950/40 dark:border-yellow-900/40' },
+    { id: 'games', label: 'Jogos & Passatempos', icon: Gamepad2, color: 'text-teal-600 bg-teal-50 border-teal-200 dark:bg-teal-950/40 dark:border-teal-900/40' },
+    { id: 'pages', label: 'Páginas Comerciais', icon: Building2, color: 'text-cyan-600 bg-cyan-50 border-cyan-200 dark:bg-cyan-950/40 dark:border-cyan-900/40' },
+  ];
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-[#121225]/80 backdrop-blur-md border-b border-white/10 text-white shadow-xl px-4 md:px-8 py-3.5">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-50 w-full bg-white dark:bg-[#242526] border-b border-[#E4E6EB] dark:border-[#3A3B3C] shadow-sm transition-colors" id="custom-main-header">
+      
+      {/* MAIN TOP BAR */}
+      <div className="w-full px-2 sm:px-4 h-14 flex items-center justify-between gap-1 sm:gap-4">
         
-        {/* LOGO AREA */}
-        <div 
-          onClick={() => setActiveTab('feed')} 
-          className="flex items-center gap-2 cursor-pointer group"
-          id="header-logo-container"
-        >
-          <div className="w-10 h-10 bg-gradient-to-tr from-[#7C4DFF] via-[#00E5FF] to-[#00E676] rounded-xl flex items-center justify-center font-black text-white text-xl shadow-[0_0_20px_rgba(0,229,255,0.3)] shadow-[#00E5FF]/20 group-hover:scale-105 transition-all duration-350">
-            <Network className="w-5.5 h-5.5 text-white animate-pulse" />
+        {/* 1. LEFT: LOGO & SEARCH PILL */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div 
+            onClick={() => setActiveTab('feed')} 
+            className="flex items-center gap-2 cursor-pointer group select-none"
+            id="header-logo-container"
+            title="Ir para o Feed de Notícias"
+          >
+            {/* Facebook-style circular Blue Brand badge */}
+            <div className="w-10 h-10 rounded-full bg-[#1877F2] hover:bg-[#166FE5] flex items-center justify-center shadow-sm text-white font-black text-lg tracking-tighter transition-all">
+              bba
+            </div>
+
+            {/* Brand Title */}
+            <div className="hidden xl:flex flex-col text-left">
+              <span className="text-[#1877F2] dark:text-[#2D88FF] font-black text-xl tracking-tight leading-none">
+                bla bla amigos
+              </span>
+              <span className="text-[9px] font-semibold text-gray-500 tracking-wider uppercase mt-0.5">
+                Rede Social
+              </span>
+            </div>
           </div>
-          <div>
-            <span className="text-xl md:text-2xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
-              BLA, BLA, AMIGOS
-            </span>
-            <div className="hidden sm:block text-[9px] font-mono tracking-widest text-[#00E5FF] text-left uppercase">
-              REDE SOCIAL PREMIUM
+
+          {/* Facebook Search Pill */}
+          <div className="relative" id="header-search-container">
+            <div className="relative flex items-center">
+              <Search className="absolute left-3 w-4 h-4 text-gray-500 dark:text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Pesquisar no Bla Bla Amigos..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className="w-36 sm:w-56 md:w-64 bg-[#F0F2F5] dark:bg-[#3A3B3C] text-[#050505] dark:text-[#E4E6EB] text-xs sm:text-sm pl-9 pr-3 py-2 rounded-full border-none focus:outline-none focus:ring-2 focus:ring-[#1877F2]/40 placeholder-gray-500 dark:placeholder-gray-400 transition-all"
+              />
             </div>
           </div>
         </div>
 
-        {/* SEARCH BAR */}
-        <div className="hidden md:flex flex-1 max-w-md relative" id="header-search-container">
-          <input
-            type="text"
-            placeholder="Pesquisar fotos, hashtags, classificados, eventos..."
-            value={searchTerm}
-            onChange={handleSearchChange}
-            className="w-full bg-[#1E1E30] text-gray-300 pl-10 pr-4 py-2 rounded-full border border-white/5 focus:outline-none focus:border-[#00E5FF] focus:ring-2 focus:ring-[#00E5FF]/20 text-sm placeholder-gray-500 transition-all duration-300"
-          />
-          <Search className="absolute left-3.5 top-2.5 w-4.5 h-4.5 text-slate-500" />
+        {/* 2. CENTER: FACEBOOK NAVIGATION TABS (Desktop / Tablet) */}
+        <div className="hidden md:flex items-center justify-center h-full flex-1 max-w-2xl px-2">
+          {mainNavTabs.map((tab) => {
+            const Icon = tab.icon;
+            const isTabActive = activeTab === tab.id;
+
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 h-14 flex items-center justify-center relative transition-colors cursor-pointer group px-2 lg:px-4 ${
+                  isTabActive
+                    ? 'text-[#1877F2] dark:text-[#2D88FF]'
+                    : 'text-gray-500 dark:text-gray-400 hover:bg-[#F2F2F2] dark:hover:bg-[#3A3B3C] rounded-lg my-1'
+                }`}
+                title={tab.label}
+              >
+                <Icon className={`w-6 h-6 transition-transform group-hover:scale-105 ${isTabActive ? 'stroke-[2.5]' : 'stroke-[2]'}`} />
+                {isTabActive && (
+                  <span className="absolute bottom-0 inset-x-2 h-[3px] bg-[#1877F2] dark:bg-[#2D88FF] rounded-t-full" />
+                )}
+              </button>
+            );
+          })}
         </div>
 
-        {/* UTILITIES / PERSPECTIVE SWITCHERS */}
-        <div className="flex items-center gap-2.5 md:gap-4">
+        {/* 3. RIGHT: CIRCULAR ACTION BUTTONS (Menu, Chat, Notifications, User) */}
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           
-          {/* BATE-PAPO REALTIME SHORTCUT BUTTON */}
-          <button
-            onClick={() => setActiveTab('chats')}
-            className={`flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full border text-xs font-black transition-all duration-300 active:scale-95 cursor-pointer ${
-              activeTab === 'chats'
-                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-indigo-400/50 shadow-[0_0_15px_rgba(99,102,241,0.5)]'
-                : 'bg-white/5 border-white/5 text-gray-300 hover:text-white hover:border-indigo-500/30 hover:bg-indigo-500/10'
-            }`}
-            title="Abrir Bate-Papo em Tempo Real"
-            id="header-bate-papo-shortcut"
-          >
-            <MessageSquare className={`w-4 h-4 ${activeTab === 'chats' ? 'text-white animate-bounce' : 'text-[#00E5FF]'}`} />
-            <span className="font-sans">Bate-Papo</span>
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-            </span>
-          </button>
+          {/* A. Apps / Grid Menu Button */}
+          <div className="relative" ref={gridMenuRef}>
+            <button
+              onClick={() => {
+                setShowGridMenu(!showGridMenu);
+                setShowNotifDropdown(false);
+                setShowUserDropdown(false);
+              }}
+              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-150 cursor-pointer active:scale-95 ${
+                showGridMenu 
+                  ? 'bg-[#E7F3FF] text-[#1877F2] dark:bg-[#263951] dark:text-[#2D88FF]' 
+                  : 'bg-[#E4E6EB] hover:bg-[#D8DADF] text-[#050505] dark:bg-[#3A3B3C] dark:hover:bg-[#4E4F50] dark:text-[#E4E6EB]'
+              }`}
+              title="Menu & Recursos"
+              id="header-apps-grid-btn"
+            >
+              <LayoutGrid className="w-5 h-5" />
+            </button>
 
-          {/* BOTÃO DE INSTALAÇÃO DO APLICATIVO BBA */}
-          <button
-            onClick={handleInstallClick}
-            className="flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-gradient-to-r from-[#00E5FF] via-[#00E676] to-[#00E5FF] hover:brightness-110 text-slate-950 text-xs font-black shadow-[0_0_15px_rgba(0,229,255,0.4)] hover:shadow-[0_0_20px_rgba(0,230,118,0.5)] transition-all duration-300 active:scale-95 cursor-pointer shrink-0"
-            title="Instalar Aplicativo BBA no Celular ou PC"
-            id="header-pwa-install-btn"
-          >
-            <Download className="w-3.5 h-3.5 animate-bounce text-slate-950" />
-            <span className="hidden sm:inline font-sans">Instalar App</span>
-            <span className="bg-slate-950 text-[#00E5FF] text-[8px] px-1 rounded font-mono font-bold">
-              BBA
-            </span>
-          </button>
-
-          {/* THEME SWITCHER */}
-          {setTheme && (
-            <div className="flex items-center bg-black/15 p-1 rounded-full border border-white/10 gap-0.5" id="header-theme-switcher">
-              <button
-                onClick={() => setTheme('light')}
-                className={`flex items-center justify-center p-1.5 md:px-2.5 md:py-1 rounded-full text-[10px] font-black transition-all duration-300 active:scale-95 cursor-pointer ${
-                  theme === 'light'
-                    ? 'bg-[#7C4DFF] text-white shadow-md'
-                    : 'text-gray-400 hover:text-white'
-                }`}
-                title="Modo Cinza Claro"
-                aria-label="Modo Cinza Claro"
-              >
-                <Sun className="w-3.5 h-3.5 md:mr-1" />
-                <span className="hidden md:inline">Claro</span>
-              </button>
-              <button
-                onClick={() => setTheme('dark')}
-                className={`flex items-center justify-center p-1.5 md:px-2.5 md:py-1 rounded-full text-[10px] font-black transition-all duration-300 active:scale-95 cursor-pointer ${
-                  theme === 'dark'
-                    ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md'
-                    : 'text-gray-400 hover:text-white'
-                }`}
-                title="Modo Escuro Clássico"
-                aria-label="Modo Escuro Clássico"
-              >
-                <Moon className="w-3.5 h-3.5 md:mr-1" />
-                <span className="hidden md:inline">Escuro</span>
-              </button>
-            </div>
-          )}
-
-          {/* USER SWAPPER (SIMULATE SESSIONS) */}
-          <div className="relative" id="header-user-swapper">
-            {currentUser.id === 'admin' ? (
-              <button
-                onClick={() => {
-                  setShowUserDropdown(!showUserDropdown);
-                  setShowNotifDropdown(false);
-                }}
-                title="Alternar Sessão de Usuário"
-                className="flex items-center gap-2 bg-white/5 p-1.5 pr-3.5 rounded-full border border-white/5 hover:border-white/10 hover:bg-white/10 transition-all duration-300 cursor-pointer"
-              >
-                <img
-                  src={currentUser.avatar}
-                  alt={currentUser.fullName}
-                  referrerPolicy="no-referrer"
-                  className="w-7 h-7 rounded-full object-cover ring-2 ring-[#7C4DFF]"
-                />
-                <div className="text-left hidden sm:block">
-                  <div className="text-xs font-semibold leading-none max-w-[90px] truncate text-white">
-                    {currentUser.fullName}
-                  </div>
-                  <div className="text-[10px] text-[#00E5FF] font-mono flex items-center gap-0.5 mt-0.5">
-                    ID: {currentUser.username}
-                    {currentUser.isVerified && <BadgeCheck className="w-3 h-3 text-[#00E5FF] inline" />}
-                  </div>
-                </div>
-                <Shuffle className="w-3.5 h-3.5 text-[#00E5FF] animate-spin-slow ml-1" />
-              </button>
-            ) : (
-              <div
-                className="flex items-center gap-2 bg-white/5 p-1.5 pr-3.5 rounded-full border border-white/5 select-none"
-              >
-                <img
-                  src={currentUser.avatar}
-                  alt={currentUser.fullName}
-                  referrerPolicy="no-referrer"
-                  className="w-7 h-7 rounded-full object-cover ring-2 ring-[#7C4DFF]"
-                />
-                <div className="text-left hidden sm:block">
-                  <div className="text-xs font-semibold leading-none max-w-[90px] truncate text-white">
-                    {currentUser.fullName}
-                  </div>
-                  <div className="text-[10px] text-[#00E5FF] font-mono flex items-center gap-0.5 mt-0.5">
-                    ID: {currentUser.username}
-                    {currentUser.isVerified && <BadgeCheck className="w-3 h-3 text-[#00E5FF] inline" />}
-                  </div>
-                </div>
-              </div>
-            )}
-
+            {/* Grid Apps Dropdown Modal */}
             <AnimatePresence>
-              {currentUser.id === 'admin' && showUserDropdown && (
+              {showGridMenu && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="absolute right-0 mt-3.5 w-64 bg-[#121225]/95 border border-white/10 rounded-2xl p-3 shadow-2xl text-slate-300 backdrop-blur-lg animate-fade-in"
+                  initial={{ opacity: 0, scale: 0.95, y: 8 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 8 }}
+                  className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-[#242526] border border-[#E4E6EB] dark:border-[#3A3B3C] rounded-2xl p-4 shadow-2xl text-[#050505] dark:text-[#E4E6EB] z-50 animate-fade-in"
                 >
-                  <div className="text-[11px] font-bold text-[#00E5FF] uppercase tracking-widest px-2 mb-2">
-                    Contas de Membros Reais
+                  <div className="flex items-center justify-between pb-3 border-b border-[#E4E6EB] dark:border-[#3A3B3C] mb-3">
+                    <div className="flex items-center gap-2">
+                      <LayoutGrid className="w-4 h-4 text-[#1877F2]" />
+                      <span className="text-sm font-bold">
+                        Menu do Bla Bla Amigos
+                      </span>
+                    </div>
+                    <span className="text-[10px] bg-blue-100 text-[#1877F2] dark:bg-blue-900/40 dark:text-blue-300 font-bold px-2 py-0.5 rounded-full">
+                      Recursos
+                    </span>
                   </div>
-                  <div className="max-h-60 overflow-y-auto space-y-1 pr-1">
-                    {quickSwitchUsers.length === 0 ? (
-                      <div className="text-[10px] text-gray-400 italic p-3.5 text-center leading-relaxed">
-                        Nenhum outro usuário real cadastrado nesta plataforma ainda.
-                      </div>
-                    ) : (
-                      quickSwitchUsers.map(u => (
+
+                  {/* Grid Buttons */}
+                  <div className="grid grid-cols-2 gap-2 max-h-80 overflow-y-auto pr-1 scrollbar-thin">
+                    {gridShortcuts.map((item) => {
+                      const Icon = item.icon;
+                      const isItemActive = activeTab === item.id;
+                      return (
                         <button
-                          key={u.id}
+                          key={item.id}
                           onClick={() => {
-                            onSelectUser(u.id);
-                            setShowUserDropdown(false);
-                            setActiveTab('feed');
+                            setActiveTab(item.id);
+                            setShowGridMenu(false);
                           }}
-                          className="w-full flex items-center gap-3 p-2 hover:bg-[#1E1E30]/60 rounded-xl transition-all text-left"
+                          className={`flex items-center gap-2.5 p-2 rounded-xl text-left transition-all cursor-pointer ${
+                            isItemActive 
+                              ? 'bg-blue-50 dark:bg-blue-950/50 text-[#1877F2] font-semibold' 
+                              : 'hover:bg-[#F0F2F5] dark:hover:bg-[#3A3B3C] text-gray-700 dark:text-gray-200'
+                          }`}
                         >
-                          <img
-                            src={u.avatar}
-                            alt={u.fullName}
-                            referrerPolicy="no-referrer"
-                            className="w-8 h-8 rounded-full object-cover"
-                          />
-                          <div className="text-xs truncate">
-                            <div className="font-semibold text-white flex items-center gap-1">
-                              {u.fullName}
-                              {u.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-[#00E5FF] inline" />}
-                            </div>
-                            <div className="text-gray-400 text-[10px] font-mono">ID: {u.username}</div>
+                          <div className={`p-2 rounded-xl border shrink-0 ${item.color}`}>
+                            <Icon className="w-4 h-4" />
                           </div>
+                          <span className="text-xs font-semibold leading-snug truncate">
+                            {item.label}
+                          </span>
                         </button>
-                      ))
-                    )}
+                      );
+                    })}
                   </div>
-                  <div className="border-t border-white/10 mt-2.5 pt-2.5 px-2">
-                    <button
-                      onClick={() => {
-                        onSelectUser('admin');
-                        setShowUserDropdown(false);
-                        setActiveTab('admin');
-                      }}
-                      className="w-full flex items-center justify-between text-xs text-rose-450 text-rose-400 font-semibold hover:text-rose-300 transition-colors"
-                    >
-                      <span className="flex items-center gap-1.5 font-sans">
-                        <ShieldAlert className="w-4 h-4" />
-                        Acesso Administrador
-                      </span>
-                      <span className="bg-rose-500/10 border border-rose-500/30 text-[9px] px-1.5 py-0.5 rounded uppercase font-mono">
-                        Admin
-                      </span>
-                    </button>
-                  </div>
+
+                  {/* Admin Direct Access */}
+                  {currentUser.id === 'admin' && (
+                    <div className="mt-3 pt-3 border-t border-[#E4E6EB] dark:border-[#3A3B3C]">
+                      <button
+                        onClick={() => {
+                          setActiveTab('admin');
+                          setShowGridMenu(false);
+                        }}
+                        className="w-full flex items-center justify-center gap-2 py-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-900/40 border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-bold cursor-pointer transition-all"
+                      >
+                        <ShieldCheck className="w-4 h-4 text-rose-600" />
+                        Painel Administrativo Completo
+                      </button>
+                    </div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
 
-          {/* NOTIFICATION HUB */}
-          <div className="relative" id="header-notifications">
+          {/* B. Messenger / Chat Button */}
+          <button
+            onClick={() => setActiveTab('chats')}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-150 cursor-pointer active:scale-95 ${
+              activeTab === 'chats' 
+                ? 'bg-[#E7F3FF] text-[#1877F2] dark:bg-[#263951] dark:text-[#2D88FF]' 
+                : 'bg-[#E4E6EB] hover:bg-[#D8DADF] text-[#050505] dark:bg-[#3A3B3C] dark:hover:bg-[#4E4F50] dark:text-[#E4E6EB]'
+            }`}
+            title="Messenger / Bate-Papo"
+            id="header-chat-btn"
+          >
+            <MessageCircle className="w-5 h-5" />
+          </button>
+
+          {/* C. Notifications Bell Button */}
+          <div className="relative" ref={notifDropdownRef}>
             <button
               onClick={() => {
                 setShowNotifDropdown(!showNotifDropdown);
                 setShowUserDropdown(false);
+                setShowGridMenu(false);
               }}
-              className="relative p-2.5 bg-white/5 rounded-full border border-white/5 text-gray-350 text-gray-300 hover:text-white hover:border-white/10 hover:bg-white/10 transition-all duration-300"
+              className={`relative w-10 h-10 rounded-full flex items-center justify-center transition-all duration-150 cursor-pointer active:scale-95 ${
+                showNotifDropdown 
+                  ? 'bg-[#E7F3FF] text-[#1877F2] dark:bg-[#263951] dark:text-[#2D88FF]' 
+                  : 'bg-[#E4E6EB] hover:bg-[#D8DADF] text-[#050505] dark:bg-[#3A3B3C] dark:hover:bg-[#4E4F50] dark:text-[#E4E6EB]'
+              }`}
+              title="Notificações"
+              id="header-notif-btn"
             >
-              <Bell className="w-4.5 h-4.5 text-[#00E5FF]" />
+              <Bell className="w-5 h-5" />
               {notifications.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-4.5 h-4.5 bg-[#FF5722] text-white rounded-full font-bold text-[9px] flex items-center justify-center animate-bounce">
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white rounded-full font-bold text-[9px] flex items-center justify-center shadow">
                   {notifications.length}
                 </span>
               )}
             </button>
 
+            {/* Notifications Dropdown */}
             <AnimatePresence>
               {showNotifDropdown && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="absolute right-0 mt-3.5 w-80 bg-slate-950/95 border border-slate-800 rounded-2xl p-4 shadow-2xl text-slate-300 backdrop-blur-lg"
+                  initial={{ opacity: 0, scale: 0.95, y: 8 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 8 }}
+                  className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-[#242526] border border-[#E4E6EB] dark:border-[#3A3B3C] rounded-2xl p-4 shadow-2xl text-[#050505] dark:text-[#E4E6EB] z-50"
                 >
-                  <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-900">
-                    <span className="font-bold text-xs uppercase tracking-wider text-indigo-400">
-                      Notificações Recentes
+                  <div className="flex items-center justify-between pb-3 border-b border-[#E4E6EB] dark:border-[#3A3B3C] mb-3">
+                    <span className="font-bold text-base">
+                      Notificações
                     </span>
-                    <span className="text-[10px] bg-slate-900 text-slate-400 px-2 py-0.5 rounded-full">
-                      Tempo Real
+                    <span className="text-xs text-[#1877F2] hover:underline cursor-pointer">
+                      Ver todas
                     </span>
                   </div>
                   
                   {notifications.length === 0 ? (
-                    <div className="text-center py-6 text-slate-500 text-xs">
-                      Nada pendente no momento. Viva a amizade! ✨
+                    <div className="text-center py-8 text-gray-500 text-xs">
+                      Nenhuma notificação nova no momento.
                     </div>
                   ) : (
-                    <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                    <div className="space-y-2 max-h-72 overflow-y-auto pr-1 scrollbar-thin">
                       {notifications.map(n => (
                         <div
                           key={n.id}
-                          className={`p-2.5 rounded-xl border text-xs text-slate-200 transition-all ${
-                            n.type === 'warning'
-                              ? 'bg-amber-500/5 border-amber-500/20'
-                              : 'bg-emerald-500/5 border-emerald-500/20'
-                          }`}
+                          className="p-2.5 rounded-xl border border-[#E4E6EB] dark:border-[#3A3B3C] hover:bg-[#F0F2F5] dark:hover:bg-[#3A3B3C] transition-colors text-left flex gap-3 items-start"
                         >
-                          <div className="flex items-start justify-between gap-2">
-                            <span className="font-semibold block mb-0.5">
-                              {n.type === 'warning' ? '🛡️ Alerta Moderação' : '✨ Sistema'}
-                            </span>
-                            <span className="text-[9px] text-slate-500 font-mono shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-blue-100 text-[#1877F2] flex items-center justify-center shrink-0 font-bold text-xs">
+                            {n.type === 'warning' ? '⚠️' : '🔔'}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-[#050505] dark:text-[#E4E6EB] font-medium leading-relaxed">{n.message}</p>
+                            <span className="text-[10px] text-gray-500 font-mono mt-0.5 block">
                               {new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </div>
-                          <p className="text-slate-300 text-xs leading-relaxed">{n.message}</p>
                         </div>
                       ))}
                     </div>
@@ -386,33 +406,265 @@ export default function Header({
             </AnimatePresence>
           </div>
 
-          {/* ADMIN SPEED LINK (FOR EASIER EVALUATION) */}
-          {currentUser.id === 'admin' && (
-            <button
-              onClick={() => setActiveTab('admin')}
-              className="hidden lg:flex items-center gap-1.5 bg-gradient-to-r from-pink-500 to-indigo-600 hover:from-pink-600 hover:to-indigo-700 text-white font-bold text-xs px-3.5 py-2.5 rounded-full border border-pink-400/20 shadow-md hover:shadow-lg transition-all active:scale-95 duration-200"
-            >
-              <Compass className="w-4 h-4 text-pink-200 animate-spin-slow" />
-              Ver Painel Admin
-            </button>
-          )}
-
-          {/* SIMULATION EXIT LINK (RETURN TO ADMIN) */}
-          {currentUser.id !== 'admin' && isAdminSessionActive && (
+          {/* D. User Avatar Button & Menu */}
+          <div className="relative" ref={userDropdownRef}>
             <button
               onClick={() => {
-                onSelectUser('admin');
-                setActiveTab('admin');
+                setShowUserDropdown(!showUserDropdown);
+                setShowNotifDropdown(false);
+                setShowGridMenu(false);
               }}
-              className="flex items-center gap-1.5 bg-gradient-to-r from-rose-500 to-amber-500 hover:brightness-110 text-white font-bold text-xs px-3.5 py-2.5 rounded-full border border-rose-400/20 shadow-md hover:shadow-lg transition-all active:scale-95 duration-200 cursor-pointer"
+              className="flex items-center gap-1 p-0.5 rounded-full hover:ring-2 hover:ring-[#1877F2]/40 transition-all cursor-pointer group"
+              title="Conta & Configurações"
+              id="header-user-avatar-btn"
             >
-              <ShieldAlert className="w-4 h-4 text-rose-100 animate-pulse" />
-              Voltar ao Admin
+              <img
+                src={currentUser.avatar}
+                alt={currentUser.fullName}
+                referrerPolicy="no-referrer"
+                className="w-9 h-9 rounded-full object-cover ring-2 ring-[#00E5FF]/40 group-hover:ring-[#00E5FF] transition-all bg-neutral-800"
+              />
+              <ChevronDown className="w-3.5 h-3.5 text-gray-400 mr-1 hidden sm:block group-hover:text-white" />
             </button>
-          )}
+
+            {/* Profile / Account Dropdown */}
+            <AnimatePresence>
+              {showUserDropdown && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 8 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 8 }}
+                  className="absolute right-0 mt-2 w-72 sm:w-80 bg-white dark:bg-[#242526] border border-[#E4E6EB] dark:border-[#3A3B3C] rounded-2xl p-3 shadow-2xl text-[#050505] dark:text-[#E4E6EB] z-50 text-left"
+                >
+                  {/* User details header */}
+                  <div 
+                    onClick={() => {
+                      onViewProfile?.(currentUser);
+                      setShowUserDropdown(false);
+                    }}
+                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-[#F0F2F5] dark:hover:bg-[#3A3B3C] transition-all cursor-pointer shadow-sm border border-[#E4E6EB] dark:border-[#3A3B3C]"
+                  >
+                    <img
+                      src={currentUser.avatar}
+                      alt={currentUser.fullName}
+                      referrerPolicy="no-referrer"
+                      className="w-11 h-11 rounded-full object-cover ring-2 ring-[#1877F2]"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-bold text-[#050505] dark:text-[#E4E6EB] truncate flex items-center gap-1">
+                        {currentUser.fullName}
+                        {currentUser.isVerified && <BadgeCheck className="w-4 h-4 text-[#1877F2] inline shrink-0" />}
+                      </h4>
+                      <p className="text-xs text-gray-500 font-mono truncate">@{currentUser.username}</p>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-[#E4E6EB] dark:border-[#3A3B3C] my-2" />
+
+                  {/* Menu Options */}
+                  <div className="space-y-1">
+                    <button
+                      onClick={() => {
+                        onViewProfile?.(currentUser);
+                        setShowUserDropdown(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-[#F0F2F5] dark:hover:bg-[#3A3B3C] rounded-xl transition-all cursor-pointer"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#1877F2] flex items-center justify-center">
+                        <UserIcon className="w-4 h-4" />
+                      </div>
+                      <span>Ver Meu Perfil Completo</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        handleInstallClick();
+                        setShowUserDropdown(false);
+                      }}
+                      className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-[#F0F2F5] dark:hover:bg-[#3A3B3C] rounded-xl transition-all cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 flex items-center justify-center">
+                          <Download className="w-4 h-4" />
+                        </div>
+                        <span>Instalar Aplicativo BBA</span>
+                      </span>
+                      <span className="text-[9px] bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded font-bold">
+                        PWA
+                      </span>
+                    </button>
+
+                    {/* Theme toggle */}
+                    {setTheme && (
+                      <button
+                        onClick={() => {
+                          setTheme(theme === 'light' ? 'dark' : 'light');
+                          setShowUserDropdown(false);
+                        }}
+                        className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-[#F0F2F5] dark:hover:bg-[#3A3B3C] rounded-xl transition-all cursor-pointer"
+                      >
+                        <span className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-600 flex items-center justify-center">
+                            {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                          </div>
+                          <span>Modo {theme === 'light' ? 'Escuro' : 'Claro'}</span>
+                        </span>
+                        <span className="text-[10px] text-gray-500 capitalize">
+                          {theme === 'light' ? 'Ativar escuro' : 'Ativar claro'}
+                        </span>
+                      </button>
+                    )}
+
+                    {/* Privacy and AdSense institutional policy */}
+                    <button
+                      onClick={() => {
+                        setShowPrivacyModal(true);
+                        setShowUserDropdown(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-[#F0F2F5] dark:hover:bg-[#3A3B3C] rounded-xl transition-all cursor-pointer"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 flex items-center justify-center">
+                        <FileText className="w-4 h-4" />
+                      </div>
+                      <span>Privacidade & Termos de Uso</span>
+                    </button>
+                  </div>
+
+                  {/* Switch user accounts (if admin) */}
+                  {currentUser.id === 'admin' && (
+                    <div className="border-t border-[#E4E6EB] dark:border-[#3A3B3C] mt-2 pt-2">
+                      <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-3 mb-1.5">
+                        Simular Usuários
+                      </div>
+                      <div className="max-h-36 overflow-y-auto space-y-0.5 pr-1">
+                        {quickSwitchUsers.map(u => (
+                          <button
+                            key={u.id}
+                            onClick={() => {
+                              onSelectUser(u.id);
+                              setShowUserDropdown(false);
+                              setActiveTab('feed');
+                            }}
+                            className="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-[#F0F2F5] dark:hover:bg-[#3A3B3C] rounded-lg transition-all text-left text-xs"
+                          >
+                            <img src={u.avatar} alt={u.fullName} className="w-6 h-6 rounded-full object-cover" />
+                            <span className="truncate text-gray-800 dark:text-gray-200">{u.fullName}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Logout Button */}
+                  {onLogout && (
+                    <div className="border-t border-[#E4E6EB] dark:border-[#3A3B3C] mt-2 pt-2">
+                      <button
+                        onClick={() => {
+                          setShowUserDropdown(false);
+                          onLogout();
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-all cursor-pointer font-semibold"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>Sair do Bla Bla Amigos</span>
+                      </button>
+                    </div>
+                  )}
+
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
         </div>
+
       </div>
+
+      {/* MOBILE BOTTOM NAVIGATION TABS BAR (Visible only on mobile screens) */}
+      <div className="md:hidden w-full border-t border-[#E4E6EB] dark:border-[#3A3B3C] bg-white dark:bg-[#242526] px-2 flex justify-around items-center h-12">
+        {mainNavTabs.map((tab) => {
+          const Icon = tab.icon;
+          const isTabActive = activeTab === tab.id;
+
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 h-full flex items-center justify-center relative cursor-pointer ${
+                isTabActive
+                  ? 'text-[#1877F2] dark:text-[#2D88FF]'
+                  : 'text-gray-500 dark:text-gray-400'
+              }`}
+              title={tab.label}
+            >
+              <Icon className={`w-5 h-5 ${isTabActive ? 'stroke-[2.5]' : 'stroke-[2]'}`} />
+              {isTabActive && (
+                <span className="absolute bottom-0 inset-x-2 h-[3px] bg-[#1877F2] dark:bg-[#2D88FF] rounded-t-full" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* PRIVACY & TERMS MODAL (FOR ADSENSE COMPLIANCE) */}
+      <AnimatePresence>
+        {showPrivacyModal && (
+          <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="bg-[#0B132B] border border-[#1E293B] rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col text-left my-8"
+            >
+              <div className="p-4.5 border-b border-[#1E293B] flex items-center justify-between bg-[#0F172A]">
+                <div className="flex items-center gap-2.5">
+                  <ShieldCheck className="w-5 h-5 text-[#00E5FF]" />
+                  <span className="text-sm font-bold text-white uppercase tracking-wider font-mono">
+                    Termos de Uso & Política de Privacidade (AdSense Compliance)
+                  </span>
+                </div>
+                <button 
+                  onClick={() => setShowPrivacyModal(false)}
+                  className="p-1.5 hover:bg-white/10 rounded-lg transition-all text-gray-400 hover:text-white cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto text-xs text-gray-300 leading-relaxed scrollbar-thin">
+                <h4 className="text-sm font-bold text-white">1. Identificação e Compromisso</h4>
+                <p>
+                  A plataforma <strong>BLA, BLA, BLA DA AMIZADE - REDE SOCIAL PREMIUM</strong> é uma comunidade digital segura e transparente, destinada a conectar amigos, profissionais e comunidades em todo o Brasil.
+                </p>
+
+                <h4 className="text-sm font-bold text-white">2. Políticas do Google AdSense & Diretrizes Publicitárias</h4>
+                <p>
+                  Nosso site cumpre integralmente as Diretrizes para Webmasters e as Políticas do Programa Google AdSense (Google Publisher Policies). Não toleramos conteúdo prejudicial, fraudulento ou não conforme.
+                </p>
+
+                <h4 className="text-sm font-bold text-white">3. Proteção e Privacidade dos Dados (LGPD)</h4>
+                <p>
+                  Garantimos a proteção dos dados pessoais de todos os membros cadastrados conforme a Lei Geral de Proteção de Dados (LGPD). Os dados nunca são vendidos a terceiros.
+                </p>
+
+                <h4 className="text-sm font-bold text-white">4. Contato Institucional</h4>
+                <p>
+                  Em caso de dúvidas, envie um e-mail para <span className="text-[#00E5FF] font-mono">contato@blablabladosamigos.online</span> ou use o canal oficial no menu de Ajuda da plataforma.
+                </p>
+              </div>
+
+              <div className="p-4 border-t border-[#1E293B] bg-[#0F172A] flex justify-end">
+                <button
+                  onClick={() => setShowPrivacyModal(false)}
+                  className="px-5 py-2 bg-[#00E5FF] hover:bg-[#00c2d6] text-slate-950 font-extrabold text-xs rounded-xl transition-all cursor-pointer"
+                >
+                  Entendi e Aceito
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* iOS INSTALL INSTRUCTIONS MODAL */}
       <AnimatePresence>
@@ -422,10 +674,9 @@ export default function Header({
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="bg-[#121225] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col text-left"
+              className="bg-[#0B132B] border border-[#1E293B] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col text-left"
             >
-              {/* Header */}
-              <div className="p-4 border-b border-white/10 flex items-center justify-between bg-[#1A1A32]">
+              <div className="p-4 border-b border-[#1E293B] flex items-center justify-between bg-[#0F172A]">
                 <div className="flex items-center gap-2">
                   <Smartphone className="w-4.5 h-4.5 text-[#00E5FF] animate-pulse" />
                   <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">
@@ -441,64 +692,29 @@ export default function Header({
                 </button>
               </div>
 
-              {/* Body */}
-              <div className="p-6 space-y-5">
-                {/* App profile preview */}
-                <div className="flex items-center gap-4 bg-[#0A0A14] p-3.5 rounded-xl border border-white/5">
-                  <img 
-                    src="/icon-512.jpg" 
-                    alt="BBA Logo" 
-                    className="w-14 h-14 rounded-2xl object-cover shadow-lg border border-white/10" 
-                  />
+              <div className="p-6 space-y-4 text-xs text-gray-300">
+                <div className="flex items-center gap-3 bg-[#0F172A] p-3 rounded-xl border border-[#1E293B]">
+                  <div className="w-12 h-12 rounded-xl bg-[#00E5FF] flex items-center justify-center text-slate-950 font-black text-xl">
+                    BBA
+                  </div>
                   <div>
-                    <h4 className="text-sm font-black text-white leading-tight">Bla Bla Amigos</h4>
-                    <p className="text-[10px] text-[#00E5FF] font-mono tracking-wider font-bold mt-0.5">SIGLA: BBA</p>
-                    <p className="text-[11px] text-gray-400 mt-1 leading-snug">
-                      Adicione o aplicativo à sua tela de início para acessar diretamente em tela cheia!
-                    </p>
+                    <h4 className="text-sm font-black text-white">Bla Bla Amigos</h4>
+                    <p className="text-[10px] text-[#00E5FF] font-mono">Rede Social Premium</p>
                   </div>
                 </div>
 
-                {/* Steps */}
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[#00E5FF] font-mono font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
-                      1
-                    </div>
-                    <div className="text-xs text-gray-300 leading-relaxed">
-                      Toque no botão de <span className="text-white font-bold inline-flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded border border-white/10"><Share className="w-3 h-3 text-blue-400 inline" /> Compartilhar</span> (na barra inferior ou superior do Safari).
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[#00E5FF] font-mono font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
-                      2
-                    </div>
-                    <div className="text-xs text-gray-300 leading-relaxed">
-                      Role o menu para baixo e selecione a opção <span className="text-white font-bold bg-white/5 px-1.5 py-0.5 rounded border border-white/10">Adicionar à Tela de Início</span>.
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[#00E5FF] font-mono font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
-                      3
-                    </div>
-                    <div className="text-xs text-gray-300 leading-relaxed">
-                      Toque em <span className="text-white font-bold text-blue-400">Adicionar</span> no canto superior direito para confirmar.
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl text-[11px] text-emerald-300 leading-relaxed font-sans">
-                  ✨ Pronto! O ícone premium com a sigla <strong className="font-extrabold text-[#00E676]">BBA</strong> será instalado e você poderá usá-lo como um aplicativo nativo completo do Facebook!
-                </div>
+                <ol className="list-decimal list-inside space-y-2 leading-relaxed">
+                  <li>Toque no botão <strong>Compartilhar</strong> (ícone quadrado com seta) no Safari.</li>
+                  <li>Role para baixo e selecione <strong>Adicionar à Tela de Início</strong>.</li>
+                  <li>Confirme tocando em <strong>Adicionar</strong> no canto superior direito.</li>
+                </ol>
 
                 <button
                   type="button"
                   onClick={() => setShowIOSModal(false)}
-                  className="w-full py-2.5 bg-[#1A1A32] hover:bg-[#25254A] border border-white/10 text-white text-xs font-bold rounded-xl transition-all cursor-pointer"
+                  className="w-full py-2.5 bg-[#00E5FF] hover:bg-[#00c2d6] text-slate-950 text-xs font-bold rounded-xl transition-all cursor-pointer"
                 >
-                  Entendi, fechar
+                  Fechar
                 </button>
               </div>
             </motion.div>

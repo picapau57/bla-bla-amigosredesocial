@@ -102,14 +102,16 @@ export default function StoriesSection({
   };
 
   return (
-    <div className="bg-[#121124] border border-white/10 rounded-2xl p-4 shadow-xl mb-6 relative" id="applet-stories-section">
+    <div className="bg-white dark:bg-[#242526] border border-[#E4E6EB] dark:border-[#3A3B3C] rounded-xl p-3 sm:p-4 shadow-sm mb-4 relative transition-colors" id="applet-stories-section">
       
       {/* HEADER */}
       <div className="flex items-center justify-between mb-3 px-1">
-        <span className="text-xs font-bold uppercase tracking-widest text-[#00E5FF] font-mono">
-          Stories Diários (24h)
+        <span className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+          Stories
         </span>
-        <span className="text-[10px] text-gray-500 font-mono font-bold">Total: {filteredStories.length}</span>
+        <span className="text-[11px] text-[#1877F2] font-semibold hover:underline cursor-pointer" onClick={() => setShowCreateModal(true)}>
+          + Criar story
+        </span>
       </div>
 
       <div className="relative group/tray">
@@ -118,11 +120,11 @@ export default function StoriesSection({
         {showLeftArrow && (
           <button
             onClick={() => handleScroll('left')}
-            className="absolute -left-3 top-1/2 -translate-y-1/2 z-20 bg-white dark:bg-[#1E1D3A] text-gray-700 dark:text-gray-200 w-9 h-9 rounded-full flex items-center justify-center shadow-md border border-gray-200 dark:border-white/10 hover:scale-105 active:scale-95 transition-all cursor-pointer hover:bg-gray-50 dark:hover:bg-[#25244C]"
+            className="absolute -left-3 top-1/2 -translate-y-1/2 z-20 bg-white dark:bg-[#3A3B3C] text-gray-700 dark:text-gray-200 w-10 h-10 rounded-full flex items-center justify-center shadow-lg border border-gray-200 dark:border-white/10 hover:scale-105 active:scale-95 transition-all cursor-pointer"
             aria-label="Anterior"
             title="Anterior"
           >
-            <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-300 stroke-[2.5]" />
+            <ChevronLeft className="w-5 h-5 text-gray-700 dark:text-gray-200 stroke-[2.5]" />
           </button>
         )}
 
@@ -130,47 +132,47 @@ export default function StoriesSection({
         {showRightArrow && (
           <button
             onClick={() => handleScroll('right')}
-            className="absolute -right-3 top-1/2 -translate-y-1/2 z-20 bg-white dark:bg-[#1E1D3A] text-gray-700 dark:text-gray-200 w-9 h-9 rounded-full flex items-center justify-center shadow-md border border-gray-200 dark:border-white/10 hover:scale-105 active:scale-95 transition-all cursor-pointer hover:bg-gray-50 dark:hover:bg-[#25244C]"
+            className="absolute -right-3 top-1/2 -translate-y-1/2 z-20 bg-white dark:bg-[#3A3B3C] text-gray-700 dark:text-gray-200 w-10 h-10 rounded-full flex items-center justify-center shadow-lg border border-gray-200 dark:border-white/10 hover:scale-105 active:scale-95 transition-all cursor-pointer"
             aria-label="Próximo"
             title="Próximo"
           >
-            <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-300 stroke-[2.5]" />
+            <ChevronRight className="w-5 h-5 text-gray-700 dark:text-gray-200 stroke-[2.5]" />
           </button>
         )}
 
         {/* STORIES LIST CONTAINER */}
         <div 
           ref={scrollRef}
-          className="flex items-center gap-3 overflow-x-auto pb-3 pt-1 scrollbar-none snap-x" 
+          className="flex items-center gap-2.5 overflow-x-auto pb-2 pt-1 scrollbar-none snap-x" 
           id="stories-bubbles-container"
         >
           
           {/* CREATE STORY CARD */}
           <div 
             onClick={() => setShowCreateModal(true)}
-            className="relative w-28 sm:w-32 h-44 sm:h-48 rounded-2xl overflow-hidden bg-white dark:bg-[#1A1932] border border-gray-200 dark:border-white/10 shadow-lg cursor-pointer shrink-0 select-none group transition-all duration-300 hover:shadow-[#00E5FF]/20 hover:border-[#00E5FF]/40 hover:-translate-y-1 flex flex-col snap-start"
+            className="relative w-28 sm:w-32 h-44 sm:h-48 rounded-xl overflow-hidden bg-white dark:bg-[#3A3B3C] border border-[#E4E6EB] dark:border-[#3A3B3C] shadow-sm cursor-pointer shrink-0 select-none group transition-all duration-200 hover:shadow-md hover:scale-[1.02] flex flex-col snap-start"
             id="create-story-card"
           >
             {/* Top image section: current user's avatar */}
-            <div className="w-full h-[70%] overflow-hidden relative bg-gray-100 dark:bg-[#0D0C1D]">
+            <div className="w-full h-[72%] overflow-hidden relative bg-[#F0F2F5] dark:bg-[#18191A]">
               <img 
                 src={currentUser.avatar} 
                 alt={currentUser.fullName}
                 referrerPolicy="no-referrer"
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 brightness-95"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 brightness-95"
               />
               <div className="absolute inset-0 bg-black/5" />
             </div>
             
             {/* Bottom text section */}
-            <div className="w-full h-[30%] bg-white dark:bg-[#0A0A14] flex flex-col items-center justify-end pb-3 relative create-story-footer">
+            <div className="w-full h-[28%] bg-white dark:bg-[#242526] flex flex-col items-center justify-end pb-2.5 relative create-story-footer">
               {/* Overlapping circular blue plus button */}
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 p-[2px] rounded-full bg-white dark:bg-[#0A0A14]">
-                <div className="w-8 h-8 rounded-full bg-[#007eff] flex items-center justify-center text-white shadow-md shadow-[#007eff]/30 group-hover:scale-110 transition-transform duration-300">
-                  <Plus className="w-4 h-4 stroke-[3px]" />
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 p-[3px] rounded-full bg-white dark:bg-[#242526]">
+                <div className="w-8 h-8 rounded-full bg-[#1877F2] hover:bg-[#166FE5] flex items-center justify-center text-white shadow-sm transition-transform duration-200 group-hover:scale-110">
+                  <Plus className="w-5 h-5 stroke-[3px]" />
                 </div>
               </div>
-              <span className="text-[10px] sm:text-[11px] text-gray-800 dark:text-white font-sans font-extrabold tracking-wide">
+              <span className="text-[11px] text-[#050505] dark:text-white font-bold tracking-tight">
                 Criar story
               </span>
             </div>
@@ -190,39 +192,39 @@ export default function StoriesSection({
               <div 
                 key={story.id} 
                 onClick={() => setActiveStoryIdx(index)}
-                className="user-story-card relative w-28 sm:w-32 h-44 sm:h-48 rounded-2xl overflow-hidden bg-[#0A0A14] border border-white/10 shadow-lg cursor-pointer shrink-0 select-none group transition-all duration-300 hover:shadow-[#007eff]/25 hover:border-[#007eff]/50 hover:-translate-y-1 snap-start"
+                className="user-story-card relative w-28 sm:w-32 h-44 sm:h-48 rounded-xl overflow-hidden bg-[#18191A] border border-[#E4E6EB] dark:border-[#3A3B3C] shadow-sm cursor-pointer shrink-0 select-none group transition-all duration-200 hover:shadow-md hover:scale-[1.02] snap-start"
               >
                 {/* Background Story Image */}
                 <img 
                   src={story.mediaUrl} 
                   alt={`${user.fullName}'s story`}
                   referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 
                 {/* Dark Gradient Overlay for optimal legibility */}
-                <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/85" />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/85" />
 
-                {/* User Circular Avatar Badge in the top-left (matches screenshot: thick vibrant blue border) */}
-                <div className="absolute top-2.5 left-2.5 z-10 w-9 h-9 rounded-full border-[2.5px] border-[#007eff] bg-white flex items-center justify-center shadow-md">
+                {/* User Circular Avatar Badge in the top-left (Facebook blue border) */}
+                <div className="absolute top-2 left-2 z-10 w-9 h-9 rounded-full border-[3px] border-[#1877F2] bg-white flex items-center justify-center shadow-md overflow-hidden">
                   <img
                     src={user.avatar}
                     alt={user.fullName}
                     referrerPolicy="no-referrer"
-                    className="w-full h-full rounded-full object-cover p-[1px]"
+                    className="w-full h-full object-cover"
                   />
                 </div>
 
                 {/* User Name and Caption snippet at the bottom */}
                 <div className="absolute bottom-2.5 left-2.5 right-2.5 z-10 flex flex-col">
-                  <span className="text-[10px] sm:text-[11px] text-white font-sans font-bold tracking-wide truncate flex items-center gap-1 drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
+                  <span className="text-[11px] text-white font-bold tracking-tight truncate flex items-center gap-1 drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
                     {isCurrentUser ? 'Seu story' : user.fullName}
                     {user.isVerified && (
-                      <span className="w-3.5 h-3.5 rounded-full bg-[#007eff] inline-flex items-center justify-center text-[7px] text-white font-black shrink-0">✓</span>
+                      <span className="w-3.5 h-3.5 rounded-full bg-[#1877F2] inline-flex items-center justify-center text-[7px] text-white font-black shrink-0">✓</span>
                     )}
                   </span>
                   {story.text && (
-                    <span className="text-[8px] text-gray-200 font-medium truncate font-sans mt-0.5 opacity-90 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
+                    <span className="text-[9px] text-gray-200 font-medium truncate mt-0.5 opacity-90 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
                       {story.text}
                     </span>
                   )}

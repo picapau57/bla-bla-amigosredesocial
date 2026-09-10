@@ -3,7 +3,7 @@ import { User, Post, Ad } from '../types';
 import { 
   Image as ImageIcon, Video, Send, Share2, MessageSquare, AlertCircle, 
   MapPin, CheckCircle, Flame, Star, Sparkles, ExternalLink, Bookmark,
-  Upload, X
+  Upload, X, ThumbsUp, Heart, Smile, Globe, MoreHorizontal
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ImageLightbox from './ImageLightbox';
@@ -370,21 +370,21 @@ export default function FeedSection({
   return (
     <div className="flex-1 space-y-6" id="feed-central-panel">
       
-      {/* POST CREATOR BOX */}
-      <div className="bg-[#121225] border border-white/10 rounded-2xl p-4 md:p-5 shadow-xl" id="feed-creator-box">
+      {/* POST CREATOR BOX (FACEBOOK STYLE) */}
+      <div className="bg-white dark:bg-[#242526] border border-[#E4E6EB] dark:border-[#3A3B3C] rounded-xl p-3.5 sm:p-4 shadow-sm" id="feed-creator-box">
         <div className="flex items-start gap-3">
           <img
             src={currentUser.avatar}
             alt={currentUser.fullName}
             referrerPolicy="no-referrer"
-            className="w-10 h-10 rounded-full object-cover ring-2 ring-[#7C4DFF]"
+            className="w-10 h-10 rounded-full object-cover shrink-0 ring-1 ring-black/5"
           />
           <form onSubmit={handleCreatePost} className="w-full">
             <textarea
               value={newPostContent}
               onChange={(e) => setNewPostContent(e.target.value)}
-              placeholder={`Olá, ${currentUser.fullName.split(' ')[0]}! O que está compartilhando com os amigos hoje?`}
-              className="w-full bg-[#0A0A14]/70 text-gray-100 placeholder-gray-500 rounded-xl p-3 text-xs md:text-sm border border-white/5 focus:outline-none focus:border-[#00E5FF] focus:ring-1 focus:ring-[#00E5FF]/20 resize-none min-h-[85px] transition-all"
+              placeholder={`No que você está pensando, ${currentUser.fullName.split(' ')[0]}?`}
+              className="w-full bg-[#F0F2F5] dark:bg-[#3A3B3C] text-[#050505] dark:text-[#E4E6EB] placeholder-[#65676B] dark:placeholder-[#B0B3B8] rounded-2xl p-3 text-sm border-none focus:outline-none focus:ring-2 focus:ring-[#1877F2]/30 resize-none min-h-[75px] transition-all"
             />
 
             {/* EXPANDABLE MEDIA ATTACHMENTS */}
@@ -669,25 +669,9 @@ export default function FeedSection({
               )}
             </AnimatePresence>
 
-            {/* BUTTON BAR */}
-            <div className="flex items-center justify-between border-t border-white/10 pt-3 mt-3">
-              <div className="flex items-center gap-1.5 md:gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (showMediaInput && mediaType === 'image' && activeMediaSource === 'upload') {
-                      setShowMediaInput(false);
-                    } else {
-                      setShowMediaInput(true);
-                      setMediaType('image');
-                      setActiveMediaSource('upload');
-                    }
-                  }}
-                  className="flex items-center gap-1.5 text-gray-400 hover:text-[#00E5FF] text-[11px] md:text-xs font-semibold px-2 py-1.5 rounded-lg hover:bg-[#1E1E30]/60 transition-all cursor-pointer"
-                >
-                  <ImageIcon className="w-4 h-4 text-[#00E5FF]" />
-                  <span>Adicionar Foto</span>
-                </button>
+            {/* BUTTON BAR (FACEBOOK ACTIONS) */}
+            <div className="flex flex-wrap items-center justify-between border-t border-[#E4E6EB] dark:border-[#3A3B3C] pt-2.5 mt-2.5 gap-2">
+              <div className="flex items-center gap-1 sm:gap-2">
                 <button
                   type="button"
                   onClick={() => {
@@ -699,22 +683,51 @@ export default function FeedSection({
                       setActiveMediaSource('url');
                     }
                   }}
-                  className="flex items-center gap-1.5 text-gray-400 hover:text-[#FF5722] text-[11px] md:text-xs font-semibold px-2 py-1.5 rounded-lg hover:bg-[#1E1E30]/60 transition-all cursor-pointer"
+                  className="flex items-center gap-2 text-[#65676B] dark:text-[#B0B3B8] hover:bg-[#F0F2F5] dark:hover:bg-[#3A3B3C] text-xs font-semibold px-2.5 py-2 rounded-lg transition-colors cursor-pointer"
                 >
-                  <Video className="w-4 h-4 text-[#FF5722] animate-pulse" />
-                  <span>Vídeo/Reels</span>
+                  <Video className="w-5 h-5 text-[#F3425F]" />
+                  <span className="hidden xs:inline">Vídeo ao vivo</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (showMediaInput && mediaType === 'image' && activeMediaSource === 'upload') {
+                      setShowMediaInput(false);
+                    } else {
+                      setShowMediaInput(true);
+                      setMediaType('image');
+                      setActiveMediaSource('upload');
+                    }
+                  }}
+                  className="flex items-center gap-2 text-[#65676B] dark:text-[#B0B3B8] hover:bg-[#F0F2F5] dark:hover:bg-[#3A3B3C] text-xs font-semibold px-2.5 py-2 rounded-lg transition-colors cursor-pointer"
+                >
+                  <ImageIcon className="w-5 h-5 text-[#45BD62]" />
+                  <span>Foto/vídeo</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMediaInput(true);
+                    setMediaType('image');
+                  }}
+                  className="flex items-center gap-2 text-[#65676B] dark:text-[#B0B3B8] hover:bg-[#F0F2F5] dark:hover:bg-[#3A3B3C] text-xs font-semibold px-2.5 py-2 rounded-lg transition-colors cursor-pointer"
+                >
+                  <Smile className="w-5 h-5 text-[#F7B125]" />
+                  <span className="hidden sm:inline">Sentimento</span>
                 </button>
               </div>
 
               <button
                 type="submit"
                 disabled={(!newPostContent.trim() && !newPostMedia) || isModeratingPost}
-                className="bg-gradient-to-r from-[#7C4DFF] via-[#00E5FF] to-[#00E676] hover:brightness-110 disabled:opacity-30 disabled:pointer-events-none text-white font-extrabold text-xs py-2 px-5 rounded-xl shadow-lg flex items-center gap-1.5 cursor-pointer uppercase tracking-wider h-9 transition-all"
+                className="bg-[#1877F2] hover:bg-[#166FE5] disabled:opacity-40 disabled:pointer-events-none text-white font-bold text-xs py-2 px-5 rounded-lg shadow-sm flex items-center gap-1.5 cursor-pointer transition-all ml-auto"
               >
                 {isModeratingPost ? (
                   <>
                     <span className="animate-pulse">Moderando...</span>
-                    <Sparkles className="w-3.5 h-3.5 animate-spin text-[#00E5FF]" />
+                    <Sparkles className="w-3.5 h-3.5 animate-spin text-white" />
                   </>
                 ) : (
                   <>
@@ -729,11 +742,11 @@ export default function FeedSection({
       </div>
 
       {/* FEED ITEMS LIST */}
-      <div className="space-y-6" id="news-feed-posts">
+      <div className="space-y-4 sm:space-y-5" id="news-feed-posts">
         {mergedFeedItems.length === 0 ? (
-          <div className="text-center bg-[#121225] border border-white/10 rounded-2xl py-12 px-4 shadow-lg text-gray-400">
-            <p className="text-sm font-mono uppercase tracking-widest text-[#00E5FF]">Nenhum post disponível</p>
-            <p className="text-xs text-gray-500 mt-2">Seja o pioneiro e publique uma novidade agora mesmo!</p>
+          <div className="text-center bg-white dark:bg-[#242526] border border-[#E4E6EB] dark:border-[#3A3B3C] rounded-xl py-12 px-4 shadow-sm text-[#65676B] dark:text-[#B0B3B8]">
+            <p className="text-sm font-bold text-[#050505] dark:text-[#E4E6EB]">Nenhuma publicação disponível</p>
+            <p className="text-xs text-[#65676B] dark:text-[#B0B3B8] mt-1">Seja o primeiro a compartilhar uma novidade com seus amigos!</p>
           </div>
         ) : (
           mergedFeedItems.map((item, index) => {
@@ -743,33 +756,36 @@ export default function FeedSection({
               return (
                 <div 
                   key={`ad-${ad.id}-${index}`} 
-                  className="bg-[#121225] border border-[#FF5722]/30 rounded-2xl p-5 shadow-2xl relative overflow-hidden"
+                  className="bg-white dark:bg-[#242526] border border-[#E4E6EB] dark:border-[#3A3B3C] rounded-xl p-4 shadow-sm relative overflow-hidden"
                   id={`inline-ad-card-${index}`}
                 >
-                  <div className="absolute top-0 left-0 bg-[#FF5722] text-white px-3 py-1 font-mono uppercase text-[9px] font-extrabold rounded-br-xl flex items-center gap-1">
-                    <Sparkles className="w-2.5 h-2.5 text-white" /> Conexão Patrocinada
+                  <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-[#E4E6EB] dark:border-[#3A3B3C]">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#1877F2]"></span>
+                      <span className="text-xs font-semibold text-[#65676B] dark:text-[#B0B3B8]">Patrocinado</span>
+                    </div>
+                    <span className="text-[11px] text-[#65676B] dark:text-[#B0B3B8] font-mono">Google Ads Partner</span>
                   </div>
 
-                  <div className="mt-4 flex flex-col md:flex-row gap-4 items-center">
-                    <div className="w-full md:w-1/3 aspect-[4/3] rounded-xl overflow-hidden bg-[#0A0A14] border border-white/5 shrink-0">
+                  <div className="flex flex-col sm:flex-row gap-4 items-center">
+                    <div className="w-full sm:w-1/3 aspect-[4/3] rounded-lg overflow-hidden bg-gray-100 dark:bg-black/20 shrink-0">
                       <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-extrabold text-sm text-white uppercase tracking-tight text-[#00E5FF]">{ad.title}</h4>
-                      <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">{ad.description}</p>
+                      <h4 className="font-bold text-sm text-[#050505] dark:text-[#E4E6EB] leading-tight">{ad.title}</h4>
+                      <p className="text-xs text-[#65676B] dark:text-[#B0B3B8] mt-1.5 leading-relaxed">{ad.description}</p>
                       
-                      <div className="mt-4 flex items-center gap-3">
+                      <div className="mt-3 flex items-center gap-3">
                         <a
                           href={ad.link}
                           target="_blank"
                           rel="noreferrer"
                           onClick={() => onAdClick(ad.id)}
-                          className="bg-white hover:bg-white/90 text-[#0E0E1E] font-black text-xs py-2 px-4 rounded-lg inline-flex items-center gap-1.5 transition-all shadow-md active:scale-95"
+                          className="bg-[#1877F2] hover:bg-[#166FE5] text-white font-bold text-xs py-1.5 px-4 rounded-lg inline-flex items-center gap-1.5 transition-colors shadow-sm"
                         >
-                          <span>Visitar Página</span>
+                          <span>Saiba mais</span>
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
-                        <span className="text-[10px] text-gray-500 font-mono">Promoção Patrocinada por Parceiro</span>
                       </div>
                     </div>
                   </div>
@@ -792,62 +808,71 @@ export default function FeedSection({
             return (
               <div 
                 key={post.id} 
-                className="bg-[#121225] border border-white/10 rounded-2xl shadow-xl overflow-hidden"
+                className="bg-white dark:bg-[#242526] border border-[#E4E6EB] dark:border-[#3A3B3C] rounded-xl shadow-sm overflow-hidden text-[#050505] dark:text-[#E4E6EB]"
                 id={`feed-post-card-${post.id}`}
               >
                 
-                {/* AUTHOR BANNER */}
-                <div className="px-4.5 pt-4.5 pb-2.5 flex items-center justify-between animate-fade-in-up">
+                {/* AUTHOR BANNER (FACEBOOK STYLE) */}
+                <div className="px-4 pt-3.5 pb-2 flex items-center justify-between">
                   <div 
                     onClick={() => onViewProfile?.(author)}
-                    className="flex items-center gap-3 cursor-pointer hover:opacity-85 transition-opacity"
+                    className="flex items-center gap-2.5 cursor-pointer group"
                   >
                     <img
                       src={author.avatar}
                       alt={author.fullName}
                       referrerPolicy="no-referrer"
-                      className="w-10 h-10 rounded-full object-cover ring-1 ring-white/10"
+                      className="w-10 h-10 rounded-full object-cover shrink-0 ring-1 ring-black/5"
                     />
                     <div>
-                      <div className="text-xs md:text-sm font-extrabold text-white flex items-center gap-1">
+                      <div className="text-sm font-bold text-[#050505] dark:text-[#E4E6EB] group-hover:underline flex items-center gap-1">
                         {author.fullName}
                         {author.isVerified && (
-                          <CheckCircle className="w-3.5 h-3.5 text-[#00E5FF] fill-[#00E5FF]/10 shrink-0" title="Verificado" />
+                          <CheckCircle className="w-4 h-4 text-[#1877F2] fill-[#1877F2]/10 shrink-0" title="Verificado" />
                         )}
                         {post.isPatrocinado && (
-                          <span className="bg-[#FF5722]/10 text-[#FF5722] text-[8px] font-extrabold font-mono tracking-wider px-1.5 py-0.5 rounded uppercase ml-1 border border-[#FF5722]/20">
+                          <span className="bg-[#1877F2]/10 text-[#1877F2] text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ml-1">
                             Patrocinado
                           </span>
                         )}
                       </div>
-                      <div className="text-[10px] text-gray-450 text-gray-400 font-mono flex items-center gap-1 mt-0.5">
-                        <span>ID: {author.username}</span>
-                        <span>•</span>
+                      <div className="text-xs text-[#65676B] dark:text-[#B0B3B8] flex items-center gap-1.5 mt-0.5">
                         <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+                        <span>•</span>
+                        <Globe className="w-3 h-3 text-[#65676B] dark:text-[#B0B3B8]" title="Público" />
                       </div>
                     </div>
                   </div>
 
-                  {/* Bookmark Button */}
-                  <button
-                    onClick={() => toggleSavePost(post.id)}
-                    className="text-gray-400 hover:text-[#00E5FF] p-1.5 rounded-lg transition-colors cursor-pointer"
-                    title={isSaved ? 'Remover dos salvos' : 'Salvar postagem'}
-                  >
-                    <Bookmark className={`w-4 h-4 ${isSaved ? 'text-[#00E5FF] fill-[#00E5FF]/20' : ''}`} />
-                  </button>
+                  {/* Bookmark / More Actions */}
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => toggleSavePost(post.id)}
+                      className="text-[#65676B] dark:text-[#B0B3B8] hover:bg-[#F0F2F5] dark:hover:bg-[#3A3B3C] p-2 rounded-full transition-colors cursor-pointer"
+                      title={isSaved ? 'Remover dos salvos' : 'Salvar postagem'}
+                    >
+                      <Bookmark className={`w-4 h-4 ${isSaved ? 'text-[#1877F2] fill-[#1877F2]' : ''}`} />
+                    </button>
+                    <button
+                      onClick={() => onShare(post.id)}
+                      className="text-[#65676B] dark:text-[#B0B3B8] hover:bg-[#F0F2F5] dark:hover:bg-[#3A3B3C] p-2 rounded-full transition-colors cursor-pointer"
+                      title="Mais opções"
+                    >
+                      <MoreHorizontal className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* TEXT CONTENT */}
-                <div className="px-5 pb-3">
-                  <p className="text-gray-200 text-xs md:text-sm whitespace-pre-wrap leading-relaxed">
+                <div className="px-4 pb-3 pt-1">
+                  <p className="text-[15px] text-[#050505] dark:text-[#E4E6EB] whitespace-pre-wrap leading-relaxed">
                     {post.content}
                   </p>
                 </div>
 
                 {/* ATTACHED MEDIA */}
                 {post.mediaUrl && (
-                  <div className="border-t border-b border-[#0A0A14] bg-[#0A0A14] overflow-hidden max-h-[460px] flex items-center justify-center">
+                  <div className="bg-black overflow-hidden max-h-[500px] flex items-center justify-center">
                     {post.mediaType === 'video' ? (
                       <ReelsVideoPlayer mediaUrl={post.mediaUrl} />
                     ) : (
@@ -855,7 +880,7 @@ export default function FeedSection({
                         src={post.mediaUrl}
                         alt="Post attachment"
                         referrerPolicy="no-referrer"
-                        className="w-full h-full object-contain max-h-[380px] hover:scale-[1.01] transition-transform duration-300 cursor-zoom-in"
+                        className="w-full h-full object-contain max-h-[440px] hover:opacity-95 transition-opacity cursor-zoom-in"
                         onClick={() => {
                           setLightboxImage(post.mediaUrl || '');
                           setLightboxAlt(post.content || 'Post attachment');
@@ -866,139 +891,159 @@ export default function FeedSection({
                   </div>
                 )}
 
-                {/* METRICS ROW */}
-                <div className="px-5 py-2.5 flex items-center justify-between text-[11px] font-mono text-gray-400 border-b border-white/5">
-                  <div className="flex gap-2">
-                    {post.reactions?.likes.length > 0 && (
-                      <span className="flex items-center gap-0.5 text-[#00E5FF] font-bold">
-                        👍 {post.reactions.likes.length}
-                      </span>
-                    )}
-                    {post.reactions?.loves.length > 0 && (
-                      <span className="flex items-center gap-0.5 text-[#FF5722] font-bold">
-                        💖 {post.reactions.loves.length}
-                      </span>
-                    )}
-                    {post.reactions?.applauds.length > 0 && (
-                      <span className="flex items-center gap-0.5 text-[#00E676] font-bold">
-                        👏 {post.reactions.applauds.length}
-                      </span>
-                    )}
-                    {(!post.reactions?.likes.length && !post.reactions?.loves.length && !post.reactions?.applauds.length) && (
-                      <span>Nenhuma reação ainda</span>
-                    )}
+                {/* METRICS ROW (FACEBOOK REACTION SUMMARY) */}
+                <div className="px-4 py-2 flex items-center justify-between text-xs text-[#65676B] dark:text-[#B0B3B8]">
+                  <div className="flex items-center gap-1.5">
+                    {/* Reaction Icon Bubbles */}
+                    <div className="flex items-center -space-x-1">
+                      {post.reactions?.likes.length > 0 && (
+                        <span className="w-5 h-5 rounded-full bg-[#1877F2] flex items-center justify-center text-white text-[11px] shadow-sm ring-1 ring-white dark:ring-[#242526]">
+                          👍
+                        </span>
+                      )}
+                      {post.reactions?.loves.length > 0 && (
+                        <span className="w-5 h-5 rounded-full bg-[#F3425F] flex items-center justify-center text-white text-[11px] shadow-sm ring-1 ring-white dark:ring-[#242526]">
+                          ❤️
+                        </span>
+                      )}
+                      {post.reactions?.applauds.length > 0 && (
+                        <span className="w-5 h-5 rounded-full bg-[#45BD62] flex items-center justify-center text-white text-[11px] shadow-sm ring-1 ring-white dark:ring-[#242526]">
+                          👏
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Counts */}
+                    <span>
+                      {(post.reactions?.likes.length || 0) + (post.reactions?.loves.length || 0) + (post.reactions?.applauds.length || 0) > 0 ? (
+                        <span>{(post.reactions?.likes.length || 0) + (post.reactions?.loves.length || 0) + (post.reactions?.applauds.length || 0)}</span>
+                      ) : (
+                        <span>Seja o primeiro a curtir</span>
+                      )}
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-3">
                     <button 
                       onClick={() => setActiveCommentsPostId(isCommentTrayOpen ? null : post.id)}
-                      className="hover:underline hover:text-white cursor-pointer"
+                      className="hover:underline cursor-pointer"
                     >
-                      {displayComments.length} {displayComments.length === 1 ? 'Comentário' : 'Comentários'}
+                      {displayComments.length} {displayComments.length === 1 ? 'comentário' : 'comentários'}
                     </button>
                     <span>•</span>
                     <button 
                       onClick={() => onShare(post.id)}
-                      className="hover:underline hover:text-white flex items-center gap-0.5 cursor-pointer"
+                      className="hover:underline cursor-pointer"
                     >
-                      <span>{post.sharesCount} compartilhamentos</span>
+                      {post.sharesCount} compartilhamentos
                     </button>
                   </div>
                 </div>
 
-                {/* MULTI REACTION BAR & INTERACTIONS */}
-                <div className="px-3.5 py-1.5 bg-[#0A0A14]/30 flex items-center justify-around gap-1.5 md:gap-3">
+                {/* FACEBOOK ACTION BUTTONS BAR */}
+                <div className="border-t border-[#E4E6EB] dark:border-[#3A3B3C] py-1 px-2 mx-3 flex items-center justify-around gap-1">
                   
-                  {/* Curtir 👍 */}
+                  {/* Curtir */}
                   <button
                     onClick={() => onToggleReaction(post.id, 'likes')}
-                    className={`flex-1 flex items-center justify-center gap-1.5 text-xs py-2 rounded-xl transition-all font-bold cursor-pointer ${
+                    className={`flex-1 flex items-center justify-center gap-1.5 text-xs py-1.5 rounded-lg transition-colors font-semibold cursor-pointer ${
                       hasLiked 
-                        ? 'bg-[#00E5FF]/10 border border-[#00E5FF]/30 text-[#00E5FF] drop-shadow-[0_0_8px_rgba(0,229,255,0.2)]' 
-                        : 'text-gray-450 text-gray-400 hover:bg-[#1E1E30]/60 hover:text-[#00E5FF]'
+                        ? 'text-[#1877F2] font-bold bg-[#1877F2]/10' 
+                        : 'text-[#65676B] dark:text-[#B0B3B8] hover:bg-[#F0F2F5] dark:hover:bg-[#3A3B3C]'
                     }`}
                   >
-                    <span className="text-sm">👍</span>
-                    <span className="hidden sm:inline">Curtir</span>
+                    <ThumbsUp className={`w-4 h-4 ${hasLiked ? 'fill-[#1877F2] text-[#1877F2]' : ''}`} />
+                    <span>Curtir</span>
                   </button>
 
-                  {/* Amar 💖 */}
+                  {/* Amar */}
                   <button
                     onClick={() => onToggleReaction(post.id, 'loves')}
-                    className={`flex-1 flex items-center justify-center gap-1.5 text-xs py-2 rounded-xl transition-all font-bold cursor-pointer ${
+                    className={`flex-1 flex items-center justify-center gap-1.5 text-xs py-1.5 rounded-lg transition-colors font-semibold cursor-pointer ${
                       hasLoved 
-                        ? 'bg-[#FF5722]/10 border border-[#FF5722]/30 text-[#FF5722] drop-shadow-[0_0_8px_rgba(255,87,34,0.2)]' 
-                        : 'text-gray-450 text-gray-400 hover:bg-[#1E1E30]/60 hover:text-[#FF5722]'
+                        ? 'text-[#F3425F] font-bold bg-[#F3425F]/10' 
+                        : 'text-[#65676B] dark:text-[#B0B3B8] hover:bg-[#F0F2F5] dark:hover:bg-[#3A3B3C]'
                     }`}
                   >
-                    <span className="text-sm">💖</span>
-                    <span className="hidden sm:inline">Amar</span>
+                    <Heart className={`w-4 h-4 ${hasLoved ? 'fill-[#F3425F] text-[#F3425F]' : ''}`} />
+                    <span>Amar</span>
                   </button>
 
-                  {/* Aplaudir 👏 */}
+                  {/* Aplaudir */}
                   <button
                     onClick={() => onToggleReaction(post.id, 'applauds')}
-                    className={`flex-1 flex items-center justify-center gap-1.5 text-xs py-2 rounded-xl transition-all font-bold cursor-pointer ${
+                    className={`flex-1 flex items-center justify-center gap-1.5 text-xs py-1.5 rounded-lg transition-colors font-semibold cursor-pointer ${
                       hasApplauded 
-                        ? 'bg-[#00E676]/10 border border-[#00E676]/30 text-[#00E676] drop-shadow-[0_0_8px_rgba(0,230,118,0.2)]' 
-                        : 'text-gray-450 text-gray-400 hover:bg-[#1E1E30]/60 hover:text-[#00E676]'
+                        ? 'text-[#45BD62] font-bold bg-[#45BD62]/10' 
+                        : 'text-[#65676B] dark:text-[#B0B3B8] hover:bg-[#F0F2F5] dark:hover:bg-[#3A3B3C]'
                     }`}
                   >
                     <span className="text-sm">👏</span>
                     <span className="hidden sm:inline">Aplaudir</span>
                   </button>
 
-                  {/* Comment Toggle */}
+                  {/* Comentar */}
                   <button
                     onClick={() => setActiveCommentsPostId(isCommentTrayOpen ? null : post.id)}
-                    className={`flex-1 flex items-center justify-center gap-1.5 text-xs py-2 rounded-xl transition-all font-bold cursor-pointer ${
+                    className={`flex-1 flex items-center justify-center gap-1.5 text-xs py-1.5 rounded-lg transition-colors font-semibold cursor-pointer ${
                       isCommentTrayOpen 
-                        ? 'bg-[#7C4DFF]/15 text-[#00E5FF]' 
-                        : 'text-gray-450 text-gray-400 hover:bg-[#1E1E30]/60 hover:text-white'
+                        ? 'text-[#1877F2] bg-[#1877F2]/10' 
+                        : 'text-[#65676B] dark:text-[#B0B3B8] hover:bg-[#F0F2F5] dark:hover:bg-[#3A3B3C]'
                     }`}
                   >
-                    <MessageSquare className="w-4 h-4 text-[#7C4DFF]" />
-                    <span className="hidden sm:inline">Comentar</span>
+                    <MessageSquare className="w-4 h-4" />
+                    <span>Comentar</span>
+                  </button>
+
+                  {/* Compartilhar */}
+                  <button
+                    onClick={() => onShare(post.id)}
+                    className="flex-1 flex items-center justify-center gap-1.5 text-xs py-1.5 rounded-lg transition-colors font-semibold cursor-pointer text-[#65676B] dark:text-[#B0B3B8] hover:bg-[#F0F2F5] dark:hover:bg-[#3A3B3C]"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    <span className="hidden sm:inline">Compartilhar</span>
                   </button>
 
                 </div>
 
-                {/* COMMENTS EXPANDER */}
+                {/* COMMENTS EXPANDER (FACEBOOK BUBBLES) */}
                 <AnimatePresence>
                   {isCommentTrayOpen && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="bg-[#0A0A14]/70 border-t border-white/5 px-4.5 py-4 space-y-4"
+                      className="border-t border-[#E4E6EB] dark:border-[#3A3B3C] px-4 py-3 space-y-3 bg-[#F9FAFB] dark:bg-[#18191A]/50"
                     >
                       {/* Comments Feed list */}
                       {displayComments.length > 0 && (
-                        <div className="space-y-3.5 max-h-56 overflow-y-auto pr-1">
+                        <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
                           {displayComments.map(c => {
                             const commenter = getAuthor(c.userId);
                             return (
-                              <div key={c.id} className="flex gap-2.5 items-start text-xs bg-[#121225] p-2.5 rounded-xl border border-white/5">
+                              <div key={c.id} className="flex gap-2.5 items-start text-xs">
                                 <img
                                   src={commenter.avatar}
                                   alt={commenter.fullName}
                                   referrerPolicy="no-referrer"
-                                  className="w-7 h-7 rounded-full object-cover shrink-0 ring-1 ring-white/10 cursor-pointer hover:scale-105 transition-transform"
+                                  className="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-black/5 cursor-pointer hover:opacity-90 transition-opacity mt-0.5"
                                   onClick={() => onViewProfile?.(commenter)}
                                 />
-                                <div className="min-w-0 flex-1 font-sans">
-                                  <div className="flex items-center justify-between">
-                                    <span 
-                                      className="font-extrabold text-[11px] text-white cursor-pointer hover:text-[#00E5FF] transition-colors"
-                                      onClick={() => onViewProfile?.(commenter)}
-                                    >
-                                      {commenter.fullName}
-                                    </span>
-                                    <span className="text-[9px] text-gray-500 font-mono">
-                                      {new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
+                                <div className="min-w-0 max-w-[85%]">
+                                  <div className="bg-[#F0F2F5] dark:bg-[#3A3B3C] rounded-2xl px-3.5 py-2 text-xs">
+                                    <div className="flex items-center justify-between gap-3">
+                                      <span 
+                                        className="font-bold text-xs text-[#050505] dark:text-[#E4E6EB] cursor-pointer hover:underline"
+                                        onClick={() => onViewProfile?.(commenter)}
+                                      >
+                                        {commenter.fullName}
+                                      </span>
+                                      <span className="text-[10px] text-[#65676B] dark:text-[#B0B3B8]">
+                                        {new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                      </span>
+                                    </div>
+                                    <p className="text-[#050505] dark:text-[#E4E6EB] mt-1 leading-normal whitespace-pre-wrap">{c.content}</p>
                                   </div>
-                                  <p className="text-gray-300 mt-1 leading-relaxed whitespace-pre-wrap">{c.content}</p>
                                 </div>
                               </div>
                             );
@@ -1007,29 +1052,30 @@ export default function FeedSection({
                       )}
 
                       {/* Comment input form */}
-                      <div className="flex gap-2 items-center">
+                      <div className="flex gap-2 items-center pt-1">
                         <img
                           src={currentUser.avatar}
                           alt="you"
                           referrerPolicy="no-referrer"
-                          className="w-7.5 h-7.5 rounded-full object-cover ring-1 ring-[#7C4DFF]"
+                          className="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-black/5"
                         />
                         <div className="relative flex-1">
                           <input
                             type="text"
-                            placeholder="Adote a amizade: Deixe um comentário de incentivo..."
+                            placeholder="Escreva um comentário..."
                             value={commentInputs[post.id] || ''}
                             onChange={(e) => handleCommentChange(post.id, e.target.value)}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') handlePostComment(post.id);
                             }}
-                            className="w-full bg-[#121225] border border-white/10 text-gray-100 text-xs pl-3.5 pr-10 py-2 rounded-xl focus:outline-none focus:border-[#00E5FF] placeholder-gray-500 font-sans"
+                            className="w-full bg-[#F0F2F5] dark:bg-[#3A3B3C] text-[#050505] dark:text-[#E4E6EB] text-xs pl-4 pr-10 py-2 rounded-full focus:outline-none focus:ring-1 focus:ring-[#1877F2] placeholder-[#65676B] dark:placeholder-[#B0B3B8] border-none"
                           />
                           <button
                             onClick={() => handlePostComment(post.id)}
-                            className="absolute right-2 top-1.5 text-[#00E5FF] hover:text-cyan-300 p-0.5 cursor-pointer"
+                            className="absolute right-2.5 top-2 text-[#1877F2] hover:text-[#166FE5] p-0.5 cursor-pointer disabled:opacity-40"
+                            disabled={!commentInputs[post.id]?.trim()}
                           >
-                            <Send className="w-4 h-4" />
+                            <Send className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>

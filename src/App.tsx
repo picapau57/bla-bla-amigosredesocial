@@ -660,6 +660,8 @@ export default function App() {
             isAdminSessionActive={social.isAdminSessionActive}
             theme={theme}
             setTheme={setTheme}
+            onViewProfile={setViewingUser}
+            onLogout={() => setIsLoggedIn(false)}
           />
 
           <div className="max-w-7xl mx-auto w-full px-4 md:px-8 py-6 flex-1 flex flex-col lg:flex-row gap-6 relative">
