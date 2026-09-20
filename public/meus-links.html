@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Bla Bla dos Amigos — Meus Links</title>
+  <meta name="description" content="Todos os links e ofertas do Bla Bla dos Amigos em um só lugar." />
+  <meta name="robots" content="index, follow" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --coral: #FF6B57;
+      --coral-deep: #E5503C;
+      --teal: #0F766E;
+      --teal-deep: #0B5C55;
+      --cream: #FFF8F1;
+      --ink: #23201D;
+      --ink-soft: #6B645D;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--cream);
+      background-image:
+        radial-gradient(circle at 12% 8%, rgba(255,107,87,0.14), transparent 45%),
+        radial-gradient(circle at 88% 92%, rgba(15,118,110,0.14), transparent 45%);
+      font-family: 'Inter', sans-serif;
+      color: var(--ink);
+      display: flex;
+      justify-content: center;
+      padding: 56px 20px 40px;
+    }
+
+    .wrap {
+      width: 100%;
+      max-width: 440px;
+    }
+
+    .avatar {
+      width: 84px;
+      height: 84px;
+      margin: 0 auto 18px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--coral), var(--teal));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+      box-shadow: 0 8px 24px rgba(15,118,110,0.25);
+    }
+
+    h1 {
+      font-family: 'Baloo 2', sans-serif;
+      font-weight: 800;
+      font-size: 28px;
+      text-align: center;
+      margin: 0 0 6px;
+      letter-spacing: -0.01em;
+    }
+
+    .tagline {
+      text-align: center;
+      color: var(--ink-soft);
+      font-size: 15px;
+      margin: 0 0 34px;
+      line-height: 1.5;
+    }
+
+    .links {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .link-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 18px;
+      background: #fff;
+      border: 1px solid rgba(35,32,29,0.08);
+      border-radius: 16px;
+      text-decoration: none;
+      color: var(--ink);
+      box-shadow: 0 2px 10px rgba(35,32,29,0.05);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+
+    .link-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(35,32,29,0.10);
+      border-color: rgba(35,32,29,0.14);
+    }
+
+    .link-card:active {
+      transform: translateY(0);
+    }
+
+    .icon {
+      flex: none;
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .icon.amazon   { background: #23201D; }
+    .icon.magalu   { background: #0F766E; }
+    .icon.site     { background: var(--coral); }
+    .icon.social   { background: linear-gradient(135deg, var(--coral), var(--teal)); }
+    .icon.oferta   { background: linear-gradient(135deg, #2563eb, #22c55e); }
+
+    .label {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .label .name {
+      font-weight: 700;
+      font-size: 15.5px;
+      display: block;
+    }
+
+    .label .desc {
+      font-size: 13px;
+      color: var(--ink-soft);
+      display: block;
+      margin-top: 1px;
+    }
+
+    .arrow {
+      flex: none;
+      color: var(--ink-soft);
+      font-size: 18px;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 36px;
+      font-size: 12.5px;
+      color: var(--ink-soft);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .link-card { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="avatar">💬</div>
+    <h1>Bla Bla dos Amigos</h1>
+    <p class="tagline">Todos os meus links e ofertas em um só lugar</p>
+
+    <div class="links">
+      <a class="link-card" href="https://link.amazon/B02gAUlI7" target="_blank" rel="noopener sponsored">
+        <span class="icon amazon">a</span>
+        <span class="label">
+          <span class="name">Amazon</span>
+          <span class="desc">Confira essa oferta selecionada</span>
+        </span>
+        <span class="arrow">→</span>
+      </a>
+
+      <a class="link-card" href="https://www.magazinevoce.com.br/magazineblablaamigos" target="_blank" rel="noopener sponsored">
+        <span class="icon magalu">M</span>
+        <span class="label">
+          <span class="name">Magazine Luiza</span>
+          <span class="desc">Minha vitrine de produtos</span>
+        </span>
+        <span class="arrow">→</span>
+      </a>
+
+      <a class="link-card" href="https://blablabladosamigos.online/?ref=BBA-37420976104-3193" target="_blank" rel="noopener">
+        <span class="icon site">🌐</span>
+        <span class="label">
+          <span class="name">Bla Bla dos Amigos</span>
+          <span class="desc">Nosso site principal</span>
+        </span>
+        <span class="arrow">→</span>
+      </a>
+
+      <a class="link-card" href="https://bla-bla-dos-amigos.lovable.app/?ref=VSTGYBNV" target="_blank" rel="noopener">
+        <span class="icon social">✨</span>
+        <span class="label">
+          <span class="name">Bla Bla dos Amigos App</span>
+          <span class="desc">Nosso app / página irmã</span>
+        </span>
+        <span class="arrow">→</span>
+      </a>
+
+      <a class="link-card" href="https://rm358.com/4/11848417" target="_blank" rel="noopener">
+        <span class="icon oferta">🎁</span>
+        <span class="label">
+          <span class="name">Oferta do dia</span>
+          <span class="desc">Aproveite antes que acabe</span>
+        </span>
+        <span class="arrow">→</span>
+      </a>
+    </div>
+
+    <footer>Bla Bla dos Amigos · alguns links são de afiliado</footer>
+  </div>
+</body>
+</html>
