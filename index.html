@@ -11,7 +11,6 @@
     <!-- PWA Configuration -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#121225" />
-    <script id="aclib" type="text/javascript" src="//acscdn.com/script/aclib.js"></script>
     <!-- iOS / Apple Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -24,7 +23,13 @@
         zoneId: 'oqifqlxxu',
       });
     </script>
-  </head>
+    <script type="text/javascript">
+    aclib.runAutoTag({
+        zoneId: 'nwa1tkf1mx',
+    });
+</script>
+
+ </head>
 <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
